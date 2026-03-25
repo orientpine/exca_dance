@@ -1,0 +1,14 @@
+Task: Fix ghost glow VBO stride in visual_cues.py
+
+Verification:
+- Inline shape assert passed for 180 vertices × 9 floats
+- PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest tests/ -v
+  - Result: 56 passed
+- .venv/bin/ruff check src/exca_dance/rendering/visual_cues.py
+  - Result: All checks passed
+- timeout 5 xvfb-run -a env SDL_AUDIODRIVER=dummy .venv/bin/python -m exca_dance --windowed
+  - Result: app started successfully in virtual mode before timeout
+
+Notes:
+- _rebuild_ghost_glow() now reads the ExcavatorModel VBO as 9 floats/vertex.
+- positions come from columns 0:3, colors from 3:6, normals are skipped.

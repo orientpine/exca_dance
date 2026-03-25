@@ -25,6 +25,10 @@ class TextRendererProtocol(Protocol):
     ) -> None: ...
 
 
+class _BlendFuncContext(Protocol):
+    blend_func: tuple[int, int] | int
+
+
 class VisualCueRenderer:
     """
     Renders visual cues for the rhythm game:
@@ -70,20 +74,24 @@ class VisualCueRenderer:
             return
 
         raw = np.frombuffer(self._ghost_model._vbo.read(), dtype="f4")
-        if raw.size % 6 != 0:
+        if raw.size % 9 != 0:
             self._ghost_glow_base = None
             return
 
-        self._ghost_glow_base = raw.reshape(-1, 6).copy()
+        raw_9 = raw.reshape(-1, 9).copy()
+        positions = raw_9[:, :3]
+        colors = raw_9[:, 3:6]
+
         ctx = self._renderer.ctx
         if self._ghost_glow_vbo is not None:
             self._ghost_glow_vbo.release()
         if self._ghost_glow_vao is not None:
             self._ghost_glow_vao.release()
 
-        glow_data = np.empty((self._ghost_glow_base.shape[0], 7), dtype="f4")
-        glow_data[:, :6] = self._ghost_glow_base
-        glow_data[:, 6] = 0.0
+        self._ghost_glow_base = np.column_stack((positions, colors)).astype("f4", copy=False)
+        glow_data = np.column_stack(
+            (positions, colors, np.zeros((positions.shape[0], 1), dtype="f4"))
+        )
         self._ghost_glow_vbo = ctx.buffer(glow_data.tobytes())
         self._ghost_glow_vao = ctx.vertex_array(
             self._renderer.prog_additive,
@@ -141,7 +149,7 @@ class VisualCueRenderer:
                 glow_data[:, 6] = glow_alpha
                 self._ghost_glow_vbo.write(glow_data.tobytes())
 
-            ctx = self._renderer.ctx
+            ctx = cast(_BlendFuncContext, cast(object, self._renderer.ctx))
             ctx.blend_func = (moderngl.SRC_ALPHA, moderngl.ONE)
             try:
                 mvp_uniform = cast(moderngl.Uniform, self._ghost_glow_vao.program["mvp"])
