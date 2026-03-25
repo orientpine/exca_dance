@@ -1,0 +1,176 @@
+"""Gameplay HUD: score, combo, judgment flash, progress bar, joint status."""
+
+from __future__ import annotations
+import pygame
+from exca_dance.core.models import JointName
+from exca_dance.rendering.theme import NeonTheme
+from exca_dance.core.hit_detection import JudgmentDisplay
+
+
+class GameplayHUD:
+    """
+    Renders the gameplay overlay:
+    - Score (top-right)
+    - Combo counter (top-center)
+    - Judgment flash (center)
+    - Progress bar (bottom)
+    - Joint status panel (left side)
+    - FPS counter (top-left, debug, toggle F3)
+    """
+
+    def __init__(self, renderer, text_renderer, audio, scoring) -> None:
+        self._renderer = renderer
+        self._text = text_renderer
+        self._audio = audio
+        self._scoring = scoring
+        self._judgment_display = JudgmentDisplay()
+        self._show_fps = False
+        self._song_duration_ms: float = 60_000.0  # default 60s
+        self._target_angles: dict[JointName, float] = {}
+
+    def set_song_duration(self, ms: float) -> None:
+        self._song_duration_ms = ms
+
+    def set_target_angles(self, angles: dict[JointName, float]) -> None:
+        self._target_angles = dict(angles)
+
+    def toggle_fps(self) -> None:
+        self._show_fps = not self._show_fps
+
+    @property
+    def judgment_display(self) -> JudgmentDisplay:
+        return self._judgment_display
+
+    def update(self, dt: float) -> None:
+        self._judgment_display.update(dt)
+
+    def render(self, joint_angles: dict[JointName, float]) -> None:
+        """Render all HUD elements."""
+        if self._text is None:
+            return
+
+        W = self._renderer.width
+        H = self._renderer.height
+        current_ms = self._audio.get_position_ms()
+
+        # ── Score (top-right) ──────────────────────────────────────────
+        score = self._scoring.get_total_score()
+        self._text.render(
+            f"{score:08d}",
+            W - 20,
+            20,
+            color=NeonTheme.NEON_BLUE.as_tuple(),
+            scale=1.8,
+            align="right",
+        )
+
+        # ── Combo (top-center) ─────────────────────────────────────────
+        combo = self._scoring._combo
+        if combo > 0:
+            mult = self._scoring.get_combo_multiplier()
+            combo_color = NeonTheme.NEON_GREEN if mult > 1 else NeonTheme.TEXT_WHITE
+            self._text.render(
+                f"x{combo}",
+                W // 2,
+                20,
+                color=combo_color.as_tuple(),
+                scale=1.5,
+                align="center",
+            )
+            if mult > 1:
+                self._text.render(
+                    f"{mult}× COMBO",
+                    W // 2,
+                    60,
+                    color=NeonTheme.NEON_ORANGE.as_tuple(),
+                    scale=1.0,
+                    align="center",
+                )
+
+        # ── Judgment flash (center) ────────────────────────────────────
+        self._judgment_display.render(self._renderer, self._text)
+
+        # ── Progress bar (bottom) ──────────────────────────────────────
+        bar_y = H - 30
+        bar_h = 8
+        bar_x = 20
+        bar_w = W - 40
+        progress = min(1.0, current_ms / max(1.0, self._song_duration_ms))
+        filled_w = int(bar_w * progress)
+
+        # Background bar (dim)
+        self._draw_rect_2d(bar_x, bar_y, bar_w, bar_h, NeonTheme.BG_PANEL)
+        # Filled bar (neon blue)
+        if filled_w > 0:
+            self._draw_rect_2d(bar_x, bar_y, filled_w, bar_h, NeonTheme.NEON_BLUE)
+
+        # Time text
+        elapsed_s = int(current_ms / 1000)
+        total_s = int(self._song_duration_ms / 1000)
+        self._text.render(
+            f"{elapsed_s // 60:02d}:{elapsed_s % 60:02d} / {total_s // 60:02d}:{total_s % 60:02d}",
+            W // 2,
+            H - 50,
+            color=NeonTheme.TEXT_DIM.as_tuple(),
+            scale=0.9,
+            align="center",
+        )
+
+        # ── Joint status panel (left side) ────────────────────────────
+        panel_x = 20
+        panel_y = 120
+        joint_colors = {
+            JointName.SWING: NeonTheme.JOINT_SWING,
+            JointName.BOOM: NeonTheme.JOINT_BOOM,
+            JointName.ARM: NeonTheme.JOINT_ARM,
+            JointName.BUCKET: NeonTheme.JOINT_BUCKET,
+        }
+        for i, jname in enumerate(JointName):
+            y = panel_y + i * 70
+            color = joint_colors[jname]
+            angle = joint_angles.get(jname, 0.0)
+            target = self._target_angles.get(jname)
+
+            self._text.render(
+                jname.value.upper(),
+                panel_x,
+                y,
+                color=color.as_tuple(),
+                scale=0.9,
+            )
+            self._text.render(
+                f"{angle:+.1f}°",
+                panel_x,
+                y + 22,
+                color=NeonTheme.TEXT_WHITE.as_tuple(),
+                scale=0.85,
+            )
+            if target is not None:
+                diff = abs(angle - target)
+                match_color = NeonTheme.NEON_GREEN if diff < 10 else NeonTheme.NEON_ORANGE
+                self._text.render(
+                    f"→ {target:+.1f}°",
+                    panel_x,
+                    y + 44,
+                    color=match_color.as_tuple(),
+                    scale=0.8,
+                )
+
+        # ── FPS counter (top-left, debug) ──────────────────────────────
+        if self._show_fps:
+            fps = self._renderer.get_fps()
+            fps_color = NeonTheme.NEON_GREEN if fps >= 55 else NeonTheme.MISS
+            self._text.render(
+                f"FPS: {fps:.0f}",
+                10,
+                10,
+                color=fps_color.as_tuple(),
+                scale=0.8,
+            )
+
+    def _draw_rect_2d(self, x: int, y: int, w: int, h: int, color) -> None:
+        """Draw a 2D screen-space rectangle using the textured quad shader."""
+        # Use a 1×1 white texture trick via prog_tex with solid color
+        # For now, skip actual GL rect drawing — text renderer handles visuals
+        # Full implementation would use a dedicated 2D rect shader
+        pass
