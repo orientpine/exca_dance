@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 import os
-import json
 import pygame
 from exca_dance.core.models import JointName, BeatEvent, BeatMap
-from exca_dance.core.beatmap import load_beatmap, save_beatmap, validate_beatmap
+from exca_dance.core.beatmap import load_beatmap, save_beatmap
 from exca_dance.core.constants import JOINT_ANGULAR_VELOCITY, JOINT_LIMITS
 from exca_dance.rendering.theme import NeonTheme
 from exca_dance.core.game_state import ScreenName

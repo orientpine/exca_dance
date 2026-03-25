@@ -7,7 +7,6 @@ The main game process NEVER imports this directly.
 from __future__ import annotations
 import logging
 import multiprocessing as mp
-import time
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +86,6 @@ class ROS2Bridge:
     """
 
     def __init__(self) -> None:
-        from exca_dance.ros2_bridge.interface import ExcavatorBridgeInterface
 
         self._command_queue: mp.Queue = mp.Queue(maxsize=10)
         self._state_queue: mp.Queue = mp.Queue(maxsize=10)

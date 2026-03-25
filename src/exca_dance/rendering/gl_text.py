@@ -1,10 +1,8 @@
 """GL text renderer: renders text via pygame.font → GL texture."""
 
 from __future__ import annotations
-from functools import lru_cache
 import pygame
 import moderngl
-import numpy as np
 
 
 class GLTextRenderer:

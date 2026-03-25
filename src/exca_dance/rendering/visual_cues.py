@@ -3,7 +3,6 @@
 from __future__ import annotations
 import numpy as np
 from exca_dance.core.models import JointName, BeatEvent
-from exca_dance.rendering.theme import NeonTheme
 
 
 class VisualCueRenderer:

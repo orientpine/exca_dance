@@ -1,7 +1,6 @@
 """Gameplay HUD: score, combo, judgment flash, progress bar, joint status."""
 
 from __future__ import annotations
-import pygame
 from exca_dance.core.models import JointName
 from exca_dance.rendering.theme import NeonTheme
 from exca_dance.core.hit_detection import JudgmentDisplay

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 import pygame
-from exca_dance.core.game_loop import GameLoop, GameState as LoopState
 
 
 class ScreenName:

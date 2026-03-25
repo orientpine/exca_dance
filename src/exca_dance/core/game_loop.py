@@ -1,10 +1,9 @@
 """Core game loop for Exca Dance."""
 
 from __future__ import annotations
-import time
 import pygame
 from exca_dance.core.models import JointName, BeatMap, BeatEvent
-from exca_dance.core.constants import TARGET_FPS, JOINT_ANGULAR_VELOCITY, JOINT_LIMITS
+from exca_dance.core.constants import JOINT_ANGULAR_VELOCITY, JOINT_LIMITS
 
 
 class GameState:
