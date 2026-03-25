@@ -31,17 +31,77 @@ def _make_box_verts(
     hx, hy, hz = lx / 2, ly / 2, lz / 2
     faces_with_normals = [
         # +Z face, normal = (0, 0, 1)
-        ([(-hx, -hy, hz), (hx, -hy, hz), (hx, hy, hz), (-hx, -hy, hz), (hx, hy, hz), (-hx, hy, hz)], (0, 0, 1)),
+        (
+            [
+                (-hx, -hy, hz),
+                (hx, -hy, hz),
+                (hx, hy, hz),
+                (-hx, -hy, hz),
+                (hx, hy, hz),
+                (-hx, hy, hz),
+            ],
+            (0, 0, 1),
+        ),
         # -Z face, normal = (0, 0, -1)
-        ([(-hx, -hy, -hz), (-hx, hy, -hz), (hx, hy, -hz), (-hx, -hy, -hz), (hx, hy, -hz), (hx, -hy, -hz)], (0, 0, -1)),
+        (
+            [
+                (-hx, -hy, -hz),
+                (-hx, hy, -hz),
+                (hx, hy, -hz),
+                (-hx, -hy, -hz),
+                (hx, hy, -hz),
+                (hx, -hy, -hz),
+            ],
+            (0, 0, -1),
+        ),
         # +X face, normal = (1, 0, 0)
-        ([(hx, -hy, -hz), (hx, hy, -hz), (hx, hy, hz), (hx, -hy, -hz), (hx, hy, hz), (hx, -hy, hz)], (1, 0, 0)),
+        (
+            [
+                (hx, -hy, -hz),
+                (hx, hy, -hz),
+                (hx, hy, hz),
+                (hx, -hy, -hz),
+                (hx, hy, hz),
+                (hx, -hy, hz),
+            ],
+            (1, 0, 0),
+        ),
         # -X face, normal = (-1, 0, 0)
-        ([(-hx, -hy, -hz), (-hx, -hy, hz), (-hx, hy, hz), (-hx, -hy, -hz), (-hx, hy, hz), (-hx, hy, -hz)], (-1, 0, 0)),
+        (
+            [
+                (-hx, -hy, -hz),
+                (-hx, -hy, hz),
+                (-hx, hy, hz),
+                (-hx, -hy, -hz),
+                (-hx, hy, hz),
+                (-hx, hy, -hz),
+            ],
+            (-1, 0, 0),
+        ),
         # +Y face, normal = (0, 1, 0)
-        ([(-hx, hy, -hz), (-hx, hy, hz), (hx, hy, hz), (-hx, hy, -hz), (hx, hy, hz), (hx, hy, -hz)], (0, 1, 0)),
+        (
+            [
+                (-hx, hy, -hz),
+                (-hx, hy, hz),
+                (hx, hy, hz),
+                (-hx, hy, -hz),
+                (hx, hy, hz),
+                (hx, hy, -hz),
+            ],
+            (0, 1, 0),
+        ),
         # -Y face, normal = (0, -1, 0)
-        ([(-hx, -hy, -hz), (hx, -hy, -hz), (hx, -hy, hz), (-hx, -hy, -hz), (hx, -hy, hz), (-hx, -hy, hz)], (0, -1, 0)),
+        (
+            [
+                (-hx, -hy, -hz),
+                (hx, -hy, -hz),
+                (hx, -hy, hz),
+                (-hx, -hy, -hz),
+                (hx, -hy, hz),
+                (-hx, -hy, hz),
+            ],
+            (0, -1, 0),
+        ),
     ]
     r, g, b = color
     verts: list[float] = []
@@ -83,17 +143,77 @@ def _make_link_verts(
     hx, hy, hz = length / 2, thickness_y / 2, thickness_z / 2
     faces_with_normals = [
         # +Z face
-        ([(-hx, -hy, hz), (hx, -hy, hz), (hx, hy, hz), (-hx, -hy, hz), (hx, hy, hz), (-hx, hy, hz)], (0, 0, 1)),
+        (
+            [
+                (-hx, -hy, hz),
+                (hx, -hy, hz),
+                (hx, hy, hz),
+                (-hx, -hy, hz),
+                (hx, hy, hz),
+                (-hx, hy, hz),
+            ],
+            (0, 0, 1),
+        ),
         # -Z face
-        ([(-hx, -hy, -hz), (-hx, hy, -hz), (hx, hy, -hz), (-hx, -hy, -hz), (hx, hy, -hz), (hx, -hy, -hz)], (0, 0, -1)),
+        (
+            [
+                (-hx, -hy, -hz),
+                (-hx, hy, -hz),
+                (hx, hy, -hz),
+                (-hx, -hy, -hz),
+                (hx, hy, -hz),
+                (hx, -hy, -hz),
+            ],
+            (0, 0, -1),
+        ),
         # +X face
-        ([(hx, -hy, -hz), (hx, hy, -hz), (hx, hy, hz), (hx, -hy, -hz), (hx, hy, hz), (hx, -hy, hz)], (1, 0, 0)),
+        (
+            [
+                (hx, -hy, -hz),
+                (hx, hy, -hz),
+                (hx, hy, hz),
+                (hx, -hy, -hz),
+                (hx, hy, hz),
+                (hx, -hy, hz),
+            ],
+            (1, 0, 0),
+        ),
         # -X face
-        ([(-hx, -hy, -hz), (-hx, -hy, hz), (-hx, hy, hz), (-hx, -hy, -hz), (-hx, hy, hz), (-hx, hy, -hz)], (-1, 0, 0)),
+        (
+            [
+                (-hx, -hy, -hz),
+                (-hx, -hy, hz),
+                (-hx, hy, hz),
+                (-hx, -hy, -hz),
+                (-hx, hy, hz),
+                (-hx, hy, -hz),
+            ],
+            (-1, 0, 0),
+        ),
         # +Y face
-        ([(-hx, hy, -hz), (-hx, hy, hz), (hx, hy, hz), (-hx, hy, -hz), (hx, hy, hz), (hx, hy, -hz)], (0, 1, 0)),
+        (
+            [
+                (-hx, hy, -hz),
+                (-hx, hy, hz),
+                (hx, hy, hz),
+                (-hx, hy, -hz),
+                (hx, hy, hz),
+                (hx, hy, -hz),
+            ],
+            (0, 1, 0),
+        ),
         # -Y face
-        ([(-hx, -hy, -hz), (hx, -hy, -hz), (hx, -hy, hz), (-hx, -hy, -hz), (hx, -hy, hz), (-hx, -hy, hz)], (0, -1, 0)),
+        (
+            [
+                (-hx, -hy, -hz),
+                (hx, -hy, -hz),
+                (hx, -hy, hz),
+                (-hx, -hy, -hz),
+                (hx, -hy, hz),
+                (-hx, -hy, hz),
+            ],
+            (0, -1, 0),
+        ),
     ]
     r, g, b = color
     verts: list[float] = []
@@ -103,6 +223,90 @@ def _make_link_verts(
         for lx, ly, lz in face_verts:
             w = rot @ np.array([lx, ly, lz], dtype="f4") + mid
             verts += [float(w[0]), float(w[1]), float(w[2]), r, g, b, nx, ny, nz]
+    return verts
+
+
+def _make_octagonal_prism_verts(
+    p1: tuple[float, float, float],
+    p2: tuple[float, float, float],
+    radius: float,
+    color: tuple[float, float, float],
+    sides: int = 8,
+) -> list[float]:
+    if sides < 3:
+        return []
+
+    dx = p2[0] - p1[0]
+    dy = p2[1] - p1[1]
+    dz = p2[2] - p1[2]
+    length = math.sqrt(dx * dx + dy * dy + dz * dz)
+    if length < 1e-6:
+        return []
+
+    x_ax = np.array([dx / length, dy / length, dz / length], dtype="f4")
+    ref = (
+        np.array([0.0, 0.0, 1.0], dtype="f4")
+        if abs(x_ax[2]) < 0.95
+        else np.array([0.0, 1.0, 0.0], dtype="f4")
+    )
+    y_ax = np.cross(ref, x_ax)
+    y_ax /= float(np.linalg.norm(y_ax))
+    z_ax = np.cross(x_ax, y_ax)
+
+    p1v = np.array(p1, dtype="f4")
+    p2v = np.array(p2, dtype="f4")
+
+    r, g, b = color
+    verts: list[float] = []
+    two_pi = 2.0 * math.pi
+
+    def _append_vertex(point: np.ndarray, normal: np.ndarray) -> None:
+        verts.extend(
+            [
+                float(point[0]),
+                float(point[1]),
+                float(point[2]),
+                r,
+                g,
+                b,
+                float(normal[0]),
+                float(normal[1]),
+                float(normal[2]),
+            ]
+        )
+
+    for i in range(sides):
+        angle0 = two_pi * i / sides
+        angle1 = two_pi * (i + 1) / sides
+        c0, s0 = math.cos(angle0), math.sin(angle0)
+        c1, s1 = math.cos(angle1), math.sin(angle1)
+
+        radial0 = c0 * y_ax + s0 * z_ax
+        radial1 = c1 * y_ax + s1 * z_ax
+        p1_a = p1v + radius * radial0
+        p1_b = p1v + radius * radial1
+        p2_a = p2v + radius * radial0
+        p2_b = p2v + radius * radial1
+
+        mid_angle = 0.5 * (angle0 + angle1)
+        side_normal = math.cos(mid_angle) * y_ax + math.sin(mid_angle) * z_ax
+        side_normal /= float(np.linalg.norm(side_normal))
+
+        _append_vertex(p1_a, side_normal)
+        _append_vertex(p2_a, side_normal)
+        _append_vertex(p2_b, side_normal)
+        _append_vertex(p1_a, side_normal)
+        _append_vertex(p2_b, side_normal)
+        _append_vertex(p1_b, side_normal)
+
+        _append_vertex(p1v, -x_ax)
+        _append_vertex(p1_b, -x_ax)
+        _append_vertex(p1_a, -x_ax)
+
+        _append_vertex(p2v, x_ax)
+        _append_vertex(p2_a, x_ax)
+        _append_vertex(p2_b, x_ax)
+
     return verts
 
 
@@ -139,21 +343,70 @@ class ExcavatorModel:
         # Base body (axis-aligned — stationary)
         verts += _make_box_verts(0, 0, 0.25, 1.5, 1.0, 0.5, self._joint_colors["base"])
 
+        verts += _make_box_verts(0.0, 0.6, 0.08, 2.0, 0.35, 0.18, self._joint_colors["base"])
+        verts += _make_box_verts(0.0, -0.6, 0.08, 2.0, 0.35, 0.18, self._joint_colors["base"])
+
         # Swing turret (axis-aligned at pivot)
         sp = pos["swing_pivot"]
         verts += _make_box_verts(sp[0], sp[1], sp[2], 0.8, 0.8, 0.3, self._joint_colors["turret"])
 
+        verts += _make_box_verts(sp[0] - 0.1, sp[1], sp[2] + 0.3, 0.4, 0.5, 0.3, (0.20, 0.22, 0.28))
+
         # Boom link — oriented from swing_pivot → boom_pivot
         bp = pos["boom_pivot"]
-        verts += _make_link_verts(sp, bp, 0.25, 0.25, self._joint_colors[JointName.BOOM])
+        verts += _make_octagonal_prism_verts(sp, bp, 0.12, self._joint_colors[JointName.BOOM])
 
         # Arm link — oriented from boom_pivot → arm_pivot
         ap = pos["arm_pivot"]
-        verts += _make_link_verts(bp, ap, 0.20, 0.20, self._joint_colors[JointName.ARM])
+        verts += _make_octagonal_prism_verts(bp, ap, 0.10, self._joint_colors[JointName.ARM])
 
         # Bucket link — oriented from arm_pivot → bucket_tip
         bt = pos["bucket_tip"]
-        verts += _make_link_verts(ap, bt, 0.30, 0.25, self._joint_colors[JointName.BUCKET])
+        verts += _make_octagonal_prism_verts(ap, bt, 0.14, self._joint_colors[JointName.BUCKET])
+
+        def _perpendicular_axis(
+            p_start: tuple[float, float, float], p_end: tuple[float, float, float]
+        ) -> np.ndarray:
+            link = np.array(
+                [
+                    p_end[0] - p_start[0],
+                    p_end[1] - p_start[1],
+                    p_end[2] - p_start[2],
+                ],
+                dtype="f4",
+            )
+            link_len = float(np.linalg.norm(link))
+            if link_len < 1e-6:
+                return np.array([0.0, 1.0, 0.0], dtype="f4")
+            link /= link_len
+            ref = (
+                np.array([0.0, 0.0, 1.0], dtype="f4")
+                if abs(float(link[2])) < 0.95
+                else np.array([0.0, 1.0, 0.0], dtype="f4")
+            )
+            perp = np.cross(link, ref)
+            perp_len = float(np.linalg.norm(perp))
+            if perp_len < 1e-6:
+                return np.array([0.0, 1.0, 0.0], dtype="f4")
+            return perp / perp_len
+
+        marker_color = (1.0, 1.0, 1.0)
+        bp_perp = _perpendicular_axis(bp, ap)
+        ap_perp = _perpendicular_axis(ap, bt)
+        bp_arr = np.array(bp, dtype="f4")
+        ap_arr = np.array(ap, dtype="f4")
+        verts += _make_octagonal_prism_verts(
+            tuple((bp_arr - 0.02 * bp_perp).tolist()),
+            tuple((bp_arr + 0.02 * bp_perp).tolist()),
+            0.18,
+            marker_color,
+        )
+        verts += _make_octagonal_prism_verts(
+            tuple((ap_arr - 0.02 * ap_perp).tolist()),
+            tuple((ap_arr + 0.02 * ap_perp).tolist()),
+            0.16,
+            marker_color,
+        )
 
         data = np.array(verts, dtype="f4")
         self._vertex_count = len(data) // 9  # 3 pos + 3 color + 3 normal

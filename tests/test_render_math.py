@@ -4,6 +4,7 @@ from typing import cast
 
 import numpy as np
 
+import exca_dance.rendering.excavator_model as excavator_model
 from exca_dance.rendering.render_math import (
     direction_vector,
     make_oriented_box,
@@ -85,3 +86,22 @@ def test_validate_gl_matrix_nan() -> None:
     mat[0, 0] = np.nan
 
     assert not validate_gl_matrix(mat)
+
+
+def test_make_octagonal_prism_verts_vertex_count() -> None:
+    make_octagonal_prism_verts = getattr(excavator_model, "_make_octagonal_prism_verts")
+    p1 = (0.0, 0.0, 0.0)
+    p2 = (1.0, 0.0, 0.0)
+    verts = make_octagonal_prism_verts(p1, p2, radius=0.1, color=(1.0, 0.5, 0.0), sides=8)
+
+    assert len(verts) == 8 * 12 * 9
+
+
+def test_octagonal_prism_vertex_count_greater_than_single_box() -> None:
+    make_octagonal_prism_verts = getattr(excavator_model, "_make_octagonal_prism_verts")
+    p1 = (0.0, 0.0, 0.0)
+    p2 = (2.5, 0.0, 0.0)
+    verts = make_octagonal_prism_verts(p1, p2, radius=0.12, color=(1.0, 0.4, 0.0), sides=8)
+
+    assert len(verts) == 8 * 12 * 9
+    assert len(verts) > 36 * 9
