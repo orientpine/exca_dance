@@ -1,6 +1,7 @@
 """ModernGL-based game renderer using Pygame as window backend."""
 
 from __future__ import annotations
+from typing import Any, cast
 import pygame
 import moderngl
 import numpy as np
@@ -23,7 +24,18 @@ class GameRenderer:
         self._width = width
         self._height = height
         self._clock = pygame.time.Clock()
+        self._bloom_enabled = False
+        self._scene_tex: moderngl.Texture | None = None
+        self._scene_fbo: moderngl.Framebuffer | None = None
+        self._bloom_tex: moderngl.Texture | None = None
+        self._bloom_fbo: moderngl.Framebuffer | None = None
+        self._bloom_tmp_tex: moderngl.Texture | None = None
+        self._bloom_tmp_fbo: moderngl.Framebuffer | None = None
         self._compile_shaders()
+
+    @staticmethod
+    def _set_uniform(program: moderngl.Program, name: str, value: Any) -> None:
+        cast(Any, program[name]).value = value
 
     def _compile_shaders(self) -> None:
         """Compile reusable shader programs."""
@@ -108,6 +120,74 @@ class GameRenderer:
             void main() { f_color = v_color; }
             """,
         )
+        self._prog_bloom_extract = self._ctx.program(
+            vertex_shader="""
+            #version 330
+            in vec2 in_position;
+            in vec2 in_uv;
+            out vec2 v_uv;
+            void main() {
+                gl_Position = vec4(in_position, 0.0, 1.0);
+                v_uv = in_uv;
+            }
+            """,
+            fragment_shader="""
+            #version 330
+            in vec2 v_uv;
+            out vec4 f_color;
+            uniform sampler2D tex;
+            uniform float threshold;
+            void main() {
+                vec4 c = texture(tex, v_uv);
+                float luminance = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+                f_color = luminance > threshold ? c : vec4(0.0, 0.0, 0.0, 1.0);
+            }
+            """,
+        )
+        self._prog_bloom_blit = self._ctx.program(
+            vertex_shader="""
+            #version 330
+            in vec2 in_position;
+            in vec2 in_uv;
+            out vec2 v_uv;
+            void main() {
+                gl_Position = vec4(in_position, 0.0, 1.0);
+                v_uv = in_uv;
+            }
+            """,
+            fragment_shader="""
+            #version 330
+            in vec2 v_uv;
+            out vec4 f_color;
+            uniform sampler2D tex;
+            uniform sampler2D bloom_tex;
+            uniform vec2 texel_size;
+            uniform bool horizontal;
+            uniform bool do_blur;
+            uniform bool do_composite;
+            void main() {
+                if (do_composite) {
+                    vec4 base = texture(tex, v_uv);
+                    vec4 bloom = texture(bloom_tex, v_uv);
+                    f_color = vec4(base.rgb + bloom.rgb, 1.0);
+                    return;
+                }
+
+                if (do_blur) {
+                    vec2 axis = horizontal ? vec2(texel_size.x, 0.0) : vec2(0.0, texel_size.y);
+                    vec3 result = texture(tex, v_uv).rgb * 0.227027;
+                    result += texture(tex, v_uv + axis * 1.384615).rgb * 0.316216;
+                    result += texture(tex, v_uv - axis * 1.384615).rgb * 0.316216;
+                    result += texture(tex, v_uv + axis * 3.230769).rgb * 0.070270;
+                    result += texture(tex, v_uv - axis * 3.230769).rgb * 0.070270;
+                    f_color = vec4(result, 1.0);
+                    return;
+                }
+
+                f_color = texture(tex, v_uv);
+            }
+            """,
+        )
         # Quad VBO for textured rendering
         quad_verts = np.array(
             [
@@ -143,6 +223,66 @@ class GameRenderer:
             self._prog_tex, [(self._quad_vbo, "2f 2f", "in_position", "in_uv")]
         )
 
+        bloom_quad_verts = np.array(
+            [
+                -1.0,
+                -1.0,
+                0.0,
+                0.0,
+                1.0,
+                -1.0,
+                1.0,
+                0.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                -1.0,
+                -1.0,
+                0.0,
+                0.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                -1.0,
+                1.0,
+                0.0,
+                1.0,
+            ],
+            dtype="f4",
+        )
+        self._bloom_quad_vbo = self._ctx.buffer(bloom_quad_verts)
+        self._bloom_extract_vao = self._ctx.vertex_array(
+            self._prog_bloom_extract,
+            [(self._bloom_quad_vbo, "2f 2f", "in_position", "in_uv")],
+        )
+        self._bloom_blit_vao = self._ctx.vertex_array(
+            self._prog_bloom_blit,
+            [(self._bloom_quad_vbo, "2f 2f", "in_position", "in_uv")],
+        )
+
+        self._set_uniform(self._prog_bloom_extract, "tex", 0)
+        self._set_uniform(self._prog_bloom_extract, "threshold", 0.7)
+        self._set_uniform(self._prog_bloom_blit, "tex", 0)
+        self._set_uniform(self._prog_bloom_blit, "bloom_tex", 1)
+        self._set_uniform(self._prog_bloom_blit, "do_blur", False)
+        self._set_uniform(self._prog_bloom_blit, "do_composite", False)
+
+    def _setup_bloom(self) -> None:
+        w, h = self._width, self._height
+        self._scene_tex = self._ctx.texture((w, h), 4)
+        self._scene_fbo = self._ctx.framebuffer([self._scene_tex])
+
+        bw, bh = max(1, w // 2), max(1, h // 2)
+        self._bloom_tex = self._ctx.texture((bw, bh), 4)
+        self._bloom_fbo = self._ctx.framebuffer([self._bloom_tex])
+        self._bloom_tmp_tex = self._ctx.texture((bw, bh), 4)
+        self._bloom_tmp_fbo = self._ctx.framebuffer([self._bloom_tmp_tex])
+
+        for tex in (self._scene_tex, self._bloom_tex, self._bloom_tmp_tex):
+            tex.filter = (moderngl.LINEAR, moderngl.LINEAR)
+
     @property
     def ctx(self) -> moderngl.Context:
         return self._ctx
@@ -164,6 +304,16 @@ class GameRenderer:
         return self._quad_vao
 
     @property
+    def bloom_enabled(self) -> bool:
+        return self._bloom_enabled
+
+    @bloom_enabled.setter
+    def bloom_enabled(self, value: bool) -> None:
+        self._bloom_enabled = value
+        if self._bloom_enabled and self._scene_fbo is None:
+            self._setup_bloom()
+
+    @property
     def width(self) -> int:
         return self._width
 
@@ -173,11 +323,68 @@ class GameRenderer:
 
     def begin_frame(self) -> None:
         """Clear the framebuffer."""
-        self._ctx.viewport = (0, 0, self._width, self._height)
-        self._ctx.clear(0.04, 0.04, 0.1, 1.0)  # dark navy background
+        if self._bloom_enabled and self._scene_fbo:
+            self._scene_fbo.use()
+            self._ctx.viewport = (0, 0, self._width, self._height)
+            self._scene_fbo.clear(0.04, 0.04, 0.1, 1.0)
+        else:
+            self._ctx.screen.use()
+            self._ctx.viewport = (0, 0, self._width, self._height)
+            self._ctx.clear(0.04, 0.04, 0.1, 1.0)  # dark navy background
+
+    def _apply_bloom(self) -> None:
+        if (
+            self._scene_tex is None
+            or self._scene_fbo is None
+            or self._bloom_tex is None
+            or self._bloom_fbo is None
+            or self._bloom_tmp_tex is None
+            or self._bloom_tmp_fbo is None
+        ):
+            return
+
+        ctx = self._ctx
+        bw, bh = cast(tuple[int, int], self._bloom_tex.size)
+
+        ctx.disable(moderngl.BLEND)
+
+        self._bloom_fbo.use()
+        ctx.viewport = (0, 0, bw, bh)
+        self._bloom_fbo.clear(0.0, 0.0, 0.0, 1.0)
+        self._scene_tex.use(location=0)
+        self._bloom_extract_vao.render(moderngl.TRIANGLES)
+
+        self._bloom_tmp_fbo.use()
+        ctx.viewport = (0, 0, bw, bh)
+        self._bloom_tmp_fbo.clear(0.0, 0.0, 0.0, 1.0)
+        self._set_uniform(self._prog_bloom_blit, "do_blur", True)
+        self._set_uniform(self._prog_bloom_blit, "do_composite", False)
+        self._set_uniform(self._prog_bloom_blit, "horizontal", True)
+        self._set_uniform(self._prog_bloom_blit, "texel_size", (1.0 / bw, 1.0 / bh))
+        self._bloom_tex.use(location=0)
+        self._bloom_blit_vao.render(moderngl.TRIANGLES)
+
+        self._bloom_fbo.use()
+        ctx.viewport = (0, 0, bw, bh)
+        self._bloom_fbo.clear(0.0, 0.0, 0.0, 1.0)
+        self._set_uniform(self._prog_bloom_blit, "horizontal", False)
+        self._bloom_tmp_tex.use(location=0)
+        self._bloom_blit_vao.render(moderngl.TRIANGLES)
+
+        ctx.screen.use()
+        ctx.viewport = (0, 0, self._width, self._height)
+        self._set_uniform(self._prog_bloom_blit, "do_blur", False)
+        self._set_uniform(self._prog_bloom_blit, "do_composite", True)
+        self._scene_tex.use(location=0)
+        self._bloom_tex.use(location=1)
+        self._bloom_blit_vao.render(moderngl.TRIANGLES)
+        self._set_uniform(self._prog_bloom_blit, "do_composite", False)
+        ctx.enable(moderngl.BLEND)
 
     def end_frame(self) -> float:
         """Swap buffers and return delta time in seconds."""
+        if self._bloom_enabled and self._scene_fbo:
+            self._apply_bloom()
         pygame.display.flip()
         dt = self._clock.tick(TARGET_FPS) / 1000.0
         return dt
@@ -186,5 +393,20 @@ class GameRenderer:
         return self._clock.get_fps()
 
     def destroy(self) -> None:
+        for resource in (
+            self._bloom_extract_vao,
+            self._bloom_blit_vao,
+            self._bloom_quad_vbo,
+            self._bloom_tmp_fbo,
+            self._bloom_tmp_tex,
+            self._bloom_fbo,
+            self._bloom_tex,
+            self._scene_fbo,
+            self._scene_tex,
+            self._quad_vao,
+            self._quad_vbo,
+        ):
+            if resource is not None:
+                resource.release()
         self._ctx.release()
         pygame.display.quit()
