@@ -31,3 +31,16 @@
 - `_draw_rect_2d` in `GameplayHUD` accepts an `alpha` kwarg, allowing full-screen flash overlays through existing `prog_solid` path (no new shader needed).
 - Combo milestone emphasis at exact combo values `(10, 25, 50)` uses `NEON_PINK` and a larger scale for stronger progression feedback.
 - Added `tests/test_hit_detection.py` with MagicMock-only coverage for PERFECT flash alpha and MISS flash color; full suite result: 59 passed.
+
+## [2026-03-26] Session: fade-to-black screen transition system
+### Transition Architecture
+- `GameStateManager.transition_to()` now queues `_pending_screen`/`_pending_kwargs` and enters a fade-out state instead of switching screens immediately.
+- Screen swap plus delayed `on_enter(**kwargs)` happens exactly at fade peak (`_fade_alpha == 1.0`), then manager enters fade-in and clears pending transition data.
+- Fade timing is symmetric (`_fade_duration = 0.3` each phase) and exposed via `is_transitioning` and `fade_alpha` properties for render-layer overlay usage.
+
+### Rendering Pattern
+- Fullscreen fade overlay in `__main__.py` reuses `renderer.prog_solid` with a `"3f 3f"` VBO layout, identity MVP, and per-frame alpha uniform updates.
+- Overlay draw is injected after `state_mgr.render(...)` and before `renderer.end_frame()` so it fades all screens uniformly without touching individual screen implementations.
+
+### Test Strategy
+- Added focused state-manager tests (`tests/test_game_state.py`) that advance time in deterministic `0.01s` steps to validate transition start (`is_transitioning=True`) and completion (`False` after total fade budget).
