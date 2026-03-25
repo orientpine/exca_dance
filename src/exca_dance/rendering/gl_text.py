@@ -16,18 +16,24 @@ class GLTextRenderer:
         self._font = pygame.font.Font(font_path, font_size)
         self._texture_cache: dict[tuple, moderngl.Texture] = {}
 
-    def _get_or_create_texture(self, text: str, color: tuple) -> tuple[moderngl.Texture, int, int]:
-        key = (text, color, id(self._font))
+    def _get_or_create_texture(self, text: str) -> tuple[moderngl.Texture, int, int]:
+        """Create or retrieve a cached GL texture for the given text.
+        Renders in white, uses the surface's per-pixel alpha as glyph mask.
+        Color is applied by the shader uniform.
+        """
+        key = (text, id(self._font))
         if key not in self._texture_cache:
-            surf = self._font.render(text, True, color[:3])
+            # Render white text with antialiasing — pygame creates per-pixel alpha
+            surf = self._font.render(text, True, (255, 255, 255))
+            surf = surf.convert_alpha()
             w, h = surf.get_size()
-            # Convert to grayscale alpha: use red channel as alpha
-            # Use luminance-only texture for memory efficiency
-            raw = pygame.surfarray.array3d(surf)  # (W, H, 3) uint8
-            # Use red channel as grayscale proxy
-            gray = raw[:, :, 0].T.copy()  # (H, W) uint8
-            tex = self._renderer.ctx.texture((w, h), 1, gray.tobytes(), dtype="f1")
-            tex.filter = moderngl.LINEAR, moderngl.LINEAR
+            if w == 0 or h == 0:
+                w, h = max(w, 1), max(h, 1)
+            # Extract the ACTUAL alpha channel — this is the glyph mask
+            alpha_arr = pygame.surfarray.pixels_alpha(surf)  # (W, H) uint8
+            alpha_mask = alpha_arr.T.copy()  # transpose to (H, W) for row-major GL
+            tex = self._renderer.ctx.texture((w, h), 1, alpha_mask.tobytes(), dtype='f1')
+            tex.filter = (moderngl.LINEAR, moderngl.LINEAR)
             self._texture_cache[key] = (tex, w, h)
         return self._texture_cache[key]
 
@@ -45,8 +51,9 @@ class GLTextRenderer:
         color: (r, g, b, a) as floats 0-1
         align: "left", "center", "right"
         """
-        r_color = tuple(int(c * 255) for c in color[:3])
-        tex, w, h = self._get_or_create_texture(text, r_color)
+        if not text:
+            return
+        tex, w, h = self._get_or_create_texture(text)
         rw, rh = w * scale, h * scale
         if align == "center":
             x -= rw / 2
