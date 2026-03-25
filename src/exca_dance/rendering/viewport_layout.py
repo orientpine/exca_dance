@@ -136,9 +136,9 @@ class GameViewportLayout:
         self._vm.set_viewport(ctx, view_name)
 
         r, g, b = (
-            NeonTheme.TEXT_DIM.r * 0.4,
-            NeonTheme.TEXT_DIM.g * 0.4,
-            NeonTheme.TEXT_DIM.b * 0.4,
+            NeonTheme.TEXT_DIM.r * 0.7,
+            NeonTheme.TEXT_DIM.g * 0.7,
+            NeonTheme.TEXT_DIM.b * 0.7,
         )
 
         gr, gg, gb = (
@@ -175,7 +175,7 @@ class GameViewportLayout:
         vao = ctx.vertex_array(prog, [(vbo, "3f 3f", "in_position", "in_color")])
 
         prog["mvp"].write(np.ascontiguousarray(mvp.astype("f4").T).tobytes())
-        prog["alpha"].value = 0.3
+        prog["alpha"].value = 0.5
 
         try:
             ctx.disable_direct(moderngl.DEPTH_TEST)
@@ -202,8 +202,9 @@ class GameViewportLayout:
             NeonTheme.BORDER.b,
         )
 
-        vx = (1440 / W) * 2.0 - 1.0
-        hy = 1.0 - (540 / H) * 2.0
+        top_rect = self._vm.get_viewport_rect("top_2d")
+        vx = (top_rect[0] / W) * 2.0 - 1.0
+        hy = (top_rect[1] / H) * 2.0 - 1.0
 
         lw = 2.0 / W
         lh = 2.0 / H
@@ -303,8 +304,13 @@ class GameViewportLayout:
         if text_renderer is not None:
             label_color = NeonTheme.TEXT_DIM.as_tuple()
             text_renderer.render("3D VIEW", 10, H - 25, color=label_color, scale=0.7)
-            text_renderer.render("TOP", W - 470, H - 25, color=label_color, scale=0.7)
-            text_renderer.render("SIDE", W - 470, 540 - 25, color=label_color, scale=0.7)
+            text_renderer.render(
+                "TOP", top_rect[0] + 10, H - 25, color=label_color, scale=0.7,
+            )
+            text_renderer.render(
+                "SIDE", top_rect[0] + 10, top_rect[1] - 25,
+                color=label_color, scale=0.7,
+            )
 
     @property
     def mvp_3d(self) -> np.ndarray:

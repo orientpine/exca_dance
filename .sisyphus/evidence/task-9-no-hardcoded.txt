@@ -1,0 +1,30 @@
+T9 Evidence: Viewport decorations use derived values, grid visibility boosted
+=============================================================================
+
+1. viewport_layout.py: Hardcoded pixel coordinates REMOVED
+   BEFORE:
+     vx = (1440 / W) * 2.0 - 1.0
+     hy = 1.0 - (540 / H) * 2.0
+   AFTER:
+     top_rect = self._vm.get_viewport_rect("top_2d")
+     vx = (top_rect[0] / W) * 2.0 - 1.0
+     hy = (top_rect[1] / H) * 2.0 - 1.0
+
+2. Label positions DERIVED from viewport rects
+   BEFORE:
+     text_renderer.render("TOP", W - 470, H - 25, ...)
+     text_renderer.render("SIDE", W - 470, 540 - 25, ...)
+   AFTER:
+     text_renderer.render("TOP", top_rect[0] + 10, H - 25, ...)
+     text_renderer.render("SIDE", top_rect[0] + 10, top_rect[1] - 25, ...)
+
+3. Grid visibility boosted
+   - Alpha: 0.3 → 0.5
+   - Grid color factor: NeonTheme.TEXT_DIM * 0.4 → NeonTheme.TEXT_DIM * 0.7
+
+4. No remaining hardcoded 1440/540 in render_viewport_decorations()
+
+5. Verification:
+   - 56/56 tests pass
+   - ruff check: All checks passed
+   - Headless launch: Clean exit after 5s timeout
