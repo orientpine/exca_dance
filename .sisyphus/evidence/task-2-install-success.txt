@@ -1,0 +1,6 @@
+Editable install: success in `.venv` via `.venv/bin/pip install -e ".[dev]"`.
+Entry point: success via `.venv/bin/python -m exca_dance`.
+Pytest collection: success via `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest --collect-only -q`.
+Imports verified:
+- `from exca_dance.core.models import JointName` -> `JointName.SWING`
+- `from exca_dance.core.constants import JOINT_LIMITS` -> key list printed successfully

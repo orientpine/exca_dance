@@ -1,0 +1,22 @@
+{
+  "active_plan": "/home/cha/Documents/exca_dance/.sisyphus/plans/exca-dance.md",
+  "started_at": "2026-03-25T00:28:33.772Z",
+  "session_ids": [
+    "ses_2df6d7747ffet3bbjGG7d6GmDn",
+    "ses_2dd9a6a74ffe7KYPmgGvXp7C5h",
+    "ses_2dd92678effe9M8VJnNmM1yA9F"
+  ],
+  "plan_name": "exca-dance",
+  "agent": "atlas",
+  "task_sessions": {
+    "todo:2": {
+      "task_key": "todo:2",
+      "task_label": "2",
+      "task_title": "**Project Scaffolding + Dependencies**",
+      "session_id": "ses_2dd92678effe9M8VJnNmM1yA9F",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-03-25T00:44:03.278Z"
+    }
+  }
+}
