@@ -82,6 +82,9 @@ class GameplayScreen:
         return None
 
     def render(self, renderer, text_renderer) -> None:
+        beat_phase = getattr(self._game_loop, "_beat_phase", 0.0)
+        self._layout.render_gameplay_background(beat_phase)
+
         # Render 3D excavator in all viewports
         self._layout.render_all(
             self._game_loop._excavator_model,

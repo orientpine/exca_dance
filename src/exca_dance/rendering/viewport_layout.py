@@ -185,6 +185,90 @@ class GameViewportLayout:
             vao.release()
             vbo.release()
 
+    def render_gameplay_background(self, beat_phase: float = 0.0) -> None:
+        import moderngl
+
+        from exca_dance.rendering.theme import NeonTheme
+
+        ctx = self._renderer.ctx
+        self._vm.set_viewport(ctx, "main_3d")
+
+        beat = max(0.0, min(1.0, beat_phase))
+
+        grid_r, grid_g, grid_b = (0.0, 0.4, 0.6)
+        grid_alpha = 0.12 + 0.10 * beat
+
+        verts: list[float] = []
+
+        for y in range(-4, 5):
+            verts += [-4, y, 0.0, grid_r, grid_g, grid_b, 8, y, 0.0, grid_r, grid_g, grid_b]
+        for x in range(-4, 9):
+            verts += [x, -4, 0.0, grid_r, grid_g, grid_b, x, 4, 0.0, grid_r, grid_g, grid_b]
+
+        ring_specs = (
+            (3.0, (2.0, 0.0, 0.0), NeonTheme.NEON_PINK, 0.08 + 0.05 * beat),
+            (5.0, (2.0, 0.0, 0.0), NeonTheme.NEON_BLUE, 0.05 + 0.03 * beat),
+        )
+
+        segments = 32
+        circle_verts: list[float] = []
+        ring_alphas: list[float] = []
+        for radius, center, color, alpha in ring_specs:
+            cx, cy, cz = center
+            ring_alphas.append(alpha)
+            for i in range(segments):
+                a0 = (i / segments) * 2.0 * np.pi
+                a1 = ((i + 1) / segments) * 2.0 * np.pi
+                x0 = cx + radius * np.cos(a0)
+                y0 = cy + radius * np.sin(a0)
+                x1 = cx + radius * np.cos(a1)
+                y1 = cy + radius * np.sin(a1)
+                circle_verts += [
+                    x0,
+                    y0,
+                    cz,
+                    color.r * 0.6,
+                    color.g * 0.6,
+                    color.b * 0.6,
+                    x1,
+                    y1,
+                    cz,
+                    color.r * 0.6,
+                    color.g * 0.6,
+                    color.b * 0.6,
+                ]
+
+        prog = self._renderer.prog_solid
+        prog["mvp"].write(np.ascontiguousarray(self._mvp_3d.astype("f4").T).tobytes())
+
+        if verts:
+            grid_data = np.array(verts, dtype="f4")
+            grid_vbo = ctx.buffer(grid_data)
+            grid_vao = ctx.vertex_array(prog, [(grid_vbo, "3f 3f", "in_position", "in_color")])
+            try:
+                prog["alpha"].value = grid_alpha
+                grid_vao.render(moderngl.LINES)
+            finally:
+                grid_vao.release()
+                grid_vbo.release()
+
+        if circle_verts:
+            ring_data = np.array(circle_verts, dtype="f4")
+            ring_vbo = ctx.buffer(ring_data)
+            ring_vao = ctx.vertex_array(prog, [(ring_vbo, "3f 3f", "in_position", "in_color")])
+            try:
+                ring_line_count = segments * 2
+                start = 0
+                for alpha in ring_alphas:
+                    prog["alpha"].value = alpha
+                    ring_vao.render(moderngl.LINES, vertices=ring_line_count, first=start)
+                    start += ring_line_count
+            finally:
+                ring_vao.release()
+                ring_vbo.release()
+
+        ctx.viewport = (0, 0, self._width, self._height)
+
     def render_viewport_decorations(self, text_renderer: Any | None) -> None:
         import moderngl
 
