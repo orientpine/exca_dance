@@ -1,0 +1,9 @@
+Task 26: ROS2 Bridge Abstract Interface Layer
+
+Validation:
+- python3 -m pytest tests/test_ros2_interface.py -v
+- Result: 4 passed
+
+Notes:
+- interface.py contains no rclpy import
+- test_no_rclpy_import checks AST imports, not docstring text

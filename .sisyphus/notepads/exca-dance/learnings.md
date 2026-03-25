@@ -55,3 +55,5 @@
 - Editable install works in a local venv with `setuptools.build_meta` plus `package-dir = {"" = "src"}`.
 - `pytest` in this environment needs `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` to avoid unrelated ROS launch plugins.
 - Relative imports inside `src/exca_dance/core/` avoid type-stub warnings from the language server.
+- Virtual bridge tests should verify actual import nodes instead of substring matches, because module docstrings may legally mention forbidden package names.
+- Pyright reportMissingTypeStubs warnings may appear on typed package imports even when runtime behavior is correct.
