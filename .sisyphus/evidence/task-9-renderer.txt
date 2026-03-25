@@ -1,0 +1,21 @@
+T9: ModernGL Renderer + GL Text Utility + Viewport Manager
+==========================================================
+Date: 2026-03-25
+Status: PASS
+
+Files created:
+  - src/exca_dance/rendering/renderer.py (181 lines)
+  - src/exca_dance/rendering/gl_text.py (69 lines)
+  - src/exca_dance/rendering/viewport.py (44 lines)
+
+Verification (xvfb-run headless):
+  Viewports: [(0, 0, 1440, 1080), (1440, 540, 480, 540), (1440, 0, 480, 540)]
+  Assertions: main_3d does not overlap top_2d ✓, top_2d and side_2d at different Y ✓
+  GameRenderer: create_context ✓, begin_frame ✓, end_frame ✓, destroy ✓
+  Output: T9 PASS
+
+LSP Diagnostics:
+  renderer.py: warnings only (unannotated class attributes, missing type stubs)
+  gl_text.py: warnings + basedpyright strictness on tuple generics (runtime correct)
+  viewport.py: warnings only (unannotated class attributes, missing type stubs)
+  No blocking errors.

@@ -1,0 +1,22 @@
+Task: T6 — Beat Map JSON Parser + Schema Validation + Tests
+
+Files added:
+- src/exca_dance/core/beatmap.py
+- tests/test_beatmap.py
+
+Test command:
+python3 -m pytest tests/test_beatmap.py -v
+
+Result:
+- collected 8 items
+- 8 passed
+
+Key behaviors verified:
+1) Valid JSON loads into BeatMap fields
+2) Missing title returns validation error
+3) Out-of-range joint angle returns validation error
+4) Events are auto-sorted by time_ms
+5) Save/load roundtrip preserves serialized data semantics
+6) Empty events list is valid
+7) Malformed JSON raises ValueError
+8) Unknown joint name returns validation error mentioning joint

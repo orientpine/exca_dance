@@ -315,7 +315,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 2. **Project Scaffolding + Dependencies**
+- [x] 2. **Project Scaffolding + Dependencies**
 
   **What to do**:
   - Create project directory structure:
@@ -404,7 +404,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 3. **Data Models + Type Definitions + Constants**
+- [x] 3. **Data Models + Type Definitions + Constants**
 
   **What to do**:
   - Create `src/exca_dance/core/models.py` with dataclasses/TypedDicts:
@@ -473,7 +473,7 @@ Max Concurrent: 8 (Wave 5)
 
 ### Wave 2: Core Modules + Renderer (7 Parallel Tasks)
 
-- [ ] 4. **Forward Kinematics Engine + Tests**
+- [x] 4. **Forward Kinematics Engine + Tests**
 
   **What to do**:
   - Create `src/exca_dance/core/kinematics.py`:
@@ -555,7 +555,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 5. **Scoring Engine + Judgment Windows + Combo + Tests**
+- [x] 5. **Scoring Engine + Judgment Windows + Combo + Tests**
 
   **What to do**:
   - Create `src/exca_dance/core/scoring.py`:
@@ -645,7 +645,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 6. **Beat Map JSON Parser + Schema Validation + Tests**
+- [x] 6. **Beat Map JSON Parser + Schema Validation + Tests**
 
   **What to do**:
   - Create `src/exca_dance/core/beatmap.py`:
@@ -728,7 +728,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 7. **Leaderboard Manager + JSON Persistence + Tests**
+- [x] 7. **Leaderboard Manager + JSON Persistence + Tests**
 
   **What to do**:
   - Create `src/exca_dance/core/leaderboard.py`:
@@ -798,7 +798,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 8. **Key Binding System + Persistence + Tests**
+- [x] 8. **Key Binding System + Persistence + Tests**
 
   **What to do**:
   - Create `src/exca_dance/core/keybinding.py`:
@@ -863,7 +863,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 9. **ModernGL Renderer + GL Text Utility + Viewport Manager**
+- [x] 9. **ModernGL Renderer + GL Text Utility + Viewport Manager**
 
   **What to do**:
   - Create `src/exca_dance/rendering/renderer.py`:
@@ -956,7 +956,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 12. **Audio System (OGG Playback + perf_counter Sync)**
+- [x] 12. **Audio System (OGG Playback + perf_counter Sync)**
 
   **What to do**:
   - Create `src/exca_dance/audio/audio_system.py`:
@@ -1039,7 +1039,7 @@ Max Concurrent: 8 (Wave 5)
 
 ### Wave 3: 3D Visualization + Theme + ROS2 Interface + Content (5 Tasks)
 
-- [ ] 10. **3D Excavator Geometric Model + FK Visualization**
+- [x] 10. **3D Excavator Geometric Model + FK Visualization**
 
   **What to do**:
   - Create `src/exca_dance/rendering/excavator_model.py`:
@@ -1108,7 +1108,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 11. **Multi-Viewport Layout (3D Main + 2D Top/Side Panels)**
+- [x] 11. **Multi-Viewport Layout (3D Main + 2D Top/Side Panels)**
 
   **What to do**:
   - Create `src/exca_dance/rendering/viewport_layout.py`:
@@ -1164,7 +1164,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 13. **Neon/Cyberpunk Visual Theme + Glow Effects**
+- [x] 13. **Neon/Cyberpunk Visual Theme + Glow Effects**
 
   **What to do**:
   - Create `src/exca_dance/rendering/theme.py`:
@@ -1227,7 +1227,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 26. **ROS2 Bridge Abstract Interface Layer**
+- [x] 26. **ROS2 Bridge Abstract Interface Layer**
 
   **What to do**:
   - Create `src/exca_dance/ros2_bridge/__init__.py`
@@ -1302,7 +1302,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 29. **Sample Content: 2 BGMs (OGG) + Beat Maps (JSON)**
+- [x] 29. **Sample Content: 2 BGMs (WAV) + Beat Maps (JSON)**
 
   **What to do**:
   - Find or generate 2 free-license BGM tracks in OGG format:
@@ -1371,7 +1371,7 @@ Max Concurrent: 8 (Wave 5)
 
 ### Wave 4: Game Core (4 Tasks)
 
-- [ ] 14. **Game Loop Core (Input → FK → Render → Audio Sync)**
+- [x] 14. **Game Loop Core (Input → FK → Render → Audio Sync)**
 
   **What to do**:
   - Create `src/exca_dance/core/game_loop.py`:
@@ -1440,7 +1440,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 15. **Visual Cue System (Ghost Excavator + Beat Indicators)**
+- [x] 15. **Visual Cue System (Ghost Excavator + Beat Indicators)**
 
   **What to do**:
   - Create `src/exca_dance/rendering/visual_cues.py`:
@@ -1504,7 +1504,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 16. **Hit Detection + Judgment Display + Scoring Integration**
+- [x] 16. **Hit Detection + Judgment Display + Scoring Integration**
 
   **What to do**:
   - Create `src/exca_dance/core/hit_detection.py`:
@@ -1571,7 +1571,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 17. **Gameplay HUD (Score, Combo, Judgment Flash, Progress)**
+- [x] 17. **Gameplay HUD (Score, Combo, Judgment Flash, Progress)**
 
   **What to do**:
   - Create `src/exca_dance/ui/gameplay_hud.py`:
@@ -1637,7 +1637,7 @@ Max Concurrent: 8 (Wave 5)
 
 ### Wave 5: UI Screens + Pose Editor (8 Parallel Tasks)
 
-- [ ] 18. **Main Menu Screen**
+- [x] 18. **Main Menu Screen**
 
   **What to do**:
   - Create `src/exca_dance/ui/screens/main_menu.py`:
@@ -1699,7 +1699,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 19. **Song Selection Screen**
+- [x] 19. **Song Selection Screen**
 
   **What to do**:
   - Create `src/exca_dance/ui/screens/song_select.py`:
@@ -1756,7 +1756,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 20. **Score Results Screen**
+- [x] 20. **Score Results Screen**
 
   **What to do**:
   - Create `src/exca_dance/ui/screens/results.py`:
@@ -1810,7 +1810,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 21. **Leaderboard Screen + 3-Character Initials Entry**
+- [x] 21. **Leaderboard Screen + 3-Character Initials Entry**
 
   **What to do**:
   - Create `src/exca_dance/ui/screens/leaderboard_screen.py`:
@@ -1867,7 +1867,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 22. **Settings Screen (Key Bindings, Volume)**
+- [x] 22. **Settings Screen (Key Bindings, Volume)**
 
   **What to do**:
   - Create `src/exca_dance/ui/screens/settings.py`:
@@ -1929,7 +1929,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 23. **Pause/Resume + Game State Management**
+- [x] 23. **Pause/Resume + Game State Management**
 
   **What to do**:
   - Create `src/exca_dance/core/game_state.py`:
@@ -1994,7 +1994,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 24. **Pose Editor: Timeline + Event Placement + Angle Editing**
+- [x] 24. **Pose Editor: Timeline + Event Placement + Angle Editing**
 
   **What to do**:
   - Create `src/exca_dance/editor/editor_screen.py`:
@@ -2068,7 +2068,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 25. **Pose Editor: Playback Preview + Save/Load**
+- [x] 25. **Pose Editor: Playback Preview + Save/Load**
 
   **What to do**:
   - Extend `src/exca_dance/editor/editor_screen.py`:

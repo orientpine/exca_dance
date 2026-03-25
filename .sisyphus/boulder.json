@@ -4,7 +4,17 @@
   "session_ids": [
     "ses_2df6d7747ffet3bbjGG7d6GmDn",
     "ses_2dd9a6a74ffe7KYPmgGvXp7C5h",
-    "ses_2dd92678effe9M8VJnNmM1yA9F"
+    "ses_2dd92678effe9M8VJnNmM1yA9F",
+    "ses_2dd8ae046ffedmDSdR27Ok2d0H",
+    "ses_2dd86812cffeZMDv5ld3B2ndPk",
+    "ses_2dd80a2adffeRKAZcEV3fVR7TO",
+    "ses_2dd7be25fffeumuSOHw0xANWvT",
+    "ses_2dd77a73cffepIjacvek52TBrY",
+    "ses_2dd71cdd4ffeGPpPK2PJUanjrW",
+    "ses_2dd6ee371ffewk8GjO0Liuwvpm",
+    "ses_2dd6b715fffezK8GvE4iwiGpsK",
+    "ses_2dd664e1fffeny6OAkAapADw05",
+    "ses_2dd63fab5ffeE6ldc3Cow7NrjG"
   ],
   "plan_name": "exca-dance",
   "agent": "atlas",
@@ -17,6 +27,78 @@
       "agent": "Sisyphus-Junior",
       "category": "quick",
       "updated_at": "2026-03-25T00:44:03.278Z"
+    },
+    "todo:4": {
+      "task_key": "todo:4",
+      "task_label": "4",
+      "task_title": "**Forward Kinematics Engine + Tests**",
+      "session_id": "ses_2dd8ae046ffedmDSdR27Ok2d0H",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-03-25T00:50:11.221Z"
+    },
+    "todo:5": {
+      "task_key": "todo:5",
+      "task_label": "5",
+      "task_title": "**Scoring Engine + Judgment Windows + Combo + Tests**",
+      "session_id": "ses_2dd86812cffeZMDv5ld3B2ndPk",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-03-25T00:56:49.894Z"
+    },
+    "todo:6": {
+      "task_key": "todo:6",
+      "task_label": "6",
+      "task_title": "**Beat Map JSON Parser + Schema Validation + Tests**",
+      "session_id": "ses_2dd80a2adffeRKAZcEV3fVR7TO",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-03-25T01:01:55.261Z"
+    },
+    "todo:7": {
+      "task_key": "todo:7",
+      "task_label": "7",
+      "task_title": "**Leaderboard Manager + JSON Persistence + Tests**",
+      "session_id": "ses_2dd7be25fffeumuSOHw0xANWvT",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-03-25T01:06:35.608Z"
+    },
+    "todo:8": {
+      "task_key": "todo:8",
+      "task_label": "8",
+      "task_title": "**Key Binding System + Persistence + Tests**",
+      "session_id": "ses_2dd77a73cffepIjacvek52TBrY",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-03-25T01:12:23.006Z"
+    },
+    "todo:9": {
+      "task_key": "todo:9",
+      "task_label": "9",
+      "task_title": "**ModernGL Renderer + GL Text Utility + Viewport Manager**",
+      "session_id": "ses_2dd71cdd4ffeGPpPK2PJUanjrW",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-03-25T01:15:47.950Z"
+    },
+    "todo:12": {
+      "task_key": "todo:12",
+      "task_label": "12",
+      "task_title": "**Audio System (OGG Playback + perf_counter Sync)**",
+      "session_id": "ses_2dd6ee371ffewk8GjO0Liuwvpm",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-03-25T01:19:30.067Z"
+    },
+    "todo:10": {
+      "task_key": "todo:10",
+      "task_label": "10",
+      "task_title": "**3D Excavator Geometric Model + FK Visualization**",
+      "session_id": "ses_2dd6b715fffezK8GvE4iwiGpsK",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-03-25T01:24:41.137Z"
     }
   }
 }

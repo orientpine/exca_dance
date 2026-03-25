@@ -1,0 +1,3 @@
+pytest: python3 -m pytest tests/test_leaderboard.py -v
+result: 10 passed
+files: src/exca_dance/core/leaderboard.py, tests/test_leaderboard.py

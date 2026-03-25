@@ -1,0 +1,16 @@
+T12: Audio System (OGG Playback + perf_counter Sync)
+=====================================================
+
+File created: src/exca_dance/audio/audio_system.py (138 lines)
+
+Verification results:
+- Position after 2s sleep: 2000.1ms (within ±100ms tolerance)
+- No pygame.mixer.music.get_pos() usage found in source
+- LSP diagnostics: clean (no errors)
+
+Key design:
+- Uses time.perf_counter() for song position tracking
+- Silent mode fallback when audio device unavailable (SDL_AUDIODRIVER=dummy)
+- Supports OGG and WAV only (no MP3)
+- Pause/resume correctly tracks accumulated pause time
+- SFX cache with per-channel volume control

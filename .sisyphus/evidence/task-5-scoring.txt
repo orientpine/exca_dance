@@ -1,0 +1,20 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-7.4.4, pluggy-1.4.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/cha/Documents/exca_dance
+plugins: ament-xmllint-0.17.4, ament-lint-0.17.4, ament-pep257-0.17.4, launch-testing-ros-0.26.11, launch-testing-3.4.10, ament-flake8-0.17.4, ament-copyright-0.17.4, anyio-4.12.1, cov-4.1.0, colcon-core-0.20.1
+collecting ... pygame-ce 2.5.7 (SDL 2.32.10, Python 3.12.3)
+collected 10 items
+
+tests/test_scoring.py::test_perfect_judgment_at_20ms PASSED              [ 10%]
+tests/test_scoring.py::test_perfect_judgment_at_35ms_boundary PASSED     [ 20%]
+tests/test_scoring.py::test_great_judgment_at_36ms PASSED                [ 30%]
+tests/test_scoring.py::test_great_judgment_at_70ms_boundary PASSED       [ 40%]
+tests/test_scoring.py::test_good_judgment_at_71ms PASSED                 [ 50%]
+tests/test_scoring.py::test_miss_judgment_at_121ms_score_zero PASSED     [ 60%]
+tests/test_scoring.py::test_combo_increments_on_hits_and_resets_on_miss PASSED [ 70%]
+tests/test_scoring.py::test_combo_multiplier_progression_at_10_and_25_hits PASSED [ 80%]
+tests/test_scoring.py::test_grade_s_at_95_percent_or_higher PASSED       [ 90%]
+tests/test_scoring.py::test_max_possible_score_for_100_events PASSED     [100%]
+
+============================== 10 passed in 0.04s ==============================

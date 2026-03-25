@@ -1,0 +1,18 @@
+Task: T4 Forward Kinematics Engine + Tests
+Date: 2026-03-25
+
+Implemented:
+- src/exca_dance/core/kinematics.py
+  - Added ExcavatorFK with clamp_angles, forward_kinematics,
+    get_joint_positions_2d_side, and get_joint_positions_2d_top.
+- tests/test_kinematics.py
+  - Added 6 tests covering zero-angle geometry, boom-up geometry,
+    swing rotation, clamping, side-view point count, and top-view swing effect.
+
+Validation command:
+python3 -m pytest tests/test_kinematics.py -v
+
+Result:
+- 6 collected
+- 6 passed
+- 0 failed
