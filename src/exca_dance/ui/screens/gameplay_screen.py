@@ -112,6 +112,11 @@ class GameplayScreen:
         ctx.viewport = (0, 0, renderer.width, renderer.height)
 
         self._layout.render_viewport_decorations(text_renderer)
+        self._visual_cues.render_timeline(
+            self._renderer,
+            self._text,
+            self._hud._song_duration_ms,
+        )
 
         # HUD overlay
         self._hud.render(self._game_loop.joint_angles)

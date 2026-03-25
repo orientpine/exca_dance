@@ -1,0 +1,5 @@
+Verification summary
+
+- grep: src/exca_dance/ui/screens/gameplay_screen.py contains render_timeline call at lines 112-122, after ctx.viewport reset and before hud.render.
+- pytest: PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest tests/ -v -> 56 passed.
+- launch: env SDL_AUDIODRIVER=dummy xvfb-run -a timeout 5 .venv/bin/python -m exca_dance --windowed -> exited cleanly; timeout returned exit:124.
