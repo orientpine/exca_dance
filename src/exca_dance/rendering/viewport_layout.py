@@ -88,11 +88,18 @@ class GameViewportLayout:
         view_3d = _look_at(self._EYE_3D, self._TARGET_3D, self._UP_3D)
         self._mvp_3d: np.ndarray = (proj_3d @ view_3d).astype("f4")
 
-        # Top-down orthographic (XY plane, looking down Z)
+        # Top-down orthographic (XY plane, camera looks down -Z — default)
         self._mvp_top: np.ndarray = _ortho(-8.0, 8.0, -6.0, 6.0).astype("f4")
 
-        # Side orthographic (XZ plane, looking along Y)
-        self._mvp_side: np.ndarray = _ortho(-2.0, 10.0, -1.0, 7.0).astype("f4")
+        # Side orthographic (XZ plane, looking along +Y)
+        # Rotation swaps axes: view_X = world_X, view_Y = world_Z, depth = -world_Y
+        side_view = np.array([
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, -1.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ], dtype="f4")
+        self._mvp_side: np.ndarray = (_ortho(-2.0, 10.0, -1.0, 7.0) @ side_view).astype("f4")
 
     def render_all(self, excavator_model, joint_angles: dict) -> None:
         """Render excavator in all 3 viewports."""
@@ -100,17 +107,17 @@ class GameViewportLayout:
 
         # 3D main view
         self._vm.set_viewport(ctx, "main_3d")
-        ctx.clear(0.04, 0.04, 0.10)
+        ctx.clear(0.04, 0.04, 0.10, viewport=self._vm.get_viewport_rect("main_3d"))
         excavator_model.render_3d(self._mvp_3d)
 
         # Top-down view
         self._vm.set_viewport(ctx, "top_2d")
-        ctx.clear(0.04, 0.04, 0.10)
+        ctx.clear(0.04, 0.04, 0.10, viewport=self._vm.get_viewport_rect("top_2d"))
         excavator_model.render_2d_top(self._mvp_top)
 
         # Side view
         self._vm.set_viewport(ctx, "side_2d")
-        ctx.clear(0.04, 0.04, 0.10)
+        ctx.clear(0.04, 0.04, 0.10, viewport=self._vm.get_viewport_rect("side_2d"))
         excavator_model.render_2d_side(self._mvp_side)
 
         # Reset to full viewport

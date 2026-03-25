@@ -72,6 +72,49 @@ def _make_box_verts(
     return verts
 
 
+def _make_link_verts(
+    p1: tuple[float, float, float],
+    p2: tuple[float, float, float],
+    thickness_y: float,
+    thickness_z: float,
+    color: tuple[float, float, float],
+) -> list[float]:
+    """Generate 36 vertices for a box oriented along the vector from *p1* to *p2*."""
+    dx = p2[0] - p1[0]
+    dy = p2[1] - p1[1]
+    dz = p2[2] - p1[2]
+    length = math.sqrt(dx * dx + dy * dy + dz * dz)
+    if length < 1e-6:
+        return []
+
+    # Build an orthonormal basis: x_axis along link direction
+    x_ax = np.array([dx / length, dy / length, dz / length], dtype="f4")
+    ref = np.array([0.0, 0.0, 1.0], dtype="f4") if abs(x_ax[2]) < 0.95 else np.array([0.0, 1.0, 0.0], dtype="f4")
+    y_ax = np.cross(ref, x_ax)
+    y_ax /= float(np.linalg.norm(y_ax))
+    z_ax = np.cross(x_ax, y_ax)
+
+    rot = np.column_stack([x_ax, y_ax, z_ax])  # 3×3 rotation
+    mid = np.array([(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2, (p1[2] + p2[2]) / 2], dtype="f4")
+
+    hx, hy, hz = length / 2, thickness_y / 2, thickness_z / 2
+    faces = [
+        ((-hx, -hy, hz), (hx, -hy, hz), (hx, hy, hz), (-hx, -hy, hz), (hx, hy, hz), (-hx, hy, hz)),
+        ((-hx, -hy, -hz), (-hx, hy, -hz), (hx, hy, -hz), (-hx, -hy, -hz), (hx, hy, -hz), (hx, -hy, -hz)),
+        ((hx, -hy, -hz), (hx, hy, -hz), (hx, hy, hz), (hx, -hy, -hz), (hx, hy, hz), (hx, -hy, hz)),
+        ((-hx, -hy, -hz), (-hx, -hy, hz), (-hx, hy, hz), (-hx, -hy, -hz), (-hx, hy, hz), (-hx, hy, -hz)),
+        ((-hx, hy, -hz), (-hx, hy, hz), (hx, hy, hz), (-hx, hy, -hz), (hx, hy, hz), (hx, hy, -hz)),
+        ((-hx, -hy, -hz), (hx, -hy, -hz), (hx, -hy, hz), (-hx, -hy, -hz), (hx, -hy, hz), (-hx, -hy, hz)),
+    ]
+    r, g, b = color
+    verts: list[float] = []
+    for face in faces:
+        for lx, ly, lz in face:
+            w = rot @ np.array([lx, ly, lz], dtype="f4") + mid
+            verts += [float(w[0]), float(w[1]), float(w[2]), r, g, b]
+    return verts
+
+
 class ExcavatorModel:
     """Renders a 3D excavator from geometric primitives using FK joint positions."""
 
@@ -94,39 +137,24 @@ class ExcavatorModel:
         pos = self._fk.forward_kinematics(self._current_angles)
         verts: list[float] = []
 
-        # Base body
+        # Base body (axis-aligned — stationary)
         verts += _make_box_verts(0, 0, 0.25, 1.5, 1.0, 0.5, JOINT_COLORS["base"])
 
-        # Swing turret
+        # Swing turret (axis-aligned at pivot)
         sp = pos["swing_pivot"]
         verts += _make_box_verts(sp[0], sp[1], sp[2], 0.8, 0.8, 0.3, JOINT_COLORS["turret"])
 
-        # Boom link
+        # Boom link — oriented from swing_pivot → boom_pivot
         bp = pos["boom_pivot"]
-        cx = (sp[0] + bp[0]) / 2
-        cy = (sp[1] + bp[1]) / 2
-        cz = (sp[2] + bp[2]) / 2
-        dx, dy, dz = bp[0] - sp[0], bp[1] - sp[1], bp[2] - sp[2]
-        length = math.sqrt(dx * dx + dy * dy + dz * dz) or 1.0
-        verts += _make_box_verts(cx, cy, cz, length, 0.25, 0.25, JOINT_COLORS[JointName.BOOM])
+        verts += _make_link_verts(sp, bp, 0.25, 0.25, JOINT_COLORS[JointName.BOOM])
 
-        # Arm link
+        # Arm link — oriented from boom_pivot → arm_pivot
         ap = pos["arm_pivot"]
-        cx2 = (bp[0] + ap[0]) / 2
-        cy2 = (bp[1] + ap[1]) / 2
-        cz2 = (bp[2] + ap[2]) / 2
-        dx2, dy2, dz2 = ap[0] - bp[0], ap[1] - bp[1], ap[2] - bp[2]
-        length2 = math.sqrt(dx2 * dx2 + dy2 * dy2 + dz2 * dz2) or 1.0
-        verts += _make_box_verts(cx2, cy2, cz2, length2, 0.20, 0.20, JOINT_COLORS[JointName.ARM])
+        verts += _make_link_verts(bp, ap, 0.20, 0.20, JOINT_COLORS[JointName.ARM])
 
-        # Bucket link
+        # Bucket link — oriented from arm_pivot → bucket_tip
         bt = pos["bucket_tip"]
-        cx3 = (ap[0] + bt[0]) / 2
-        cy3 = (ap[1] + bt[1]) / 2
-        cz3 = (ap[2] + bt[2]) / 2
-        dx3, dy3, dz3 = bt[0] - ap[0], bt[1] - ap[1], bt[2] - ap[2]
-        length3 = math.sqrt(dx3 * dx3 + dy3 * dy3 + dz3 * dz3) or 1.0
-        verts += _make_box_verts(cx3, cy3, cz3, length3, 0.30, 0.25, JOINT_COLORS[JointName.BUCKET])
+        verts += _make_link_verts(ap, bt, 0.30, 0.25, JOINT_COLORS[JointName.BUCKET])
 
         data = np.array(verts, dtype="f4")
         self._vertex_count = len(data) // 6  # 3 pos + 3 color
@@ -147,7 +175,7 @@ class ExcavatorModel:
         if self._vao is None:
             return
         prog = self._renderer.prog_solid
-        prog["mvp"].write(mvp.astype("f4").tobytes())
+        prog["mvp"].write(np.ascontiguousarray(mvp.astype("f4").T).tobytes())
         prog["alpha"].value = alpha
         self._renderer.ctx.enable(moderngl.DEPTH_TEST)
         self._vao.render(moderngl.TRIANGLES, vertices=self._vertex_count)
