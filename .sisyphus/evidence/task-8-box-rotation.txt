@@ -1,0 +1,36 @@
+Task: T8 excavator_model ghost color support
+Date: 2026-03-25
+
+Modified file:
+- src/exca_dance/rendering/excavator_model.py
+
+Code changes:
+1) Added ExcavatorModel.__init__ parameter:
+   - joint_colors: dict[str | JointName, tuple[float, float, float]] | None = None
+2) Added instance color map field:
+   - self._joint_colors (defaults to module-level JOINT_COLORS when joint_colors is None)
+3) Updated _update_geometry() color sources:
+   - JOINT_COLORS[...] -> self._joint_colors[...] for base/turret/boom/arm/bucket
+
+Compatibility checks:
+Command:
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -c "from exca_dance.rendering.excavator_model import ExcavatorModel; print('joint_colors param:', 'joint_colors' in str(ExcavatorModel.__init__.__code__.co_varnames))"
+Output:
+pygame-ce 2.5.7 (SDL 2.32.10, Python 3.12.3)
+joint_colors param: True
+
+Test checks:
+Command:
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest --tb=short -q
+Output:
+56 passed in 0.15s
+
+QA command (requested tail):
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest --tb=short -q 2>&1 | tail -5
+Output:
+........................................................                 [100%]
+56 passed in 0.14s
+
+Diagnostics:
+- lsp_diagnostics run on src/exca_dance/rendering/excavator_model.py
+- No errors on changed code path (warnings exist elsewhere in file/project typing baseline)

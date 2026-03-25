@@ -13,6 +13,7 @@ class ResultsScreen:
         self._text = text_renderer
         self._scoring = None
         self._song_title = ""
+        self._beatmap = None
         self._selected = 0
         self._options = [
             ("SAVE SCORE", "save"),
@@ -20,13 +21,16 @@ class ResultsScreen:
             ("MAIN MENU", ScreenName.MAIN_MENU),
         ]
 
-    def on_enter(self, scoring=None, song_title: str = "", **kwargs) -> None:
+    def on_enter(self, scoring=None, song_title: str = "", beatmap=None, **kwargs) -> None:
         self._scoring = scoring
         self._song_title = song_title
+        self._beatmap = beatmap
         self._selected = 0
 
     def handle_event(self, event: pygame.event.Event):
         if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                return ScreenName.MAIN_MENU
             if event.key in (pygame.K_UP, pygame.K_w):
                 self._selected = (self._selected - 1) % len(self._options)
             elif event.key in (pygame.K_DOWN, pygame.K_s):
@@ -39,6 +43,8 @@ class ResultsScreen:
                         {"mode": "enter", "scoring": self._scoring, "song_title": self._song_title},
                     )
                 elif action == "retry":
+                    if self._beatmap is not None:
+                        return (ScreenName.GAMEPLAY, {"beatmap": self._beatmap})
                     return ScreenName.SONG_SELECT
                 else:
                     return action

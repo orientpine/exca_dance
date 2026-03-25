@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import pygame
+import moderngl
 from exca_dance.core.models import BeatMap
 from exca_dance.rendering.theme import NeonTheme
 from exca_dance.core.game_state import ScreenName
@@ -22,9 +23,14 @@ class GameplayScreen:
         self._result_scoring = None
 
     def on_enter(self, beatmap: BeatMap | None = None, **kwargs) -> None:
-        if beatmap:
-            self._beatmap = beatmap
-            self._hud.set_song_duration(len(beatmap.events) * 2000.0 if beatmap.events else 60000.0)
+        self._beatmap = beatmap
+        if beatmap is not None:
+            if beatmap.events:
+                last_event = beatmap.events[-1]
+                duration_ms = last_event.time_ms + last_event.duration_ms + 3000.0
+            else:
+                duration_ms = 60000.0
+            self._hud.set_song_duration(duration_ms)
             self._game_loop.set_on_song_end(self._on_song_end)
             self._game_loop.start_song(beatmap)
 
@@ -36,6 +42,9 @@ class GameplayScreen:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_F3:
                 self._hud.toggle_fps()
+            elif event.key == pygame.K_q and self._game_loop.state == LoopState.PAUSED:
+                self._game_loop.stop()
+                return ScreenName.MAIN_MENU
         return None
 
     def update(self, dt: float):
@@ -43,7 +52,10 @@ class GameplayScreen:
             scoring = self._result_scoring
             self._result_scoring = None
             title = self._beatmap.title if self._beatmap else ""
-            return (ScreenName.RESULTS, {"scoring": scoring, "song_title": title})
+            return (
+                ScreenName.RESULTS,
+                {"scoring": scoring, "song_title": title, "beatmap": self._beatmap},
+            )
 
         hit_results = self._game_loop.tick(dt)
         for result in hit_results:
@@ -79,8 +91,27 @@ class GameplayScreen:
             self._game_loop.joint_angles,
         )
 
-        # Ghost excavator overlay
+        self._layout.render_2d_grid("top_2d")
+        self._layout.render_2d_grid("side_2d")
+
+        # Ghost overlay — render in each viewport separately
+        ctx = renderer.ctx
+        vm = self._layout.viewport_manager
+        ctx.enable_direct(moderngl.DEPTH_TEST)
+
+        vm.set_viewport(ctx, "main_3d")
         self._visual_cues.render_ghost(self._layout.mvp_3d)
+
+        vm.set_viewport(ctx, "top_2d")
+        self._visual_cues.render_ghost(self._layout.mvp_top)
+
+        vm.set_viewport(ctx, "side_2d")
+        self._visual_cues.render_ghost(self._layout.mvp_side)
+
+        # Reset to full viewport
+        ctx.viewport = (0, 0, renderer.width, renderer.height)
+
+        self._layout.render_viewport_decorations(text_renderer)
 
         # HUD overlay
         self._hud.render(self._game_loop.joint_angles)
@@ -97,7 +128,7 @@ class GameplayScreen:
                 align="center",
             )
             text_renderer.render(
-                "ESC Resume  |  Q Quit",
+                "ESC Resume  |  Q Main Menu",
                 W // 2,
                 H // 2 + 20,
                 color=NeonTheme.TEXT_DIM.as_tuple(),

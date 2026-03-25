@@ -1,6 +1,9 @@
 """Core game loop for Exca Dance."""
 
 from __future__ import annotations
+
+from typing import Any, cast
+
 import pygame
 from exca_dance.core.models import JointName, BeatMap, BeatEvent
 from exca_dance.core.constants import JOINT_ANGULAR_VELOCITY, JOINT_LIMITS
@@ -43,6 +46,7 @@ class GameLoop:
         self._beatmap: BeatMap | None = None
         self._pending_events: list[BeatEvent] = []
         self._processed_events: list[BeatEvent] = []
+        self._all_events_consumed_at_ms: float | None = None
 
         # Joint angles (degrees)
         self._joint_angles: dict[JointName, float] = {j: 0.0 for j in JointName}
@@ -70,6 +74,7 @@ class GameLoop:
         self._held_keys.clear()
         self._audio.load_music(beatmap.audio_file)
         self._audio.play()
+        self._all_events_consumed_at_ms = None
         self._state = GameState.PLAYING
 
     def pause(self) -> None:
@@ -105,7 +110,7 @@ class GameLoop:
     # Per-frame update (called by screen/state manager)
     # ------------------------------------------------------------------ #
 
-    def tick(self, dt: float) -> list:
+    def tick(self, dt: float) -> list[Any]:
         """
         Process one frame. Returns list of HitResult from this frame.
         dt: delta time in seconds.
@@ -158,21 +163,22 @@ class GameLoop:
             lo, hi = JOINT_LIMITS[joint]
             self._joint_angles[joint] = max(lo, min(hi, self._joint_angles[joint] + delta))
 
-    def _check_beats(self) -> list:
+    def _check_beats(self) -> list[Any]:
         """Evaluate beat events whose time has passed."""
         from exca_dance.core.constants import JUDGMENT_WINDOWS
         from exca_dance.core.models import Judgment
 
         current_ms = self._audio.get_position_ms()
-        hit_results = []
+        good_window = JUDGMENT_WINDOWS[cast(Judgment, Judgment.GOOD)]
+        hit_results: list[Any] = []
         remaining = []
 
         for event in self._pending_events:
             if current_ms >= event.time_ms:
                 timing_error = abs(current_ms - event.time_ms)
                 # Auto-miss if past GOOD window
-                if timing_error > JUDGMENT_WINDOWS[Judgment.GOOD]:
-                    result = self._scoring.judge({}, JUDGMENT_WINDOWS[Judgment.GOOD] + 1)
+                if timing_error > good_window:
+                    result = self._scoring.judge({}, good_window + 1)
                 else:
                     angle_errors = {
                         j: abs(self._joint_angles.get(j, 0.0) - target)
@@ -190,8 +196,18 @@ class GameLoop:
     def _check_song_end(self) -> None:
         """Detect song completion."""
         if not self._pending_events and self._beatmap is not None:
-            # All events processed — check if audio finished
+            current_ms = self._audio.get_position_ms()
+
+            if self._all_events_consumed_at_ms is None:
+                self._all_events_consumed_at_ms = current_ms
+
             if not self._audio.is_playing():
+                self._state = GameState.FINISHED
+                if self._on_song_end:
+                    self._on_song_end(self._scoring)
+                return
+
+            if current_ms - self._all_events_consumed_at_ms >= 3000.0:
                 self._state = GameState.FINISHED
                 if self._on_song_end:
                     self._on_song_end(self._scoring)

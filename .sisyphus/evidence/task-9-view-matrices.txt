@@ -1,0 +1,15 @@
+=== Task 9: View Matrix Improvement Evidence ===
+Date: 2026-03-25T23:36:58+09:00
+
+--- pytest ---
+........................................................                 [100%]
+56 passed in 0.15s
+
+--- module load ---
+pygame-ce 2.5.7 (SDL 2.32.10, Python 3.12.3)
+Module loaded OK
+
+--- Changes Summary ---
+Side view: replaced manual axis-swap matrix with _look_at(eye=[0,-12,3], center=[2,0,3], up=[0,0,1])
+Top view: replaced bare _ortho() with _look_at(eye=[2,0,15], center=[2,0,0], up=[0,1,0]) + adjusted ortho bounds
+3D main view: UNCHANGED (as required)

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from exca_dance.core.models import Judgment
+from typing import cast
+
+from exca_dance.core.models import JointName, Judgment
 from exca_dance.core.scoring import ScoringEngine
 
 
@@ -41,25 +43,49 @@ def test_miss_judgment_at_121ms_score_zero() -> None:
     assert result.score == 0
 
 
+def test_angle_accuracy_scaling_uses_20_degree_floor() -> None:
+    engine = ScoringEngine()
+    boom = cast(JointName, JointName.BOOM)
+    angle_errors: dict[JointName, float] = {boom: 0.0}
+
+    angle_errors[boom] = 0.0
+    assert engine.judge(angle_errors, 20.0).score == 300
+
+    angle_errors[boom] = 10.0
+    assert engine.judge(angle_errors, 20.0).score == 150
+
+    angle_errors[boom] = 20.0
+    assert engine.judge(angle_errors, 20.0).score == 30
+
+
 def test_combo_increments_on_hits_and_resets_on_miss() -> None:
     engine = ScoringEngine()
-    engine.judge({}, 20.0)
-    engine.judge({}, 20.0)
+    _ = engine.judge({}, 20.0)
+    _ = engine.judge({}, 20.0)
     assert engine.get_max_combo() == 2
 
-    engine.judge({}, 121.0)
+    _ = engine.judge({}, 121.0)
     assert engine.get_combo_multiplier() == 1
 
 
 def test_combo_multiplier_progression_at_10_and_25_hits() -> None:
     engine = ScoringEngine()
     for _ in range(10):
-        engine.judge({}, 20.0)
+        _ = engine.judge({}, 20.0)
     assert engine.get_combo_multiplier() == 2
 
     for _ in range(15):
-        engine.judge({}, 20.0)
+        _ = engine.judge({}, 20.0)
     assert engine.get_combo_multiplier() == 3
+
+
+def test_combo_multiplier_applies_on_current_hit() -> None:
+    engine = ScoringEngine()
+
+    for _ in range(9):
+        assert engine.judge({}, 20.0).score == 300
+
+    assert engine.judge({}, 20.0).score == 600
 
 
 def test_grade_s_at_95_percent_or_higher() -> None:

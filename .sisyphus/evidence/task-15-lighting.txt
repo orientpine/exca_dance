@@ -1,0 +1,14 @@
+=== Task 15: Directional Lighting QA ===
+Date: 2026-03-25T23:47:11+09:00
+
+--- pytest ---
+........................................................                 [100%]
+56 passed in 0.15s
+
+--- in_normal attribute check ---
+pygame-ce 2.5.7 (SDL 2.32.10, Python 3.12.3)
+Normal attribute found. PASS
+
+--- VBO layout check ---
+pygame-ce 2.5.7 (SDL 2.32.10, Python 3.12.3)
+_make_box_verts: 324 floats = 36 verts × 9 floats. PASS

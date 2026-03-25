@@ -3,6 +3,7 @@
 from __future__ import annotations
 import os
 import pygame
+from typing import cast
 from exca_dance.core.models import JointName, BeatEvent, BeatMap
 from exca_dance.core.beatmap import load_beatmap, save_beatmap
 from exca_dance.core.constants import JOINT_ANGULAR_VELOCITY, JOINT_LIMITS
@@ -50,6 +51,7 @@ class PoseEditorScreen:
         if event.type == pygame.KEYDOWN:
             self._held_keys.add(event.key)
             ctrl = pygame.key.get_mods() & pygame.KMOD_CTRL
+            shift = pygame.key.get_mods() & pygame.KMOD_SHIFT
 
             if event.key == pygame.K_ESCAPE:
                 self._audio.stop()
@@ -68,12 +70,16 @@ class PoseEditorScreen:
             elif event.key == pygame.K_DELETE:
                 self._delete_selected()
             elif event.key in (pygame.K_LEFT, pygame.K_RIGHT):
-                delta = -500 if event.key == pygame.K_LEFT else 500
-                self._cursor_ms = max(0.0, self._cursor_ms + delta)
-            elif event.key in (pygame.K_LBRACKET, pygame.K_RBRACKET):
+                if shift:
+                    self._held_keys.add(event.key)
+                else:
+                    self._held_keys.discard(event.key)
+                    delta = -500 if event.key == pygame.K_LEFT else 500
+                    self._cursor_ms = max(0.0, self._cursor_ms + delta)
+            elif event.key in (pygame.K_LEFTBRACKET, pygame.K_RIGHTBRACKET):
                 if self._selected_idx >= 0 and self._selected_idx < len(self._events):
                     ev = self._events[self._selected_idx]
-                    delta = -50 if event.key == pygame.K_LBRACKET else 50
+                    delta = -50 if event.key == pygame.K_LEFTBRACKET else 50
                     new_dur = max(100, ev.duration_ms + delta)
                     self._events[self._selected_idx] = BeatEvent(
                         ev.time_ms, ev.target_angles, new_dur
@@ -85,7 +91,9 @@ class PoseEditorScreen:
         return None
 
     def _new_beatmap(self) -> None:
-        self._beatmap = BeatMap(title="New Song", artist="", bpm=120.0, offset_ms=0, audio_file="")
+        self._beatmap = BeatMap(
+            title="New Song", artist="", bpm=120.0, offset_ms=0, audio_file="", events=[]
+        )
         self._events = []
         self._selected_idx = -1
         self._cursor_ms = 0.0
@@ -161,15 +169,15 @@ class PoseEditorScreen:
         # Update joint angles from held keys
         for key in self._held_keys:
             # Use default WASD-like mapping for editor
-            key_map = {
-                pygame.K_w: (JointName.BOOM, 1),
-                pygame.K_s: (JointName.BOOM, -1),
-                pygame.K_a: (JointName.SWING, -1),
-                pygame.K_d: (JointName.SWING, 1),
-                pygame.K_UP: (JointName.ARM, 1),
-                pygame.K_DOWN: (JointName.ARM, -1),
-                pygame.K_LEFT: (JointName.BUCKET, -1),
-                pygame.K_RIGHT: (JointName.BUCKET, 1),
+            key_map: dict[int, tuple[JointName, int]] = {
+                pygame.K_w: (cast(JointName, JointName.BOOM), 1),
+                pygame.K_s: (cast(JointName, JointName.BOOM), -1),
+                pygame.K_a: (cast(JointName, JointName.SWING), -1),
+                pygame.K_d: (cast(JointName, JointName.SWING), 1),
+                pygame.K_UP: (cast(JointName, JointName.ARM), 1),
+                pygame.K_DOWN: (cast(JointName, JointName.ARM), -1),
+                pygame.K_LEFT: (cast(JointName, JointName.BUCKET), -1),
+                pygame.K_RIGHT: (cast(JointName, JointName.BUCKET), 1),
             }
             if key in key_map:
                 jname, direction = key_map[key]

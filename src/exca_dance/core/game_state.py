@@ -1,14 +1,37 @@
 """Game state machine for Exca Dance."""
 
 from __future__ import annotations
+from typing import Protocol, final
 import pygame
 
 
+TransitionResult = str | tuple[str, dict[str, object]]
+
+
+class _Renderer(Protocol):
+    width: int
+    height: int
+
+
+class _TextRenderer(Protocol):
+    def render(self, *args: object, **kwargs: object) -> None: ...
+
+
+class _Screen(Protocol):
+    def on_enter(self, **kwargs: object) -> None: ...
+
+    def handle_event(self, event: pygame.event.Event) -> TransitionResult | None: ...
+
+    def update(self, dt: float) -> TransitionResult | None: ...
+
+    def render(self, renderer: _Renderer, text_renderer: _TextRenderer) -> None: ...
+
+
+@final
 class ScreenName:
     MAIN_MENU = "main_menu"
     SONG_SELECT = "song_select"
     GAMEPLAY = "gameplay"
-    PAUSED = "paused"
     RESULTS = "results"
     LEADERBOARD = "leaderboard"
     SETTINGS = "settings"
@@ -22,14 +45,14 @@ class GameStateManager:
     """
 
     def __init__(self) -> None:
-        self._screens: dict[str, object] = {}
+        self._screens: dict[str, _Screen] = {}
         self._current: str = ScreenName.MAIN_MENU
-        self._transition_data: dict = {}
+        self._transition_data: dict[str, object] = {}
 
-    def register(self, name: str, screen) -> None:
+    def register(self, name: str, screen: _Screen) -> None:
         self._screens[name] = screen
 
-    def transition_to(self, name: str, **kwargs) -> None:
+    def transition_to(self, name: str, **kwargs: object) -> None:
         self._current = name
         self._transition_data = kwargs
         screen = self._screens.get(name)
@@ -53,17 +76,14 @@ class GameStateManager:
             if result:
                 self._handle_transition(result)
 
-    def render(self, renderer, text_renderer) -> None:
+    def render(self, renderer: _Renderer, text_renderer: _TextRenderer) -> None:
         screen = self._screens.get(self._current)
         if screen and hasattr(screen, "render"):
             screen.render(renderer, text_renderer)
 
-    def _handle_transition(self, result) -> None:
+    def _handle_transition(self, result: TransitionResult | None) -> None:
         if isinstance(result, str):
             self.transition_to(result)
         elif isinstance(result, tuple) and len(result) == 2:
             name, kwargs = result
-            if isinstance(kwargs, dict):
-                self.transition_to(name, **kwargs)
-            else:
-                self.transition_to(name)
+            self.transition_to(name, **kwargs)

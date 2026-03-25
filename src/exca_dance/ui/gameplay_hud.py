@@ -168,8 +168,72 @@ class GameplayHUD:
             )
 
     def _draw_rect_2d(self, x: int, y: int, w: int, h: int, color) -> None:
-        """Draw a 2D screen-space rectangle using the textured quad shader."""
-        # Use a 1×1 white texture trick via prog_tex with solid color
-        # For now, skip actual GL rect drawing — text renderer handles visuals
-        # Full implementation would use a dedicated 2D rect shader
-        pass
+        import moderngl
+        import numpy as np
+
+        ctx = self._renderer.ctx
+        W = self._renderer.width
+        H = self._renderer.height
+
+        x0 = (x / W) * 2.0 - 1.0
+        x1 = ((x + w) / W) * 2.0 - 1.0
+        y0 = 1.0 - (y / H) * 2.0
+        y1 = 1.0 - ((y + h) / H) * 2.0
+
+        if hasattr(color, "r"):
+            r, g, b = color.r, color.g, color.b
+        else:
+            r, g, b = color[0], color[1], color[2]
+
+        verts = [
+            x0,
+            y1,
+            0.0,
+            r,
+            g,
+            b,
+            x1,
+            y1,
+            0.0,
+            r,
+            g,
+            b,
+            x1,
+            y0,
+            0.0,
+            r,
+            g,
+            b,
+            x0,
+            y1,
+            0.0,
+            r,
+            g,
+            b,
+            x1,
+            y0,
+            0.0,
+            r,
+            g,
+            b,
+            x0,
+            y0,
+            0.0,
+            r,
+            g,
+            b,
+        ]
+        data = np.array(verts, dtype="f4")
+        vbo = ctx.buffer(data)
+        prog = self._renderer.prog_solid
+        vao = ctx.vertex_array(prog, [(vbo, "3f 3f", "in_position", "in_color")])
+
+        identity = np.eye(4, dtype="f4")
+        prog["mvp"].write(np.ascontiguousarray(identity).tobytes())
+        prog["alpha"].value = 1.0
+
+        ctx.disable(moderngl.DEPTH_TEST)
+        vao.render(moderngl.TRIANGLES)
+
+        vao.release()
+        vbo.release()

@@ -32,6 +32,7 @@ class AudioSystem:
         self._sfx_volume: float = 1.0
         self._sfx_cache: dict[str, pygame.mixer.Sound] = {}
         self._current_path: str | None = None
+        self._song_duration_ms: float | None = None
         self._silent_mode: bool = False
         self._init_mixer(buffer_size)
 
@@ -57,8 +58,9 @@ class AudioSystem:
         self._current_path = path
         logger.debug("Loaded music: %s", path)
 
-    def play(self) -> None:
+    def play(self, song_duration_ms: float | None = None) -> None:
         """Start/restart playback from beginning."""
+        self._song_duration_ms = song_duration_ms
         if self._silent_mode:
             self._start_time = time.perf_counter()
             self._accumulated_pause = 0.0
@@ -106,7 +108,23 @@ class AudioSystem:
         return max(0.0, elapsed * 1000.0)
 
     def is_playing(self) -> bool:
-        return self._is_playing and not self._is_paused
+        if not self._is_playing or self._is_paused:
+            return False
+
+        if self._silent_mode:
+            if self._song_duration_ms is not None:
+                elapsed_ms = (
+                    time.perf_counter() - self._start_time - self._accumulated_pause
+                ) * 1000.0
+                if elapsed_ms >= self._song_duration_ms:
+                    self._is_playing = False
+                    return False
+            return True
+
+        if not pygame.mixer.music.get_busy():
+            self._is_playing = False
+            return False
+        return True
 
     def set_volume(self, volume: float) -> None:
         self._volume = max(0.0, min(1.0, volume))

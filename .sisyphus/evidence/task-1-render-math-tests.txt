@@ -1,0 +1,31 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-7.4.4, pluggy-1.4.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/cha/Documents/exca_dance
+collecting ... collected 9 items
+
+tests/test_render_math.py::test_direction_vector_unit_length PASSED      [ 11%]
+tests/test_render_math.py::test_direction_vector_axis_aligned_x PASSED   [ 22%]
+tests/test_render_math.py::test_rotation_matrix_is_4x4_f4 PASSED         [ 33%]
+tests/test_render_math.py::test_rotation_aligns_x_axis PASSED            [ 44%]
+tests/test_render_math.py::test_oriented_box_shape PASSED                [ 55%]
+tests/test_render_math.py::test_oriented_box_endpoints_near_p1_p2 PASSED [ 66%]
+tests/test_render_math.py::test_degenerate_zero_length PASSED            [ 77%]
+tests/test_render_math.py::test_validate_gl_matrix_valid PASSED          [ 88%]
+tests/test_render_math.py::test_validate_gl_matrix_nan PASSED            [100%]
+
+============================== 9 passed in 0.06s ===============================
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-7.4.4, pluggy-1.4.0
+rootdir: /home/cha/Documents/exca_dance
+collected 54 items
+
+tests/test_beatmap.py ........                                           [ 14%]
+tests/test_keybinding.py .......                                         [ 27%]
+tests/test_kinematics.py ......                                          [ 38%]
+tests/test_leaderboard.py ..........                                     [ 57%]
+tests/test_render_math.py .........                                      [ 74%]
+tests/test_ros2_interface.py ....                                        [ 81%]
+tests/test_scoring.py ..........                                         [100%]
+
+============================== 54 passed in 0.13s ==============================

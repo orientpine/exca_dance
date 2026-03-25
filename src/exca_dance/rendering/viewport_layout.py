@@ -1,6 +1,7 @@
 """Multi-viewport layout for Exca Dance gameplay screen."""
 
 from __future__ import annotations
+from typing import Any
 import numpy as np
 from exca_dance.rendering.viewport import ViewportManager
 from exca_dance.core.constants import SCREEN_WIDTH, SCREEN_HEIGHT
@@ -88,20 +89,23 @@ class GameViewportLayout:
         view_3d = _look_at(self._EYE_3D, self._TARGET_3D, self._UP_3D)
         self._mvp_3d: np.ndarray = (proj_3d @ view_3d).astype("f4")
 
-        # Top-down orthographic (XY plane, camera looks down -Z — default)
-        self._mvp_top: np.ndarray = _ortho(-8.0, 8.0, -6.0, 6.0).astype("f4")
+        # Top-down orthographic (XY plane, camera looks down -Z)
+        top_eye = np.array([2.0, 0.0, 15.0], dtype="f4")
+        top_center = np.array([2.0, 0.0, 0.0], dtype="f4")
+        top_up = np.array([0.0, 1.0, 0.0], dtype="f4")
+        view_top = _look_at(top_eye, top_center, top_up)
+        proj_top = _ortho(-6.0, 8.0, -5.0, 8.0)
+        self._mvp_top: np.ndarray = (proj_top @ view_top).astype("f4")
 
         # Side orthographic (XZ plane, looking along +Y)
-        # Rotation swaps axes: view_X = world_X, view_Y = world_Z, depth = -world_Y
-        side_view = np.array([
-            [1.0, 0.0, 0.0, 0.0],
-            [0.0, 0.0, 1.0, 0.0],
-            [0.0, -1.0, 0.0, 0.0],
-            [0.0, 0.0, 0.0, 1.0],
-        ], dtype="f4")
-        self._mvp_side: np.ndarray = (_ortho(-2.0, 10.0, -1.0, 7.0) @ side_view).astype("f4")
+        side_eye = np.array([0.0, -12.0, 3.0], dtype="f4")
+        side_center = np.array([2.0, 0.0, 3.0], dtype="f4")
+        side_up = np.array([0.0, 0.0, 1.0], dtype="f4")
+        view_side = _look_at(side_eye, side_center, side_up)
+        proj_side = _ortho(-5.0, 10.0, -2.0, 9.0)
+        self._mvp_side: np.ndarray = (proj_side @ view_side).astype("f4")
 
-    def render_all(self, excavator_model, joint_angles: dict) -> None:
+    def render_all(self, excavator_model, joint_angles: dict[str, float]) -> None:
         """Render excavator in all 3 viewports."""
         ctx = self._renderer.ctx
 
@@ -122,6 +126,185 @@ class GameViewportLayout:
 
         # Reset to full viewport
         ctx.viewport = (0, 0, self._width, self._height)
+
+    def render_2d_grid(self, view_name: str) -> None:
+        import moderngl
+
+        from exca_dance.rendering.theme import NeonTheme
+
+        ctx = self._renderer.ctx
+        self._vm.set_viewport(ctx, view_name)
+
+        r, g, b = (
+            NeonTheme.TEXT_DIM.r * 0.4,
+            NeonTheme.TEXT_DIM.g * 0.4,
+            NeonTheme.TEXT_DIM.b * 0.4,
+        )
+
+        gr, gg, gb = (
+            NeonTheme.NEON_GREEN.r * 0.5,
+            NeonTheme.NEON_GREEN.g * 0.5,
+            NeonTheme.NEON_GREEN.b * 0.5,
+        )
+
+        verts = []
+
+        if view_name == "top_2d":
+            mvp = self._mvp_top
+            for y in range(-5, 9):
+                c = (gr, gg, gb) if y == 0 else (r, g, b)
+                verts += [-6, y, 0, c[0], c[1], c[2], 8, y, 0, c[0], c[1], c[2]]
+            for x in range(-6, 9):
+                c = (gr, gg, gb) if x == 0 else (r, g, b)
+                verts += [x, -5, 0, c[0], c[1], c[2], x, 8, 0, c[0], c[1], c[2]]
+        else:
+            mvp = self._mvp_side
+            for z in range(-2, 9):
+                c = (gr, gg, gb) if z == 0 else (r, g, b)
+                verts += [-5, 0, z, c[0], c[1], c[2], 10, 0, z, c[0], c[1], c[2]]
+            for x in range(-5, 11):
+                c = (gr, gg, gb) if x == 0 else (r, g, b)
+                verts += [x, 0, -2, c[0], c[1], c[2], x, 0, 9, c[0], c[1], c[2]]
+
+        if not verts:
+            return
+
+        data = np.array(verts, dtype="f4")
+        vbo = ctx.buffer(data)
+        prog = self._renderer.prog_solid
+        vao = ctx.vertex_array(prog, [(vbo, "3f 3f", "in_position", "in_color")])
+
+        prog["mvp"].write(np.ascontiguousarray(mvp.astype("f4").T).tobytes())
+        prog["alpha"].value = 0.3
+
+        try:
+            ctx.disable_direct(moderngl.DEPTH_TEST)
+            vao.render(moderngl.LINES)
+        finally:
+            ctx.enable_direct(moderngl.DEPTH_TEST)
+            vao.release()
+            vbo.release()
+
+    def render_viewport_decorations(self, text_renderer: Any | None) -> None:
+        import moderngl
+
+        from exca_dance.rendering.theme import NeonTheme
+
+        ctx = self._renderer.ctx
+        W = self._width
+        H = self._height
+
+        ctx.viewport = (0, 0, W, H)
+
+        border_r, border_g, border_b = (
+            NeonTheme.BORDER.r,
+            NeonTheme.BORDER.g,
+            NeonTheme.BORDER.b,
+        )
+
+        vx = (1440 / W) * 2.0 - 1.0
+        hy = 1.0 - (540 / H) * 2.0
+
+        lw = 2.0 / W
+        lh = 2.0 / H
+
+        r, g, b = border_r, border_g, border_b
+        verts = [
+            vx,
+            -1.0,
+            0.0,
+            r,
+            g,
+            b,
+            vx + lw,
+            -1.0,
+            0.0,
+            r,
+            g,
+            b,
+            vx + lw,
+            1.0,
+            0.0,
+            r,
+            g,
+            b,
+            vx,
+            -1.0,
+            0.0,
+            r,
+            g,
+            b,
+            vx + lw,
+            1.0,
+            0.0,
+            r,
+            g,
+            b,
+            vx,
+            1.0,
+            0.0,
+            r,
+            g,
+            b,
+            vx,
+            hy,
+            0.0,
+            r,
+            g,
+            b,
+            1.0,
+            hy,
+            0.0,
+            r,
+            g,
+            b,
+            1.0,
+            hy + lh,
+            0.0,
+            r,
+            g,
+            b,
+            vx,
+            hy,
+            0.0,
+            r,
+            g,
+            b,
+            1.0,
+            hy + lh,
+            0.0,
+            r,
+            g,
+            b,
+            vx,
+            hy + lh,
+            0.0,
+            r,
+            g,
+            b,
+        ]
+        data = np.array(verts, dtype="f4")
+        vbo = ctx.buffer(data)
+        prog = self._renderer.prog_solid
+        vao = ctx.vertex_array(prog, [(vbo, "3f 3f", "in_position", "in_color")])
+
+        identity = np.eye(4, dtype="f4")
+        prog["mvp"].write(np.ascontiguousarray(identity).tobytes())
+        prog["alpha"].value = NeonTheme.BORDER.a
+
+        try:
+            ctx.disable_direct(moderngl.DEPTH_TEST)
+            vao.render(moderngl.TRIANGLES)
+        finally:
+            ctx.enable_direct(moderngl.DEPTH_TEST)
+            vao.release()
+            vbo.release()
+
+        if text_renderer is not None:
+            label_color = NeonTheme.TEXT_DIM.as_tuple()
+            text_renderer.render("3D VIEW", 10, H - 25, color=label_color, scale=0.7)
+            text_renderer.render("TOP", W - 470, H - 25, color=label_color, scale=0.7)
+            text_renderer.render("SIDE", W - 470, 540 - 25, color=label_color, scale=0.7)
 
     @property
     def mvp_3d(self) -> np.ndarray:

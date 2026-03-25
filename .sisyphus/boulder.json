@@ -1,109 +1,102 @@
 {
-  "active_plan": "/home/cha/Documents/exca_dance/.sisyphus/plans/exca-dance.md",
-  "started_at": "2026-03-25T00:28:33.772Z",
+  "active_plan": "/home/cha/Documents/exca_dance/.sisyphus/plans/game-production-polish.md",
+  "started_at": "2026-03-25T14:16:51.995Z",
   "session_ids": [
-    "ses_2df6d7747ffet3bbjGG7d6GmDn",
-    "ses_2dd9a6a74ffe7KYPmgGvXp7C5h",
-    "ses_2dd92678effe9M8VJnNmM1yA9F",
-    "ses_2dd8ae046ffedmDSdR27Ok2d0H",
-    "ses_2dd86812cffeZMDv5ld3B2ndPk",
-    "ses_2dd80a2adffeRKAZcEV3fVR7TO",
-    "ses_2dd7be25fffeumuSOHw0xANWvT",
-    "ses_2dd77a73cffepIjacvek52TBrY",
-    "ses_2dd71cdd4ffeGPpPK2PJUanjrW",
-    "ses_2dd6ee371ffewk8GjO0Liuwvpm",
-    "ses_2dd6b715fffezK8GvE4iwiGpsK",
-    "ses_2dd664e1fffeny6OAkAapADw05",
-    "ses_2dd63fab5ffeE6ldc3Cow7NrjG",
-    "ses_2dce5a16effemVlM066zsJjUKd",
-    "ses_2daf60249ffep53wkQRxegIrHD",
-    "ses_2daf55308ffeh0zSwsGGbbv3iM",
-    "ses_2daf3dc68ffenGmOvOuVh1x36J",
-    "ses_2daecffd2ffe385pQKwhCt7pS9"
+    "ses_2dac3ec01ffeTAmvHQ7VkpQ3Zz",
+    "ses_2daa3004bffedWSIh0utBW32Qs",
+    "ses_2da9ddaa2ffeBW8sBA6VSRO086",
+    "ses_2da9daf73ffex8VZREZL9uZH0v",
+    "ses_2da9e17d7ffe65Pj97wedOJ4xR",
+    "ses_2da974511ffeQFCfalzfOBX159",
+    "ses_2da979415ffeKJ3xW5dvZfttkl",
+    "ses_2da971411ffevuBqzBrixoWFMR",
+    "ses_2da9320eeffeDhEcNewkxmDLvb",
+    "ses_2da936ca2ffem7q2UuznicucMU",
+    "ses_2da92d1b8ffe39AAMeXvUIxGuQ",
+    "ses_2da93c4a7ffeTzY5cEN3t2FBli",
+    "ses_2da8f2f65ffevXHD4fNe6kn3Ip",
+    "ses_2da8ed3afffe8V55Fi2QkLnqJI",
+    "ses_2da8baf80ffe2NG2BvKU1ic2o7",
+    "ses_2da8b3ed5ffeI8LF957f3lryDH",
+    "ses_2da8adeeeffeomHlGvABLgjvcZ",
+    "ses_2da862a36ffei1qW3AWYUgg8m7",
+    "ses_2da869519ffelqO4pZJlQeLFVk",
+    "ses_2da866fa9ffehY2jiQ5kYENDaN",
+    "ses_2da83b9abffeFLHP9jnbkgCLML"
   ],
-  "plan_name": "exca-dance",
+  "plan_name": "game-production-polish",
   "agent": "atlas",
   "task_sessions": {
+    "todo:1": {
+      "task_key": "todo:1",
+      "task_label": "1",
+      "task_title": "Rendering Math Utilities — 방향 벡터·회전 행렬 유틸리티 모듈 신규 생성",
+      "session_id": "ses_2daa3004bffedWSIh0utBW32Qs",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-03-25T14:23:28.777Z"
+    },
     "todo:2": {
       "task_key": "todo:2",
       "task_label": "2",
-      "task_title": "**Project Scaffolding + Dependencies**",
-      "session_id": "ses_2dd92678effe9M8VJnNmM1yA9F",
-      "agent": "Sisyphus-Junior",
-      "category": "quick",
-      "updated_at": "2026-03-25T00:44:03.278Z"
-    },
-    "todo:4": {
-      "task_key": "todo:4",
-      "task_label": "4",
-      "task_title": "**Forward Kinematics Engine + Tests**",
-      "session_id": "ses_2dd8ae046ffedmDSdR27Ok2d0H",
+      "task_title": "Fix AudioSystem End-of-Song Detection + Game Termination",
+      "session_id": "ses_2da9e17d7ffe65Pj97wedOJ4xR",
       "agent": "Sisyphus-Junior",
       "category": "deep",
-      "updated_at": "2026-03-25T00:50:11.221Z"
+      "updated_at": "2026-03-25T14:30:14.634Z"
     },
     "todo:5": {
       "task_key": "todo:5",
       "task_label": "5",
-      "task_title": "**Scoring Engine + Judgment Windows + Combo + Tests**",
-      "session_id": "ses_2dd86812cffeZMDv5ld3B2ndPk",
-      "agent": "Sisyphus-Junior",
-      "category": "deep",
-      "updated_at": "2026-03-25T00:56:49.894Z"
-    },
-    "todo:6": {
-      "task_key": "todo:6",
-      "task_label": "6",
-      "task_title": "**Beat Map JSON Parser + Schema Validation + Tests**",
-      "session_id": "ses_2dd80a2adffeRKAZcEV3fVR7TO",
-      "agent": "Sisyphus-Junior",
-      "category": "deep",
-      "updated_at": "2026-03-25T01:01:55.261Z"
-    },
-    "todo:7": {
-      "task_key": "todo:7",
-      "task_label": "7",
-      "task_title": "**Leaderboard Manager + JSON Persistence + Tests**",
-      "session_id": "ses_2dd7be25fffeumuSOHw0xANWvT",
+      "task_title": "Fix Scoring Formula — 각도 배율 곡선 + 콤보 순서 조정",
+      "session_id": "ses_2da979415ffeKJ3xW5dvZfttkl",
       "agent": "Sisyphus-Junior",
       "category": "quick",
-      "updated_at": "2026-03-25T01:06:35.608Z"
+      "updated_at": "2026-03-25T14:33:45.153Z"
     },
     "todo:8": {
       "task_key": "todo:8",
       "task_label": "8",
-      "task_title": "**Key Binding System + Persistence + Tests**",
-      "session_id": "ses_2dd77a73cffepIjacvek52TBrY",
+      "task_title": "Fix Excavator Box Rotation Along Link Directions",
+      "session_id": "ses_2da93c4a7ffeTzY5cEN3t2FBli",
       "agent": "Sisyphus-Junior",
-      "category": "quick",
-      "updated_at": "2026-03-25T01:12:23.006Z"
-    },
-    "todo:9": {
-      "task_key": "todo:9",
-      "task_label": "9",
-      "task_title": "**ModernGL Renderer + GL Text Utility + Viewport Manager**",
-      "session_id": "ses_2dd71cdd4ffeGPpPK2PJUanjrW",
-      "agent": "Sisyphus-Junior",
-      "category": "unspecified-high",
-      "updated_at": "2026-03-25T01:15:47.950Z"
-    },
-    "todo:12": {
-      "task_key": "todo:12",
-      "task_label": "12",
-      "task_title": "**Audio System (OGG Playback + perf_counter Sync)**",
-      "session_id": "ses_2dd6ee371ffewk8GjO0Liuwvpm",
-      "agent": "Sisyphus-Junior",
-      "category": "unspecified-high",
-      "updated_at": "2026-03-25T01:19:30.067Z"
+      "category": "deep",
+      "updated_at": "2026-03-25T14:39:02.962Z"
     },
     "todo:10": {
       "task_key": "todo:10",
       "task_label": "10",
-      "task_title": "**3D Excavator Geometric Model + FK Visualization**",
-      "session_id": "ses_2dd6b715fffezK8GvE4iwiGpsK",
+      "task_title": "Ghost Rendering in ALL 3 Viewports with Distinct Colors",
+      "session_id": "ses_2da8f2f65ffevXHD4fNe6kn3Ip",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-03-25T14:42:40.173Z"
+    },
+    "todo:13": {
+      "task_key": "todo:13",
+      "task_label": "13",
+      "task_title": "Grid/Reference Lines in 2D Orthographic Views",
+      "session_id": "ses_2da8baf80ffe2NG2BvKU1ic2o7",
       "agent": "Sisyphus-Junior",
       "category": "quick",
-      "updated_at": "2026-03-25T01:24:41.137Z"
+      "updated_at": "2026-03-25T14:46:03.568Z"
+    },
+    "final-wave:f1": {
+      "task_key": "final-wave:f1",
+      "task_label": "F1",
+      "task_title": "**Plan Compliance Audit** — `oracle`",
+      "session_id": "ses_2da869519ffelqO4pZJlQeLFVk",
+      "agent": "oracle",
+      "updated_at": "2026-03-25T14:51:31.961Z"
+    },
+    "final-wave:f4": {
+      "task_key": "final-wave:f4",
+      "task_label": "F4",
+      "task_title": "**Scope Fidelity Check** — `deep`",
+      "session_id": "ses_2da83b9abffeFLHP9jnbkgCLML",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-03-25T14:57:07.274Z"
     }
   }
 }

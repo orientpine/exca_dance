@@ -27,48 +27,27 @@ def _make_box_verts(
     lz: float,
     color: tuple[float, float, float],
 ) -> list[float]:
-    """Generate 36 vertices (12 triangles) for an axis-aligned box."""
+    """Generate 36 vertices (12 triangles) for an axis-aligned box with per-face normals."""
     hx, hy, hz = lx / 2, ly / 2, lz / 2
-    faces = [
-        # +Z
-        ((-hx, -hy, hz), (hx, -hy, hz), (hx, hy, hz), (-hx, -hy, hz), (hx, hy, hz), (-hx, hy, hz)),
-        # -Z
-        (
-            (-hx, -hy, -hz),
-            (-hx, hy, -hz),
-            (hx, hy, -hz),
-            (-hx, -hy, -hz),
-            (hx, hy, -hz),
-            (hx, -hy, -hz),
-        ),
-        # +X
-        ((hx, -hy, -hz), (hx, hy, -hz), (hx, hy, hz), (hx, -hy, -hz), (hx, hy, hz), (hx, -hy, hz)),
-        # -X
-        (
-            (-hx, -hy, -hz),
-            (-hx, -hy, hz),
-            (-hx, hy, hz),
-            (-hx, -hy, -hz),
-            (-hx, hy, hz),
-            (-hx, hy, -hz),
-        ),
-        # +Y
-        ((-hx, hy, -hz), (-hx, hy, hz), (hx, hy, hz), (-hx, hy, -hz), (hx, hy, hz), (hx, hy, -hz)),
-        # -Y
-        (
-            (-hx, -hy, -hz),
-            (hx, -hy, -hz),
-            (hx, -hy, hz),
-            (-hx, -hy, -hz),
-            (hx, -hy, hz),
-            (-hx, -hy, hz),
-        ),
+    faces_with_normals = [
+        # +Z face, normal = (0, 0, 1)
+        ([(-hx, -hy, hz), (hx, -hy, hz), (hx, hy, hz), (-hx, -hy, hz), (hx, hy, hz), (-hx, hy, hz)], (0, 0, 1)),
+        # -Z face, normal = (0, 0, -1)
+        ([(-hx, -hy, -hz), (-hx, hy, -hz), (hx, hy, -hz), (-hx, -hy, -hz), (hx, hy, -hz), (hx, -hy, -hz)], (0, 0, -1)),
+        # +X face, normal = (1, 0, 0)
+        ([(hx, -hy, -hz), (hx, hy, -hz), (hx, hy, hz), (hx, -hy, -hz), (hx, hy, hz), (hx, -hy, hz)], (1, 0, 0)),
+        # -X face, normal = (-1, 0, 0)
+        ([(-hx, -hy, -hz), (-hx, -hy, hz), (-hx, hy, hz), (-hx, -hy, -hz), (-hx, hy, hz), (-hx, hy, -hz)], (-1, 0, 0)),
+        # +Y face, normal = (0, 1, 0)
+        ([(-hx, hy, -hz), (-hx, hy, hz), (hx, hy, hz), (-hx, hy, -hz), (hx, hy, hz), (hx, hy, -hz)], (0, 1, 0)),
+        # -Y face, normal = (0, -1, 0)
+        ([(-hx, -hy, -hz), (hx, -hy, -hz), (hx, -hy, hz), (-hx, -hy, -hz), (hx, -hy, hz), (-hx, -hy, hz)], (0, -1, 0)),
     ]
     r, g, b = color
     verts: list[float] = []
-    for face in faces:
-        for x, y, z in face:
-            verts += [cx + x, cy + y, cz + z, r, g, b]
+    for face_verts, (nx, ny, nz) in faces_with_normals:
+        for x, y, z in face_verts:
+            verts += [cx + x, cy + y, cz + z, r, g, b, nx, ny, nz]
     return verts
 
 
@@ -79,7 +58,7 @@ def _make_link_verts(
     thickness_z: float,
     color: tuple[float, float, float],
 ) -> list[float]:
-    """Generate 36 vertices for a box oriented along the vector from *p1* to *p2*."""
+    """Generate 36 vertices for a box oriented along the vector from *p1* to *p2*, with normals."""
     dx = p2[0] - p1[0]
     dy = p2[1] - p1[1]
     dz = p2[2] - p1[2]
@@ -89,7 +68,11 @@ def _make_link_verts(
 
     # Build an orthonormal basis: x_axis along link direction
     x_ax = np.array([dx / length, dy / length, dz / length], dtype="f4")
-    ref = np.array([0.0, 0.0, 1.0], dtype="f4") if abs(x_ax[2]) < 0.95 else np.array([0.0, 1.0, 0.0], dtype="f4")
+    ref = (
+        np.array([0.0, 0.0, 1.0], dtype="f4")
+        if abs(x_ax[2]) < 0.95
+        else np.array([0.0, 1.0, 0.0], dtype="f4")
+    )
     y_ax = np.cross(ref, x_ax)
     y_ax /= float(np.linalg.norm(y_ax))
     z_ax = np.cross(x_ax, y_ax)
@@ -98,29 +81,45 @@ def _make_link_verts(
     mid = np.array([(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2, (p1[2] + p2[2]) / 2], dtype="f4")
 
     hx, hy, hz = length / 2, thickness_y / 2, thickness_z / 2
-    faces = [
-        ((-hx, -hy, hz), (hx, -hy, hz), (hx, hy, hz), (-hx, -hy, hz), (hx, hy, hz), (-hx, hy, hz)),
-        ((-hx, -hy, -hz), (-hx, hy, -hz), (hx, hy, -hz), (-hx, -hy, -hz), (hx, hy, -hz), (hx, -hy, -hz)),
-        ((hx, -hy, -hz), (hx, hy, -hz), (hx, hy, hz), (hx, -hy, -hz), (hx, hy, hz), (hx, -hy, hz)),
-        ((-hx, -hy, -hz), (-hx, -hy, hz), (-hx, hy, hz), (-hx, -hy, -hz), (-hx, hy, hz), (-hx, hy, -hz)),
-        ((-hx, hy, -hz), (-hx, hy, hz), (hx, hy, hz), (-hx, hy, -hz), (hx, hy, hz), (hx, hy, -hz)),
-        ((-hx, -hy, -hz), (hx, -hy, -hz), (hx, -hy, hz), (-hx, -hy, -hz), (hx, -hy, hz), (-hx, -hy, hz)),
+    faces_with_normals = [
+        # +Z face
+        ([(-hx, -hy, hz), (hx, -hy, hz), (hx, hy, hz), (-hx, -hy, hz), (hx, hy, hz), (-hx, hy, hz)], (0, 0, 1)),
+        # -Z face
+        ([(-hx, -hy, -hz), (-hx, hy, -hz), (hx, hy, -hz), (-hx, -hy, -hz), (hx, hy, -hz), (hx, -hy, -hz)], (0, 0, -1)),
+        # +X face
+        ([(hx, -hy, -hz), (hx, hy, -hz), (hx, hy, hz), (hx, -hy, -hz), (hx, hy, hz), (hx, -hy, hz)], (1, 0, 0)),
+        # -X face
+        ([(-hx, -hy, -hz), (-hx, -hy, hz), (-hx, hy, hz), (-hx, -hy, -hz), (-hx, hy, hz), (-hx, hy, -hz)], (-1, 0, 0)),
+        # +Y face
+        ([(-hx, hy, -hz), (-hx, hy, hz), (hx, hy, hz), (-hx, hy, -hz), (hx, hy, hz), (hx, hy, -hz)], (0, 1, 0)),
+        # -Y face
+        ([(-hx, -hy, -hz), (hx, -hy, -hz), (hx, -hy, hz), (-hx, -hy, -hz), (hx, -hy, hz), (-hx, -hy, hz)], (0, -1, 0)),
     ]
     r, g, b = color
     verts: list[float] = []
-    for face in faces:
-        for lx, ly, lz in face:
+    for face_verts, local_normal in faces_with_normals:
+        world_normal = rot @ np.array(local_normal, dtype="f4")
+        nx, ny, nz = float(world_normal[0]), float(world_normal[1]), float(world_normal[2])
+        for lx, ly, lz in face_verts:
             w = rot @ np.array([lx, ly, lz], dtype="f4") + mid
-            verts += [float(w[0]), float(w[1]), float(w[2]), r, g, b]
+            verts += [float(w[0]), float(w[1]), float(w[2]), r, g, b, nx, ny, nz]
     return verts
 
 
 class ExcavatorModel:
     """Renders a 3D excavator from geometric primitives using FK joint positions."""
 
-    def __init__(self, renderer, fk: ExcavatorFK | None = None) -> None:
+    def __init__(
+        self,
+        renderer,
+        fk: ExcavatorFK | None = None,
+        joint_colors: dict[str | JointName, tuple[float, float, float]] | None = None,
+    ) -> None:
         self._renderer = renderer
         self._fk = fk or ExcavatorFK()
+        self._joint_colors: dict[str | JointName, tuple[float, float, float]] = (
+            joint_colors if joint_colors is not None else JOINT_COLORS
+        )
         self._current_angles: dict[JointName, float] = {j: 0.0 for j in JointName}
         self._vbo: moderngl.Buffer | None = None
         self._vao: moderngl.VertexArray | None = None
@@ -138,26 +137,26 @@ class ExcavatorModel:
         verts: list[float] = []
 
         # Base body (axis-aligned — stationary)
-        verts += _make_box_verts(0, 0, 0.25, 1.5, 1.0, 0.5, JOINT_COLORS["base"])
+        verts += _make_box_verts(0, 0, 0.25, 1.5, 1.0, 0.5, self._joint_colors["base"])
 
         # Swing turret (axis-aligned at pivot)
         sp = pos["swing_pivot"]
-        verts += _make_box_verts(sp[0], sp[1], sp[2], 0.8, 0.8, 0.3, JOINT_COLORS["turret"])
+        verts += _make_box_verts(sp[0], sp[1], sp[2], 0.8, 0.8, 0.3, self._joint_colors["turret"])
 
         # Boom link — oriented from swing_pivot → boom_pivot
         bp = pos["boom_pivot"]
-        verts += _make_link_verts(sp, bp, 0.25, 0.25, JOINT_COLORS[JointName.BOOM])
+        verts += _make_link_verts(sp, bp, 0.25, 0.25, self._joint_colors[JointName.BOOM])
 
         # Arm link — oriented from boom_pivot → arm_pivot
         ap = pos["arm_pivot"]
-        verts += _make_link_verts(bp, ap, 0.20, 0.20, JOINT_COLORS[JointName.ARM])
+        verts += _make_link_verts(bp, ap, 0.20, 0.20, self._joint_colors[JointName.ARM])
 
         # Bucket link — oriented from arm_pivot → bucket_tip
         bt = pos["bucket_tip"]
-        verts += _make_link_verts(ap, bt, 0.30, 0.25, JOINT_COLORS[JointName.BUCKET])
+        verts += _make_link_verts(ap, bt, 0.30, 0.25, self._joint_colors[JointName.BUCKET])
 
         data = np.array(verts, dtype="f4")
-        self._vertex_count = len(data) // 6  # 3 pos + 3 color
+        self._vertex_count = len(data) // 9  # 3 pos + 3 color + 3 normal
 
         ctx = self._renderer.ctx
         if self._vbo is not None:
@@ -167,7 +166,7 @@ class ExcavatorModel:
         self._vbo = ctx.buffer(data)
         self._vao = ctx.vertex_array(
             self._renderer.prog_solid,
-            [(self._vbo, "3f 3f", "in_position", "in_color")],
+            [(self._vbo, "3f 3f 3f", "in_position", "in_color", "in_normal")],
         )
 
     def render_3d(self, mvp: np.ndarray, alpha: float = 1.0) -> None:

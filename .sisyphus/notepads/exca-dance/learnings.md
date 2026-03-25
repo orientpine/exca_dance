@@ -57,3 +57,30 @@
 - Relative imports inside `src/exca_dance/core/` avoid type-stub warnings from the language server.
 - Virtual bridge tests should verify actual import nodes instead of substring matches, because module docstrings may legally mention forbidden package names.
 - Pyright reportMissingTypeStubs warnings may appear on typed package imports even when runtime behavior is correct.
+
+## T1 Render Math Notes
+
+- `render_math.py` now isolates reusable geometry helpers from `_make_link_verts`: unit direction, direction-aligned rotation matrix, pure-position oriented-box vertex generation, and GL matrix validation.
+- Degenerate link segments (`p1 == p2`) should return an empty `(0, 3)` float32 array instead of raising or producing NaN values.
+- Rotation alignment is Z-up first with Y-up fallback when direction is near-parallel to up; this mirrors existing rendering convention while remaining numerically stable.
+- For strict static checks in this repo, `typing.cast` around some NumPy scalar-returning expressions avoids `basedpyright reportAny` noise in math-heavy tests/utilities.
+- Test evidence for task is saved at `.sisyphus/evidence/task-1-render-math-tests.txt` and includes both focused and full-suite pytest runs.
+
+## Ghost Palette Notes
+
+- Added a distinct violet/purple ghost palette in `rendering/theme.py` so target poses no longer blend with current joint colors.
+- Raised `GHOST_ALPHA` to `0.55` and annotated class attributes to keep `basedpyright` diagnostics clean without changing color values.
+#QW|
+#TJ|## Pause Menu Q-Key Fix Notes
+#KM|
+#ZX|- In `GameplayScreen.handle_event()`, the PAUSED-state Q shortcut should call `game_loop.stop()` before returning `ScreenName.MAIN_MENU`; keep PLAYING-state Q behavior untouched.
+#WV|- Updated pause overlay copy from `Q Quit` to `Q Main Menu` to match the actual action.
+#HY|- Full pytest run completed with `54 passed` using `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest -v --tb=short`.
+
+## Song-End Transition Fix Notes (Task 2)
+
+- `AudioSystem.is_playing()` now synchronizes `_is_playing` with real mixer state via `pygame.mixer.music.get_busy()` (non-silent mode), fixing stale true state after natural song completion.
+- Added optional `song_duration_ms` support in `AudioSystem.play(...)` plus `_song_duration_ms`; in silent mode playback now auto-completes once perf-counter elapsed time reaches duration.
+- `GameLoop` now records `_all_events_consumed_at_ms` and uses a 3-second fallback after all events are consumed to force `FINISHED` transition.
+- `_all_events_consumed_at_ms` is reset in `start_song()` to avoid state leakage across songs.
+- Evidence file: `.sisyphus/evidence/task-2-song-end.txt` (`54 passed`).

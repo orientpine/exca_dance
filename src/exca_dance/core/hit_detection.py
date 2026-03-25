@@ -2,59 +2,43 @@
 
 from __future__ import annotations
 import time
-from exca_dance.core.models import JointName, BeatEvent, HitResult, Judgment
-from exca_dance.core.constants import JUDGMENT_WINDOWS
-from exca_dance.core.scoring import ScoringEngine
+from typing import Protocol, TypedDict, final
+from exca_dance.core.models import HitResult, Judgment
 
 
-class HitDetector:
-    """Evaluates beat events against current joint angles and timing."""
+class _Renderer(Protocol):
+    width: int
+    height: int
 
-    def __init__(self, scoring_engine: ScoringEngine) -> None:
-        self._scoring = scoring_engine
 
-    def check_events(
+class _TextRenderer(Protocol):
+    def render(
         self,
-        current_time_ms: float,
-        current_angles: dict[JointName, float],
-        active_events: list[BeatEvent],
-    ) -> tuple[list[HitResult], list[BeatEvent]]:
-        """
-        Evaluate events whose time has passed.
-        Returns (hit_results, remaining_events).
-        """
-        hit_results: list[HitResult] = []
-        remaining: list[BeatEvent] = []
-
-        for event in active_events:
-            if current_time_ms >= event.time_ms:
-                timing_error = abs(current_time_ms - event.time_ms)
-                if timing_error > JUDGMENT_WINDOWS[Judgment.GOOD]:
-                    # Auto-miss: too late
-                    result = self._scoring.judge({}, JUDGMENT_WINDOWS[Judgment.GOOD] + 1.0)
-                else:
-                    angle_errors = {
-                        j: abs(current_angles.get(j, 0.0) - target)
-                        for j, target in event.target_angles.items()
-                    }
-                    result = self._scoring.judge(angle_errors, timing_error)
-                hit_results.append(result)
-            else:
-                remaining.append(event)
-
-        return hit_results, remaining
-
-    def get_pending_count(self, active_events: list[BeatEvent]) -> int:
-        return len(active_events)
+        text: str,
+        x: int,
+        y: int,
+        *,
+        color: object,
+        scale: float,
+        align: str,
+    ) -> None: ...
 
 
+class _JudgmentEntry(TypedDict):
+    judgment: Judgment
+    score: int
+    combo: int
+    start_time: float
+
+
+@final
 class JudgmentDisplay:
     """Animated judgment text display (PERFECT!, GREAT!, etc.)."""
 
     DISPLAY_DURATION = 0.6  # seconds
 
     def __init__(self) -> None:
-        self._active: list[dict] = []  # list of {judgment, score, combo, start_time}
+        self._active: list[_JudgmentEntry] = []
 
     def trigger(self, hit_result: HitResult, combo: int) -> None:
         """Show a new judgment result."""
@@ -67,15 +51,13 @@ class JudgmentDisplay:
             }
         )
 
-    def update(self, dt: float) -> None:
+    def update(self, _dt: float) -> None:
         """Remove expired judgments."""
         now = time.perf_counter()
         self._active = [a for a in self._active if now - a["start_time"] < self.DISPLAY_DURATION]
 
-    def render(self, renderer, text_renderer) -> None:
+    def render(self, renderer: _Renderer, text_renderer: _TextRenderer) -> None:
         """Render active judgment texts (requires GL text renderer)."""
-        if text_renderer is None:
-            return
         now = time.perf_counter()
         from exca_dance.rendering.theme import NeonTheme
         from exca_dance.core.models import Judgment

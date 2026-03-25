@@ -1,0 +1,7 @@
+theme.py ghost palette update
+
+- Added ghost-only violet/purple palette to `NeonTheme`.
+- `GHOST_ALPHA` set to `0.55`.
+- Verified with `.venv/bin/python -c "from exca_dance.rendering.theme import NeonTheme; print(NeonTheme.GHOST_ALPHA)"` → `0.55`.
+- Verified with `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest -v --tb=short 2>&1 | tail -20` → `54 passed`.
+- `lsp_diagnostics` on `src/exca_dance/rendering/theme.py` returned no diagnostics.

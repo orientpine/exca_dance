@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import cast
+
 from exca_dance.core.constants import COMBO_THRESHOLDS, JUDGMENT_WINDOWS, SCORE_VALUES
 from exca_dance.core.models import HitResult, JointName, Judgment
 
@@ -19,8 +21,12 @@ class ScoringEngine:
         self._max_combo = 0
 
     def judge(self, angle_errors: dict[JointName, float], timing_error_ms: float) -> HitResult:
-        judgment = Judgment.MISS
-        for tier in [Judgment.PERFECT, Judgment.GREAT, Judgment.GOOD]:
+        judgment = cast(Judgment, Judgment.MISS)
+        tiers = cast(
+            tuple[Judgment, Judgment, Judgment],
+            (Judgment.PERFECT, Judgment.GREAT, Judgment.GOOD),
+        )
+        for tier in tiers:
             if timing_error_ms <= JUDGMENT_WINDOWS[tier]:
                 judgment = tier
                 break
@@ -29,14 +35,14 @@ class ScoringEngine:
             avg_err = sum(angle_errors.values()) / len(angle_errors)
         else:
             avg_err = 0.0
-        angle_mult = max(0.5, 1.0 - (avg_err / 30.0))
+        self.update_combo(judgment)
+        combo_mult: int = self.get_combo_multiplier()
 
-        combo_mult = self.get_combo_multiplier()
+        angle_mult: float = max(0.1, 1.0 - (avg_err / 20.0))
 
-        base = SCORE_VALUES[judgment]
+        base: int = SCORE_VALUES[judgment]
         score = int(base * angle_mult * combo_mult)
 
-        self.update_combo(judgment)
         self._total_score += score
         self._judgments[judgment] += 1
         avg_err_val = sum(angle_errors.values()) / len(angle_errors) if angle_errors else 0.0
@@ -68,7 +74,8 @@ class ScoringEngine:
         return self._max_combo
 
     def get_max_possible_score(self, num_events: int) -> int:
-        return SCORE_VALUES[Judgment.PERFECT] * 4 * num_events
+        perfect_score = SCORE_VALUES[cast(Judgment, Judgment.PERFECT)]
+        return perfect_score * 4 * num_events
 
     def get_grade(self, total: int, max_possible: int) -> str:
         if max_possible == 0:

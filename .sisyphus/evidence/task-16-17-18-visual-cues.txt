@@ -1,0 +1,3 @@
+pytest: 56 passed
+command: PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest --tb=short -q
+diagnostics: clean

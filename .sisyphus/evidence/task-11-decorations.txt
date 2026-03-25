@@ -1,0 +1,11 @@
+Task 11 viewport decorations
+
+Changes:
+- Added GameViewportLayout.render_viewport_decorations(text_renderer)
+- Called viewport decorations before HUD in GameplayScreen.render()
+
+Verification:
+- PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest --tb=short -q
+  - 56 passed
+- PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -c "from exca_dance.rendering.viewport_layout import GameViewportLayout; assert hasattr(GameViewportLayout, 'render_viewport_decorations'); print('PASS')"
+  - PASS

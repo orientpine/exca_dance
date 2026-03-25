@@ -1,0 +1,11 @@
+Task 12 screen flow update
+
+- Results retry now restarts the same beatmap when available.
+- Results ESC returns to main menu.
+- Gameplay passes beatmap through to Results.
+- Leaderboard initials confirm returns to main menu.
+- Editor uses LEFT/RIGHT for timeline scrubbing and Shift+LEFT/RIGHT for bucket control.
+
+Verification:
+- PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest --tb=short -q
+- Result: 56 passed

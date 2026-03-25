@@ -33,19 +33,29 @@ class GameRenderer:
             #version 330
             in vec3 in_position;
             in vec3 in_color;
+            in vec3 in_normal;
             out vec3 v_color;
+            out vec3 v_normal;
             uniform mat4 mvp;
             void main() {
                 gl_Position = mvp * vec4(in_position, 1.0);
                 v_color = in_color;
+                v_normal = in_normal;
             }
             """,
             fragment_shader="""
             #version 330
             in vec3 v_color;
+            in vec3 v_normal;
             out vec4 f_color;
             uniform float alpha;
-            void main() { f_color = vec4(v_color, alpha); }
+            void main() {
+                vec3 light_dir = normalize(vec3(0.3, -0.5, 0.8));
+                float diffuse = max(dot(normalize(v_normal), light_dir), 0.0);
+                float ambient = 0.35;
+                float lighting = ambient + (1.0 - ambient) * diffuse;
+                f_color = vec4(v_color * lighting, alpha);
+            }
             """,
         )
         # Textured quad shader (for GL text)

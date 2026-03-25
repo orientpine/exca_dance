@@ -50,9 +50,9 @@ class LeaderboardScreen:
             if self._scoring:
                 score = self._scoring.get_total_score()
                 self._lb.add_entry(initials, score, self._song_title)
-            self._mode = "view"
+            return ScreenName.MAIN_MENU
         elif event.key == pygame.K_ESCAPE:
-            self._mode = "view"
+            return ScreenName.MAIN_MENU
         return None
 
     def update(self, dt: float):
