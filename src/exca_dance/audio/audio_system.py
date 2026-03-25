@@ -5,9 +5,11 @@ NEVER uses pygame.mixer.music position query — it drifts ~500ms/300s with MP3.
 
 from __future__ import annotations
 
+import json
 import logging
 import time
 from pathlib import Path
+from typing import cast
 
 import pygame
 
@@ -20,9 +22,9 @@ _SUPPORTED_SFX = {".wav"}
 class AudioSystem:
     """Manages BGM playback and SFX with precise timing via perf_counter."""
 
-    def __init__(self, buffer_size: int = 512):
-        self._buffer_size = buffer_size
-        self._initialized = False
+    def __init__(self, buffer_size: int = 512, volume_settings_path: str = "data/volume.json"):
+        self._buffer_size: int = buffer_size
+        self._initialized: bool = False
         self._start_time: float = 0.0
         self._pause_start: float = 0.0
         self._accumulated_pause: float = 0.0
@@ -34,7 +36,9 @@ class AudioSystem:
         self._current_path: str | None = None
         self._song_duration_ms: float | None = None
         self._silent_mode: bool = False
+        self._volume_settings_path: Path = Path(volume_settings_path)
         self._init_mixer(buffer_size)
+        self.load_volume_settings(str(self._volume_settings_path))
 
     def _init_mixer(self, buffer_size: int) -> None:
         try:
@@ -126,15 +130,45 @@ class AudioSystem:
             return False
         return True
 
-    def set_volume(self, volume: float) -> None:
+    def get_bgm_volume(self) -> float:
+        return self._volume
+
+    def get_sfx_volume(self) -> float:
+        return self._sfx_volume
+
+    def set_bgm_volume(self, volume: float) -> None:
         self._volume = max(0.0, min(1.0, volume))
         if not self._silent_mode and self._initialized:
             pygame.mixer.music.set_volume(self._volume)
+
+    def set_volume(self, volume: float) -> None:
+        self.set_bgm_volume(volume)
 
     def set_sfx_volume(self, volume: float) -> None:
         self._sfx_volume = max(0.0, min(1.0, volume))
         for snd in self._sfx_cache.values():
             snd.set_volume(self._sfx_volume)
+
+    def save_volume_settings(self, path: str) -> None:
+        settings_path = Path(path)
+        settings_path.parent.mkdir(parents=True, exist_ok=True)
+        data = {"bgm": self._volume, "sfx": self._sfx_volume}
+        with open(settings_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+
+    def load_volume_settings(self, path: str) -> None:
+        settings_path = Path(path)
+        if not settings_path.exists():
+            return
+        try:
+            with open(settings_path, "r", encoding="utf-8") as f:
+                data = cast(dict[str, object], json.load(f))
+            bgm = cast(float | int | str, data.get("bgm", self._volume))
+            sfx = cast(float | int | str, data.get("sfx", self._sfx_volume))
+            self.set_bgm_volume(float(bgm))
+            self.set_sfx_volume(float(sfx))
+        except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:
+            logger.warning("Volume settings unreadable, using defaults: %s", exc)
 
     def load_sfx(self, name: str, path: str) -> None:
         """Load a WAV sound effect."""
@@ -148,7 +182,7 @@ class AudioSystem:
 
     def play_sfx(self, name: str) -> None:
         if name in self._sfx_cache:
-            self._sfx_cache[name].play()
+            _ = self._sfx_cache[name].play()
 
     def destroy(self) -> None:
         if self._initialized and not self._silent_mode:
