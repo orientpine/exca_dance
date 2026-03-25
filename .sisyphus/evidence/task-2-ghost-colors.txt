@@ -1,0 +1,18 @@
+Verification summary for ghost theme update
+
+Inline python check:
+- GHOST_ALPHA = 0.85
+- GHOST_SWING contrast = 0.51
+- GHOST_BOOM contrast = 0.61
+- GHOST_ARM contrast = 0.71
+- GHOST_BUCKET contrast = 0.84
+- Pulse constants present: GHOST_OUTLINE_PULSE_MIN = 0.4, GHOST_OUTLINE_PULSE_SPEED = 4.0
+- Result: ALL PASS
+
+Ruff:
+- .venv/bin/ruff check src/exca_dance/rendering/theme.py
+- Result: All checks passed!
+
+Tests:
+- PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest tests/ -v
+- Result: 56 passed
