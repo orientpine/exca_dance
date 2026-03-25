@@ -48,6 +48,7 @@ class GameStateManager:
         self._screens: dict[str, _Screen] = {}
         self._current: str = ScreenName.MAIN_MENU
         self._transition_data: dict[str, object] = {}
+        self._quit_requested: bool = False
 
     def register(self, name: str, screen: _Screen) -> None:
         self._screens[name] = screen
@@ -67,22 +68,30 @@ class GameStateManager:
         if screen and hasattr(screen, "handle_event"):
             result = screen.handle_event(event)
             if result:
-                self._handle_transition(result)
+                self._process_result(result)
 
-    def update(self, dt: float) -> None:
+    def update(self, dt: float) -> str | None:
+        if self._quit_requested:
+            return "quit"
         screen = self._screens.get(self._current)
         if screen and hasattr(screen, "update"):
             result = screen.update(dt)
             if result:
-                self._handle_transition(result)
+                self._process_result(result)
+        if self._quit_requested:
+            return "quit"
+        return None
 
     def render(self, renderer: _Renderer, text_renderer: _TextRenderer) -> None:
         screen = self._screens.get(self._current)
         if screen and hasattr(screen, "render"):
             screen.render(renderer, text_renderer)
 
-    def _handle_transition(self, result: TransitionResult | None) -> None:
+    def _process_result(self, result: TransitionResult) -> None:
         if isinstance(result, str):
+            if result == "quit":
+                self._quit_requested = True
+                return
             self.transition_to(result)
         elif isinstance(result, tuple) and len(result) == 2:
             name, kwargs = result
