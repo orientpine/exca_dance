@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 # pyright: reportPrivateUsage=false, reportUnknownMemberType=false
+import math
+import time
 from typing import Protocol, cast
 import numpy as np
 import moderngl
@@ -37,7 +39,7 @@ class VisualCueRenderer:
     - Beat timeline: scrolling event markers at bottom
     """
 
-    GHOST_FADE_MS: float = 2000.0  # fade in over 2 beats before event
+    GHOST_FADE_MS: float = 1500.0  # fade in over 2 beats before event
 
     def __init__(
         self,
@@ -98,6 +100,47 @@ class VisualCueRenderer:
             [(self._ghost_glow_vbo, "3f 4f", "in_position", "in_color")],
         )
 
+    def _extract_edges(self, vertices_9: np.ndarray) -> np.ndarray:
+        if vertices_9.shape[0] < 3:
+            return np.empty((0, 3), dtype="f4")
+
+        positions = vertices_9[:, :3]
+        edge_keys: set[frozenset[tuple[float, float, float]]] = set()
+        edge_segments: list[tuple[tuple[float, float, float], tuple[float, float, float]]] = []
+
+        triangle_count = positions.shape[0] // 3
+
+        def _vec3(row: np.ndarray) -> tuple[float, float, float]:
+            return (float(row[0]), float(row[1]), float(row[2]))
+
+        def _round_vec3(v: tuple[float, float, float]) -> tuple[float, float, float]:
+            return (round(v[0], 4), round(v[1], 4), round(v[2], 4))
+
+        for idx in range(triangle_count):
+            tri = positions[idx * 3 : idx * 3 + 3]
+            v0 = _vec3(tri[0])
+            v1 = _vec3(tri[1])
+            v2 = _vec3(tri[2])
+            for a, b in ((v0, v1), (v1, v2), (v2, v0)):
+                key: frozenset[tuple[float, float, float]] = frozenset(
+                    {_round_vec3(a), _round_vec3(b)}
+                )
+                if key in edge_keys:
+                    continue
+                edge_keys.add(key)
+                edge_segments.append((a, b))
+
+        if not edge_segments:
+            return np.empty((0, 3), dtype="f4")
+
+        edge_positions = np.empty((len(edge_segments) * 2, 3), dtype="f4")
+        out_i = 0
+        for a, b in edge_segments:
+            edge_positions[out_i] = a
+            edge_positions[out_i + 1] = b
+            out_i += 2
+        return edge_positions
+
     def update(
         self,
         current_time_ms: float,
@@ -141,7 +184,7 @@ class VisualCueRenderer:
         alpha = max(0.0, min(ghost_alpha, alpha))
         self._ghost_model.render_3d(mvp, alpha=alpha)
 
-        glow_alpha = alpha * 0.25
+        glow_alpha = alpha * 0.5
         if glow_alpha > 0.01 and self._ghost_glow_vao is not None:
             if self._ghost_glow_vbo is not None and self._ghost_glow_base is not None:
                 glow_data = np.empty((self._ghost_glow_base.shape[0], 7), dtype="f4")
@@ -157,6 +200,52 @@ class VisualCueRenderer:
                 self._ghost_glow_vao.render(moderngl.TRIANGLES)
             finally:
                 ctx.blend_func = moderngl.DEFAULT_BLENDING
+
+    def render_outline(self, mvp: np.ndarray) -> None:
+        if self._active_target is None:
+            return
+        if self._ghost_model._vbo is None:
+            return
+
+        raw = np.frombuffer(self._ghost_model._vbo.read(), dtype="f4").reshape(-1, 9)
+        edge_positions = self._extract_edges(raw)
+        if edge_positions.size == 0:
+            return
+
+        t = time.perf_counter()
+        outline = NeonTheme.GHOST_OUTLINE
+        base = (NeonTheme.GHOST_OUTLINE_PULSE_MIN + outline.a) / 2.0
+        amp = (outline.a - NeonTheme.GHOST_OUTLINE_PULSE_MIN) / 2.0
+        alpha = base + amp * math.sin(t * NeonTheme.GHOST_OUTLINE_PULSE_SPEED * 2.0 * math.pi)
+
+        line_data = np.empty((edge_positions.shape[0], 7), dtype="f4")
+        line_data[:, :3] = edge_positions
+        line_data[:, 3] = outline.r
+        line_data[:, 4] = outline.g
+        line_data[:, 5] = outline.b
+        line_data[:, 6] = alpha
+
+        ctx = self._renderer.ctx
+        vbo = ctx.buffer(line_data.tobytes())
+        vao = ctx.vertex_array(
+            self._renderer.prog_additive,
+            [(vbo, "3f 4f", "in_position", "in_color")],
+        )
+
+        blend_ctx = cast(_BlendFuncContext, cast(object, ctx))
+        old_blend_func = blend_ctx.blend_func
+        ctx.enable(moderngl.BLEND)
+        blend_ctx.blend_func = (moderngl.SRC_ALPHA, moderngl.ONE)
+        ctx.disable(moderngl.DEPTH_TEST)
+        try:
+            mvp_uniform = cast(moderngl.Uniform, self._renderer.prog_additive["mvp"])
+            mvp_uniform.write(np.ascontiguousarray(mvp.astype("f4").T).tobytes())
+            vao.render(moderngl.LINES)
+        finally:
+            blend_ctx.blend_func = old_blend_func
+            ctx.enable(moderngl.DEPTH_TEST)
+            vbo.release()
+            vao.release()
 
     def render_timeline(
         self,

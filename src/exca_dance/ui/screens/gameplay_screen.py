@@ -3,7 +3,7 @@
 from __future__ import annotations
 import pygame
 import moderngl
-from exca_dance.core.models import BeatMap, Judgment
+from exca_dance.core.models import BeatMap, Judgment, JointName
 from exca_dance.rendering.theme import NeonTheme
 from exca_dance.core.game_state import ScreenName
 from exca_dance.core.game_loop import GameState as LoopState
@@ -19,6 +19,8 @@ class GameplayScreen:
         visual_cues,
         viewport_layout,
         hit_sounds: dict[Judgment, pygame.mixer.Sound],
+        *,
+        overlay_2d=None,
     ) -> None:
         self._renderer = renderer
         self._text = text_renderer
@@ -28,6 +30,7 @@ class GameplayScreen:
         self._layout = viewport_layout
         self._hit_sounds: dict[Judgment, pygame.mixer.Sound] = hit_sounds
         self._beatmap: BeatMap | None = None
+        self._overlay_2d = overlay_2d
         self._result_scoring = None
 
     def on_enter(self, beatmap: BeatMap | None = None, **kwargs) -> None:
@@ -112,13 +115,45 @@ class GameplayScreen:
 
         vm.set_viewport(ctx, "main_3d")
         self._visual_cues.render_ghost(self._layout.mvp_3d)
+        self._visual_cues.render_outline(self._layout.mvp_3d)
+
+        cur = None
+        tgt = None
+        mpct = None
+        if self._overlay_2d is not None:
+            cur = self._game_loop.joint_angles
+            tgt = self._visual_cues._active_target
+            mpct = (
+                {j: self._visual_cues.get_angle_match_pct(j) for j in JointName}
+                if tgt is not None
+                else None
+            )
 
         vm.set_viewport(ctx, "top_2d")
         self._visual_cues.render_ghost(self._layout.mvp_top)
+        self._visual_cues.render_outline(self._layout.mvp_top)
+        if self._overlay_2d is not None:
+            self._overlay_2d.render(
+                "top_2d",
+                self._layout.mvp_top,
+                cur,
+                tgt,
+                text_renderer,
+                mpct,
+            )
 
         vm.set_viewport(ctx, "side_2d")
         self._visual_cues.render_ghost(self._layout.mvp_side)
-
+        self._visual_cues.render_outline(self._layout.mvp_side)
+        if self._overlay_2d is not None:
+            self._overlay_2d.render(
+                "side_2d",
+                self._layout.mvp_side,
+                cur,
+                tgt,
+                text_renderer,
+                mpct,
+            )
         # Reset to full viewport
         ctx.viewport = (0, 0, renderer.width, renderer.height)
 

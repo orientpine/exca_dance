@@ -1,0 +1,70 @@
+Task 7 Evidence — Ghost neon outline with pulse animation
+
+Modified files:
+- src/exca_dance/rendering/visual_cues.py
+- src/exca_dance/ui/screens/gameplay_screen.py
+
+Validation commands and outputs:
+
+1) Ruff (target files)
+Command:
+.venv/bin/ruff check src/exca_dance/rendering/visual_cues.py src/exca_dance/ui/screens/gameplay_screen.py
+Output:
+All checks passed!
+
+2) LSP diagnostics (errors only, changed files)
+Command:
+lsp_diagnostics(visual_cues.py, severity=error)
+Output:
+No diagnostics found
+
+Command:
+lsp_diagnostics(gameplay_screen.py, severity=error)
+Output:
+No diagnostics found
+
+3) Method existence check
+Command:
+.venv/bin/python -c "from exca_dance.rendering.visual_cues import VisualCueRenderer; assert hasattr(VisualCueRenderer, 'render_outline'); assert hasattr(VisualCueRenderer, '_extract_edges'); print('PASS: render_outline and _extract_edges exist')"
+Output:
+PASS: render_outline and _extract_edges exist
+
+4) Feature grep checks
+Command:
+grep pattern: DEPTH_TEST|SRC_ALPHA.*ONE|blend_func|perf_counter|sin( in visual_cues.py
+Output highlights:
+- blend_func state save/restore present
+- SRC_ALPHA, ONE additive blending present
+- DEPTH_TEST disable/restore present
+- perf_counter + sin() pulse present
+
+Command:
+grep pattern: render_outline in gameplay_screen.py
+Output:
+- render_outline calls in main_3d, top_2d, side_2d
+
+5) Full tests
+Command:
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest tests/ -v
+Output:
+56 passed in 0.15s
+
+6) Runtime smoke test
+Requested command:
+xvfb-run -a SDL_AUDIODRIVER=dummy timeout 5 python -m exca_dance --windowed; echo "exit:$?"
+Observed output:
+/usr/bin/xvfb-run: 184: SDL_AUDIODRIVER=dummy: not found
+exit:127
+
+Adjusted env/python command attempted:
+SDL_AUDIODRIVER=dummy xvfb-run -a timeout 5 .venv/bin/python -m exca_dance --windowed; echo "exit:$?"
+Observed output:
+SyntaxError in src/exca_dance/__main__.py at line 148: '(' was never closed
+exit:1
+
+Implementation notes confirmed:
+- Added VisualCueRenderer._extract_edges(vertices_9)
+- Added VisualCueRenderer.render_outline(mvp) with pulsing alpha
+- Updated ghost glow alpha from alpha*0.25 -> alpha*0.5
+- Updated GHOST_FADE_MS from 2000.0 -> 1500.0
+- Wired render_outline after render_ghost for all three gameplay viewports
