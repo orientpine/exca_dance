@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import argparse
+from importlib import import_module
 import logging
 import os
 import sys
@@ -207,6 +208,10 @@ def main(argv: list[str] | None = None) -> int:
         state_mgr.register(
             ScreenName.SETTINGS, SettingsScreen(renderer, text_renderer, keybinding, audio)
         )
+        tutorial_screen_class = import_module(
+            "exca_dance.ui.screens.tutorial_screen"
+        ).TutorialScreen
+        state_mgr.register(ScreenName.TUTORIAL, tutorial_screen_class(renderer, text_renderer))
         state_mgr.register(
             ScreenName.EDITOR,
             PoseEditorScreen(renderer, text_renderer, audio, viewport_layout, excavator_model, fk),

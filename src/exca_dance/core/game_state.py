@@ -30,6 +30,7 @@ class _Screen(Protocol):
 @final
 class ScreenName:
     MAIN_MENU = "main_menu"
+    TUTORIAL = "tutorial"
     SONG_SELECT = "song_select"
     GAMEPLAY = "gameplay"
     RESULTS = "results"
