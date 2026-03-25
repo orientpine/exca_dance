@@ -142,14 +142,13 @@ class VisualCueRenderer:
                 self._ghost_glow_vbo.write(glow_data.tobytes())
 
             ctx = self._renderer.ctx
-            old_blend = ctx.blend_func
+            ctx.blend_func = (moderngl.SRC_ALPHA, moderngl.ONE)
             try:
-                ctx.blend_func = (moderngl.SRC_ALPHA, moderngl.ONE)
                 mvp_uniform = cast(moderngl.Uniform, self._ghost_glow_vao.program["mvp"])
                 mvp_uniform.write(np.ascontiguousarray(mvp.astype("f4").T).tobytes())
                 self._ghost_glow_vao.render(moderngl.TRIANGLES)
             finally:
-                ctx.blend_func = old_blend
+                ctx.blend_func = moderngl.DEFAULT_BLENDING
 
     def render_timeline(
         self,

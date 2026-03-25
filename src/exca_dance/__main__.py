@@ -97,7 +97,12 @@ def main(argv: list[str] | None = None) -> int:
         from exca_dance.editor.editor_screen import PoseEditorScreen
 
         state_mgr = GameStateManager()
-        state_mgr.register(ScreenName.MAIN_MENU,   MainMenuScreen(renderer, text_renderer, args.mode.upper()))
+        state_mgr.register(
+            ScreenName.MAIN_MENU,
+            MainMenuScreen(
+                renderer, text_renderer, args.mode.upper(), fk, ExcavatorModel,
+            ),
+        )
         state_mgr.register(ScreenName.SONG_SELECT, SongSelectScreen(renderer, text_renderer, leaderboard))
         state_mgr.register(ScreenName.GAMEPLAY,    GameplayScreen(renderer, text_renderer, game_loop, hud, visual_cues, viewport_layout))
         state_mgr.register(ScreenName.RESULTS,     ResultsScreen(renderer, text_renderer))
