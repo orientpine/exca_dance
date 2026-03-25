@@ -116,6 +116,9 @@ def main(argv: list[str] | None = None) -> int:
         from exca_dance.rendering.excavator_model import ExcavatorModel as ExcModel
 
         visual_cues = VisualCueRenderer(renderer, ExcModel, fk)
+        from exca_dance.rendering.overlay_2d import Overlay2DRenderer
+
+        overlay_2d = Overlay2DRenderer(renderer, fk)
         hud = GameplayHUD(renderer, text_renderer, audio, scoring, visual_cues)
 
         # Screens
@@ -152,6 +155,7 @@ def main(argv: list[str] | None = None) -> int:
                 visual_cues,
                 viewport_layout,
                 hit_sounds,
+                overlay_2d=overlay_2d,
             ),
         )
         state_mgr.register(ScreenName.RESULTS, ResultsScreen(renderer, text_renderer))

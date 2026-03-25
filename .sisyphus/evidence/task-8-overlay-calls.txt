@@ -1,0 +1,26 @@
+T8 Evidence: Overlay2DRenderer wired into gameplay pipeline
+============================================================
+
+1. __main__.py: Overlay2DRenderer constructed at line ~119-121
+   - `from exca_dance.rendering.overlay_2d import Overlay2DRenderer`
+   - `overlay_2d = Overlay2DRenderer(renderer, fk)`
+   - Passed as `overlay_2d=overlay_2d` kwarg to GameplayScreen
+
+2. gameplay_screen.py: Accepts overlay_2d param
+   - `__init__` accepts `*, overlay_2d=None` keyword-only arg
+   - Stored as `self._overlay_2d`
+   - JointName imported for match_pct dict construction
+
+3. gameplay_screen.py render(): Overlay calls in 2D viewports
+   - NOT called in main_3d (only ghost + outline there)
+   - After top_2d ghost+outline: self._overlay_2d.render("top_2d", mvp_top, cur, tgt, text_renderer, mpct)
+   - After side_2d ghost+outline: self._overlay_2d.render("side_2d", mvp_side, cur, tgt, text_renderer, mpct)
+   - cur = self._game_loop.joint_angles
+   - tgt = self._visual_cues._active_target (may be None)
+   - mpct = {j: self._visual_cues.get_angle_match_pct(j) for j in JointName} if tgt else None
+   - Viewport is set before each overlay call (renders WITHIN the 2D viewport)
+
+4. Verification:
+   - 56/56 tests pass
+   - ruff check: All checks passed
+   - Headless launch: Clean exit after 5s timeout
