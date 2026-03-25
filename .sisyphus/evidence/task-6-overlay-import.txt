@@ -1,0 +1,24 @@
+== Task 6: 2D Joint Comparison Overlay Renderer ==
+Date: 2026-03-26
+
+== Import Test ==
+$ .venv/bin/python -c "from exca_dance.rendering.overlay_2d import Overlay2DRenderer; print('PASS')"
+PASS
+
+== Ruff Check ==
+$ .venv/bin/ruff check src/exca_dance/rendering/overlay_2d.py
+All checks passed!
+
+== Test Suite (56/56) ==
+$ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest tests/ -v
+56 passed in 0.15s
+
+== File ==
+src/exca_dance/rendering/overlay_2d.py (224 lines)
+- Class: Overlay2DRenderer
+- Constructor: __init__(renderer: GameRenderer, fk: ExcavatorFK)
+- Public: render(viewport_name, mvp, current_angles, target_angles, text_renderer, match_pct)
+- Pattern: prog_solid + "3f 3f" + moderngl.LINES + try/finally VBO/VAO cleanup
+- Current pose: cyan (NeonTheme.NEON_BLUE)
+- Target pose: violet (NeonTheme.GHOST_OUTLINE)
+- Text: per-joint match % projected to screen coords
