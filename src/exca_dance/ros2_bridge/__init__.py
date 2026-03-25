@@ -3,6 +3,7 @@
 Provides create_bridge() factory that returns the appropriate bridge
 based on mode and ROS2 availability.
 """
+
 from __future__ import annotations
 import logging
 from exca_dance.ros2_bridge.interface import ExcavatorBridgeInterface, VirtualBridge
@@ -25,6 +26,7 @@ def create_bridge(mode: str = "virtual") -> ExcavatorBridgeInterface:
     # mode == 'real'
     try:
         from exca_dance.ros2_bridge.ros2_node import ROS2Bridge
+
         bridge = ROS2Bridge()
         bridge.connect()
         logger.info("ROS2 bridge connected")

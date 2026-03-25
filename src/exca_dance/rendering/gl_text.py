@@ -30,7 +30,7 @@ class GLTextRenderer:
             # Extract the ACTUAL alpha channel — this is the glyph mask
             alpha_arr = pygame.surfarray.pixels_alpha(surf)  # (W, H) uint8
             alpha_mask = alpha_arr.T.copy()  # transpose to (H, W) for row-major GL
-            tex = self._renderer.ctx.texture((w, h), 1, alpha_mask.tobytes(), dtype='f1')
+            tex = self._renderer.ctx.texture((w, h), 1, alpha_mask.tobytes(), dtype="f1")
             tex.filter = (moderngl.LINEAR, moderngl.LINEAR)
             self._texture_cache[key] = (tex, w, h)
         return self._texture_cache[key]

@@ -305,11 +305,18 @@ class GameViewportLayout:
             label_color = NeonTheme.TEXT_DIM.as_tuple()
             text_renderer.render("3D VIEW", 10, H - 25, color=label_color, scale=0.7)
             text_renderer.render(
-                "TOP", top_rect[0] + 10, H - 25, color=label_color, scale=0.7,
+                "TOP",
+                top_rect[0] + 10,
+                H - 25,
+                color=label_color,
+                scale=0.7,
             )
             text_renderer.render(
-                "SIDE", top_rect[0] + 10, top_rect[1] - 25,
-                color=label_color, scale=0.7,
+                "SIDE",
+                top_rect[0] + 10,
+                top_rect[1] - 25,
+                color=label_color,
+                scale=0.7,
             )
 
     @property

@@ -31,17 +31,77 @@ def _make_box_verts(
     hx, hy, hz = lx / 2, ly / 2, lz / 2
     faces_with_normals = [
         # +Z face, normal = (0, 0, 1)
-        ([(-hx, -hy, hz), (hx, -hy, hz), (hx, hy, hz), (-hx, -hy, hz), (hx, hy, hz), (-hx, hy, hz)], (0, 0, 1)),
+        (
+            [
+                (-hx, -hy, hz),
+                (hx, -hy, hz),
+                (hx, hy, hz),
+                (-hx, -hy, hz),
+                (hx, hy, hz),
+                (-hx, hy, hz),
+            ],
+            (0, 0, 1),
+        ),
         # -Z face, normal = (0, 0, -1)
-        ([(-hx, -hy, -hz), (-hx, hy, -hz), (hx, hy, -hz), (-hx, -hy, -hz), (hx, hy, -hz), (hx, -hy, -hz)], (0, 0, -1)),
+        (
+            [
+                (-hx, -hy, -hz),
+                (-hx, hy, -hz),
+                (hx, hy, -hz),
+                (-hx, -hy, -hz),
+                (hx, hy, -hz),
+                (hx, -hy, -hz),
+            ],
+            (0, 0, -1),
+        ),
         # +X face, normal = (1, 0, 0)
-        ([(hx, -hy, -hz), (hx, hy, -hz), (hx, hy, hz), (hx, -hy, -hz), (hx, hy, hz), (hx, -hy, hz)], (1, 0, 0)),
+        (
+            [
+                (hx, -hy, -hz),
+                (hx, hy, -hz),
+                (hx, hy, hz),
+                (hx, -hy, -hz),
+                (hx, hy, hz),
+                (hx, -hy, hz),
+            ],
+            (1, 0, 0),
+        ),
         # -X face, normal = (-1, 0, 0)
-        ([(-hx, -hy, -hz), (-hx, -hy, hz), (-hx, hy, hz), (-hx, -hy, -hz), (-hx, hy, hz), (-hx, hy, -hz)], (-1, 0, 0)),
+        (
+            [
+                (-hx, -hy, -hz),
+                (-hx, -hy, hz),
+                (-hx, hy, hz),
+                (-hx, -hy, -hz),
+                (-hx, hy, hz),
+                (-hx, hy, -hz),
+            ],
+            (-1, 0, 0),
+        ),
         # +Y face, normal = (0, 1, 0)
-        ([(-hx, hy, -hz), (-hx, hy, hz), (hx, hy, hz), (-hx, hy, -hz), (hx, hy, hz), (hx, hy, -hz)], (0, 1, 0)),
+        (
+            [
+                (-hx, hy, -hz),
+                (-hx, hy, hz),
+                (hx, hy, hz),
+                (-hx, hy, -hz),
+                (hx, hy, hz),
+                (hx, hy, -hz),
+            ],
+            (0, 1, 0),
+        ),
         # -Y face, normal = (0, -1, 0)
-        ([(-hx, -hy, -hz), (hx, -hy, -hz), (hx, -hy, hz), (-hx, -hy, -hz), (hx, -hy, hz), (-hx, -hy, hz)], (0, -1, 0)),
+        (
+            [
+                (-hx, -hy, -hz),
+                (hx, -hy, -hz),
+                (hx, -hy, hz),
+                (-hx, -hy, -hz),
+                (hx, -hy, hz),
+                (-hx, -hy, hz),
+            ],
+            (0, -1, 0),
+        ),
     ]
     r, g, b = color
     verts: list[float] = []
@@ -83,17 +143,77 @@ def _make_link_verts(
     hx, hy, hz = length / 2, thickness_y / 2, thickness_z / 2
     faces_with_normals = [
         # +Z face
-        ([(-hx, -hy, hz), (hx, -hy, hz), (hx, hy, hz), (-hx, -hy, hz), (hx, hy, hz), (-hx, hy, hz)], (0, 0, 1)),
+        (
+            [
+                (-hx, -hy, hz),
+                (hx, -hy, hz),
+                (hx, hy, hz),
+                (-hx, -hy, hz),
+                (hx, hy, hz),
+                (-hx, hy, hz),
+            ],
+            (0, 0, 1),
+        ),
         # -Z face
-        ([(-hx, -hy, -hz), (-hx, hy, -hz), (hx, hy, -hz), (-hx, -hy, -hz), (hx, hy, -hz), (hx, -hy, -hz)], (0, 0, -1)),
+        (
+            [
+                (-hx, -hy, -hz),
+                (-hx, hy, -hz),
+                (hx, hy, -hz),
+                (-hx, -hy, -hz),
+                (hx, hy, -hz),
+                (hx, -hy, -hz),
+            ],
+            (0, 0, -1),
+        ),
         # +X face
-        ([(hx, -hy, -hz), (hx, hy, -hz), (hx, hy, hz), (hx, -hy, -hz), (hx, hy, hz), (hx, -hy, hz)], (1, 0, 0)),
+        (
+            [
+                (hx, -hy, -hz),
+                (hx, hy, -hz),
+                (hx, hy, hz),
+                (hx, -hy, -hz),
+                (hx, hy, hz),
+                (hx, -hy, hz),
+            ],
+            (1, 0, 0),
+        ),
         # -X face
-        ([(-hx, -hy, -hz), (-hx, -hy, hz), (-hx, hy, hz), (-hx, -hy, -hz), (-hx, hy, hz), (-hx, hy, -hz)], (-1, 0, 0)),
+        (
+            [
+                (-hx, -hy, -hz),
+                (-hx, -hy, hz),
+                (-hx, hy, hz),
+                (-hx, -hy, -hz),
+                (-hx, hy, hz),
+                (-hx, hy, -hz),
+            ],
+            (-1, 0, 0),
+        ),
         # +Y face
-        ([(-hx, hy, -hz), (-hx, hy, hz), (hx, hy, hz), (-hx, hy, -hz), (hx, hy, hz), (hx, hy, -hz)], (0, 1, 0)),
+        (
+            [
+                (-hx, hy, -hz),
+                (-hx, hy, hz),
+                (hx, hy, hz),
+                (-hx, hy, -hz),
+                (hx, hy, hz),
+                (hx, hy, -hz),
+            ],
+            (0, 1, 0),
+        ),
         # -Y face
-        ([(-hx, -hy, -hz), (hx, -hy, -hz), (hx, -hy, hz), (-hx, -hy, -hz), (hx, -hy, hz), (-hx, -hy, hz)], (0, -1, 0)),
+        (
+            [
+                (-hx, -hy, -hz),
+                (hx, -hy, -hz),
+                (hx, -hy, hz),
+                (-hx, -hy, -hz),
+                (hx, -hy, hz),
+                (-hx, -hy, hz),
+            ],
+            (0, -1, 0),
+        ),
     ]
     r, g, b = color
     verts: list[float] = []
