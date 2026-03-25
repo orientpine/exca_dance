@@ -69,7 +69,7 @@ class JudgmentDisplay:
             Judgment.MISS: "MISS",
         }
 
-        cx = renderer.width // 2
+        cx = int(renderer.width * 0.375)
         cy = renderer.height // 2 - 80
 
         for item in self._active:

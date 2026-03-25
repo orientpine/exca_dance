@@ -59,13 +59,15 @@ class GameplayHUD:
 
         W = self._renderer.width
         H = self._renderer.height
+        main_w = int(W * 0.75)
+        main_center_x = main_w // 2
         current_ms = self._audio.get_position_ms()
 
         # ── Score (top-right) ──────────────────────────────────────────
         score = self._scoring.get_total_score()
         self._text.render(
             f"{score:08d}",
-            W - 20,
+            main_w - 20,
             20,
             color=NeonTheme.NEON_BLUE.as_tuple(),
             scale=1.8,
@@ -79,7 +81,7 @@ class GameplayHUD:
             combo_color = NeonTheme.NEON_GREEN if mult > 1 else NeonTheme.TEXT_WHITE
             self._text.render(
                 f"x{combo}",
-                W // 2,
+                main_center_x,
                 20,
                 color=combo_color.as_tuple(),
                 scale=1.5,
@@ -88,7 +90,7 @@ class GameplayHUD:
             if mult > 1:
                 self._text.render(
                     f"{mult}× COMBO",
-                    W // 2,
+                    main_center_x,
                     60,
                     color=NeonTheme.NEON_ORANGE.as_tuple(),
                     scale=1.0,
@@ -99,10 +101,10 @@ class GameplayHUD:
         self._judgment_display.render(self._renderer, self._text)
 
         # ── Progress bar (bottom) ──────────────────────────────────────
-        bar_y = H - 30
+        bar_y = H - 15
         bar_h = 8
         bar_x = 20
-        bar_w = W - 40
+        bar_w = main_w - 40
         progress = min(1.0, current_ms / max(1.0, self._song_duration_ms))
         filled_w = int(bar_w * progress)
 
@@ -116,8 +118,11 @@ class GameplayHUD:
         elapsed_s = int(current_ms / 1000)
         total_s = int(self._song_duration_ms / 1000)
         self._text.render(
-            f"{elapsed_s // 60:02d}:{elapsed_s % 60:02d} / {total_s // 60:02d}:{total_s % 60:02d}",
-            W // 2,
+            (
+                f"{elapsed_s // 60:02d}:{elapsed_s % 60:02d} / "
+                f"{total_s // 60:02d}:{total_s % 60:02d}"
+            ),
+            main_center_x,
             H - 50,
             color=NeonTheme.TEXT_DIM.as_tuple(),
             scale=0.9,
@@ -127,6 +132,7 @@ class GameplayHUD:
         # ── Joint status panel (left side) ────────────────────────────
         panel_x = 20
         panel_y = 120
+        line_h = 26
         joint_colors = {
             JointName.SWING: NeonTheme.JOINT_SWING,
             JointName.BOOM: NeonTheme.JOINT_BOOM,
@@ -134,7 +140,7 @@ class GameplayHUD:
             JointName.BUCKET: NeonTheme.JOINT_BUCKET,
         }
         for i, jname in enumerate(JointName):
-            y = panel_y + i * 70
+            y = panel_y + i * line_h
             color = joint_colors[jname]
             angle = joint_angles.get(jname, 0.0)
             target = self._target_angles.get(jname)
@@ -149,30 +155,19 @@ class GameplayHUD:
                 else:
                     angle_color = NeonTheme.NEON_PINK.as_tuple()
 
+            line = f"{jname.value.upper()} {angle:+.1f}°"
+            if target is not None:
+                line += f" → {target:+.1f}°"
+
+            line_color = angle_color if self._visual_cues is not None else color.as_tuple()
+
             self._text.render(
-                jname.value.upper(),
+                line,
                 panel_x,
                 y,
-                color=color.as_tuple(),
-                scale=0.9,
-            )
-            self._text.render(
-                f"{angle:+.1f}°",
-                panel_x,
-                y + 22,
-                color=angle_color,
+                color=line_color,
                 scale=0.85,
             )
-            if target is not None:
-                diff = abs(angle - target)
-                match_color = NeonTheme.NEON_GREEN if diff < 10 else NeonTheme.NEON_ORANGE
-                self._text.render(
-                    f"→ {target:+.1f}°",
-                    panel_x,
-                    y + 44,
-                    color=match_color.as_tuple(),
-                    scale=0.8,
-                )
 
         # ── FPS counter (top-left, debug) ──────────────────────────────
         if self._show_fps:

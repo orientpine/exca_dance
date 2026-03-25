@@ -1,0 +1,12 @@
+HUD reposition evidence:
+- Score x moved to main_3d right edge: int(width * 0.75) - 20
+- Combo x moved to main_3d center: int(width * 0.75) // 2
+- Judgment flash x moved to main_3d center: int(renderer.width * 0.375)
+- Progress bar width constrained to main_3d: int(width * 0.75) - 40
+- Progress bar y moved to H - 15
+- Joint status panel collapsed to one line per joint
+
+Verification:
+- PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest tests/ -v -> 56 passed
+- .venv/bin/ruff check src/exca_dance/ui/gameplay_hud.py -> passed
+- SDL_AUDIODRIVER=dummy xvfb-run -a timeout 8 .venv/bin/python -m exca_dance --windowed -> exit:124
