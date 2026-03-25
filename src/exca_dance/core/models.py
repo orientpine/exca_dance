@@ -46,6 +46,7 @@ class BeatMap:
     bpm: float
     offset_ms: int
     audio_file: str
+    difficulty: str = "NORMAL"
     events: list[BeatEvent] = field(default_factory=list)
 
 

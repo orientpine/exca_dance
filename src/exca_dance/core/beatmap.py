@@ -9,6 +9,8 @@ from typing import Any
 from exca_dance.core.constants import JOINT_LIMITS
 from exca_dance.core.models import BeatEvent, BeatMap, JointName
 
+_DIFFICULTIES = {"EASY", "NORMAL", "HARD"}
+
 
 def validate_beatmap(data: dict[str, Any]) -> list[str]:
     """Return list of validation error strings. Empty = valid."""
@@ -21,6 +23,10 @@ def validate_beatmap(data: dict[str, Any]) -> list[str]:
         errors.append("bpm must be a positive number")
     if "audio_file" not in data or not data["audio_file"]:
         errors.append("Missing required field: audio_file")
+    if "difficulty" in data:
+        difficulty = str(data["difficulty"]).upper()
+        if difficulty not in _DIFFICULTIES:
+            errors.append("difficulty must be one of EASY/NORMAL/HARD")
     for i, ev in enumerate(data.get("events", [])):
         if "time_ms" not in ev:
             errors.append(f"Event {i}: missing time_ms")
@@ -55,7 +61,7 @@ def load_beatmap(path: str) -> BeatMap:
             )
         )
     events.sort(key=lambda e: e.time_ms)
-    return BeatMap(
+    beatmap = BeatMap(
         title=data["title"],
         artist=data.get("artist", ""),
         bpm=float(data["bpm"]),
@@ -63,6 +69,8 @@ def load_beatmap(path: str) -> BeatMap:
         audio_file=data["audio_file"],
         events=events,
     )
+    setattr(beatmap, "difficulty", str(data.get("difficulty", "NORMAL")).upper())
+    return beatmap
 
 
 def save_beatmap(beatmap: BeatMap, path: str) -> None:
@@ -73,6 +81,7 @@ def save_beatmap(beatmap: BeatMap, path: str) -> None:
         "bpm": beatmap.bpm,
         "offset_ms": beatmap.offset_ms,
         "audio_file": beatmap.audio_file,
+        "difficulty": getattr(beatmap, "difficulty", "NORMAL"),
         "events": [
             {
                 "time_ms": ev.time_ms,
