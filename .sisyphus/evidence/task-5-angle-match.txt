@@ -1,0 +1,9 @@
+Task 5 evidence
+
+- Updated GameplayHUD to accept optional visual_cues and color joint angle text by match quality.
+- Wired VisualCueRenderer into GameplayHUD construction in __main__.py.
+- Validation:
+  - PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest tests/ -v
+    - Result: 56 passed
+  - .venv/bin/ruff check src/exca_dance/ui/gameplay_hud.py src/exca_dance/__main__.py
+    - Result: passed

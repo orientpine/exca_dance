@@ -4,6 +4,7 @@ from __future__ import annotations
 from exca_dance.core.models import JointName
 from exca_dance.rendering.theme import NeonTheme
 from exca_dance.core.hit_detection import JudgmentDisplay
+from exca_dance.rendering.visual_cues import VisualCueRenderer
 
 
 class GameplayHUD:
@@ -17,11 +18,19 @@ class GameplayHUD:
     - FPS counter (top-left, debug, toggle F3)
     """
 
-    def __init__(self, renderer, text_renderer, audio, scoring) -> None:
+    def __init__(
+        self,
+        renderer,
+        text_renderer,
+        audio,
+        scoring,
+        visual_cues: VisualCueRenderer | None = None,
+    ) -> None:
         self._renderer = renderer
         self._text = text_renderer
         self._audio = audio
         self._scoring = scoring
+        self._visual_cues = visual_cues
         self._judgment_display = JudgmentDisplay()
         self._show_fps = False
         self._song_duration_ms: float = 60_000.0  # default 60s
@@ -129,6 +138,16 @@ class GameplayHUD:
             color = joint_colors[jname]
             angle = joint_angles.get(jname, 0.0)
             target = self._target_angles.get(jname)
+            angle_color = NeonTheme.TEXT_WHITE.as_tuple()
+
+            if self._visual_cues is not None:
+                match_pct = self._visual_cues.get_angle_match_pct(jname)
+                if match_pct >= 0.9:
+                    angle_color = NeonTheme.NEON_GREEN.as_tuple()
+                elif match_pct >= 0.6:
+                    angle_color = (1.0, 0.9, 0.0, 1.0)
+                else:
+                    angle_color = NeonTheme.NEON_PINK.as_tuple()
 
             self._text.render(
                 jname.value.upper(),
@@ -141,7 +160,7 @@ class GameplayHUD:
                 f"{angle:+.1f}°",
                 panel_x,
                 y + 22,
-                color=NeonTheme.TEXT_WHITE.as_tuple(),
+                color=angle_color,
                 scale=0.85,
             )
             if target is not None:
