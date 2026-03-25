@@ -22,3 +22,12 @@
 - Cached `get_upcoming_events(500)` in a local `_upcoming` variable before indexing, removing the race between repeated calls.
 - Added `tests/test_gameplay_screen.py` with `unittest.mock.MagicMock` coverage for `GameplayScreen.update()` when upcoming events are empty.
 - Full suite result: 57 passed.
+
+## [2026-03-26] Session: judgment flash + combo milestone polish
+### UI Feedback Patterns
+- `JudgmentDisplay` now owns transient screen-flash state (`flash_alpha`, `flash_color`, `flash_start`, `flash_duration`) and exposes it via `current_flash` so HUD can render overlays without duplicating timing logic.
+- PERFECT/MISS flash specs implemented as short-lived effects: PERFECT uses white `(1.0, 1.0, 1.0)` at 0.15 for 50ms, MISS uses red `(1.0, 0.1, 0.1)` at 0.08 for 30ms.
+- Judgment label pop animation is cleanly handled in `render()` with a 0.3s ease-out style scale transition from 1.5× base size to base size.
+- `_draw_rect_2d` in `GameplayHUD` accepts an `alpha` kwarg, allowing full-screen flash overlays through existing `prog_solid` path (no new shader needed).
+- Combo milestone emphasis at exact combo values `(10, 25, 50)` uses `NEON_PINK` and a larger scale for stronger progression feedback.
+- Added `tests/test_hit_detection.py` with MagicMock-only coverage for PERFECT flash alpha and MISS flash color; full suite result: 59 passed.

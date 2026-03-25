@@ -67,13 +67,18 @@ class GameplayHUD:
         combo = self._scoring._combo
         if combo > 0:
             mult = self._scoring.get_combo_multiplier()
-            combo_color = NeonTheme.NEON_GREEN if mult > 1 else NeonTheme.TEXT_WHITE
+            if combo in (10, 25, 50):
+                combo_color = NeonTheme.NEON_PINK
+                combo_scale = 2.0
+            else:
+                combo_color = NeonTheme.NEON_GREEN if mult > 1 else NeonTheme.TEXT_WHITE
+                combo_scale = 1.5
             self._text.render(
                 f"x{combo}",
                 W // 2,
                 20,
                 color=combo_color.as_tuple(),
-                scale=1.5,
+                scale=combo_scale,
                 align="center",
             )
             if mult > 1:
@@ -85,6 +90,10 @@ class GameplayHUD:
                     scale=1.0,
                     align="center",
                 )
+
+        flash_color, flash_alpha = self._judgment_display.current_flash
+        if flash_color is not None and flash_alpha > 0.0:
+            self._draw_rect_2d(0, 0, W, H, flash_color, alpha=flash_alpha)
 
         # ── Judgment flash (center) ────────────────────────────────────
         self._judgment_display.render(self._renderer, self._text)
@@ -167,7 +176,16 @@ class GameplayHUD:
                 scale=0.8,
             )
 
-    def _draw_rect_2d(self, x: int, y: int, w: int, h: int, color) -> None:
+    def _draw_rect_2d(
+        self,
+        x: int,
+        y: int,
+        w: int,
+        h: int,
+        color,
+        *,
+        alpha: float = 1.0,
+    ) -> None:
         import moderngl
         import numpy as np
 
@@ -230,7 +248,7 @@ class GameplayHUD:
 
         identity = np.eye(4, dtype="f4")
         prog["mvp"].write(np.ascontiguousarray(identity).tobytes())
-        prog["alpha"].value = 1.0
+        prog["alpha"].value = alpha
 
         ctx.disable(moderngl.DEPTH_TEST)
         vao.render(moderngl.TRIANGLES)
