@@ -2139,7 +2139,7 @@ Max Concurrent: 8 (Wave 5)
 
 ### Wave 6: ROS2 Integration + Final Polish (3 Tasks)
 
-- [ ] 27. **ROS2 Node Process + IPC Queues**
+- [x] 27. **ROS2 Node Process + IPC Queues**
 
   **What to do**:
   - Create `src/exca_dance/ros2_bridge/ros2_node.py`:
@@ -2213,7 +2213,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 28. **Mode Switching (Virtual ↔ Real) + Graceful Fallback**
+- [x] 28. **Mode Switching (Virtual ↔ Real) + Graceful Fallback**
 
   **What to do**:
   - Modify `src/exca_dance/ros2_bridge/__init__.py`:
@@ -2272,7 +2272,7 @@ Max Concurrent: 8 (Wave 5)
 
 ---
 
-- [ ] 30. **Final Integration + Entry Point + Error Handling**
+- [x] 30. **Final Integration + Entry Point + Error Handling**
 
   **What to do**:
   - Complete `src/exca_dance/__main__.py`:
@@ -2352,19 +2352,19 @@ Max Concurrent: 8 (Wave 5)
 
 > 4 review agents run in PARALLEL. ALL must APPROVE. Present consolidated results to user and get explicit "okay" before completing.
 
-- [ ] F1. **Plan Compliance Audit** — `oracle`
+- [x] F1. **Plan Compliance Audit** — `oracle`
   Read the plan end-to-end. For each "Must Have": verify implementation exists (read file, run command). For each "Must NOT Have": search codebase for forbidden patterns (e.g., `get_pos()`, `.blit(`, `import ursina`) — reject with file:line if found. Check evidence files exist in .sisyphus/evidence/. Compare deliverables against plan.
   Output: `Must Have [N/N] | Must NOT Have [N/N] | Tasks [N/N] | VERDICT: APPROVE/REJECT`
 
-- [ ] F2. **Code Quality Review** — `unspecified-high`
+- [x] F2. **Code Quality Review** — `unspecified-high`
   Run `python -m py_compile` on all source files + `pytest tests/ -v` + `ruff check src/`. Review all files for: empty except blocks, print() in production, unused imports, hardcoded paths. Check for AI slop: excessive docstrings, over-abstraction, generic variable names.
   Output: `Build [PASS/FAIL] | Tests [N pass/N fail] | Lint [N issues] | VERDICT`
 
-- [ ] F3. **Real Manual QA** — `unspecified-high`
+- [x] F3. **Real Manual QA** — `unspecified-high`
   Start game from clean state. Execute EVERY QA scenario from EVERY task. Test full flow: Main Menu → Song Select → Gameplay → Results → Leaderboard → Editor. Test edge cases: pause during gameplay, empty beat map, corrupted leaderboard JSON, missing audio file. Save evidence to `.sisyphus/evidence/final-qa/`.
   Output: `Scenarios [N/N pass] | Integration [N/N] | Edge Cases [N tested] | VERDICT`
 
-- [ ] F4. **Scope Fidelity Check** — `deep`
+- [x] F4. **Scope Fidelity Check** — `deep`
   For each task: read spec, read actual code. Verify 1:1 match. Check "Must NOT Have" compliance — search for forbidden patterns. Detect scope creep: features not in plan. Flag unaccounted files/modules.
   Output: `Tasks [N/N compliant] | Forbidden [CLEAN/N issues] | Unaccounted [CLEAN/N files] | VERDICT`
 
