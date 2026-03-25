@@ -62,11 +62,8 @@ class GameplayScreen:
             combo = self._game_loop._scoring._combo
             self._hud.judgment_display.trigger(result, combo)
             if self._beatmap:
-                self._hud.set_target_angles(
-                    self._game_loop.get_upcoming_events(500)[0].target_angles
-                    if self._game_loop.get_upcoming_events(500)
-                    else {}
-                )
+                _upcoming = self._game_loop.get_upcoming_events(500)
+                self._hud.set_target_angles(_upcoming[0].target_angles if _upcoming else {})
 
         self._hud.update(dt)
 
