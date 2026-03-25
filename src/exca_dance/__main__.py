@@ -28,8 +28,9 @@ def main(argv: list[str] | None = None) -> int:
     logger = logging.getLogger("exca_dance")
     logger.info("Exca Dance starting... mode=%s", args.mode)
 
-    # Headless/CI guard
-    os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
+    # Headless/CI: only force dummy audio when no display is available
+    if not os.environ.get("DISPLAY") and not os.environ.get("WAYLAND_DISPLAY") and sys.platform != "win32":
+        os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
     try:
         import pygame
