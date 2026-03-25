@@ -1,0 +1,5 @@
+Tests: PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest tests/ -v
+Result: 56 passed
+
+Smoke: SDL_AUDIODRIVER=dummy xvfb-run -a timeout 5 .venv/bin/python -m exca_dance --windowed
+Result: exit:124 (timeout after clean startup/shutdown)

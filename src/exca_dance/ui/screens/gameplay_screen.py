@@ -3,7 +3,7 @@
 from __future__ import annotations
 import pygame
 import moderngl
-from exca_dance.core.models import BeatMap
+from exca_dance.core.models import BeatMap, Judgment
 from exca_dance.rendering.theme import NeonTheme
 from exca_dance.core.game_state import ScreenName
 from exca_dance.core.game_loop import GameState as LoopState
@@ -11,7 +11,14 @@ from exca_dance.core.game_loop import GameState as LoopState
 
 class GameplayScreen:
     def __init__(
-        self, renderer, text_renderer, game_loop, hud, visual_cues, viewport_layout
+        self,
+        renderer,
+        text_renderer,
+        game_loop,
+        hud,
+        visual_cues,
+        viewport_layout,
+        hit_sounds: dict[Judgment, pygame.mixer.Sound],
     ) -> None:
         self._renderer = renderer
         self._text = text_renderer
@@ -19,6 +26,7 @@ class GameplayScreen:
         self._hud = hud
         self._visual_cues = visual_cues
         self._layout = viewport_layout
+        self._hit_sounds: dict[Judgment, pygame.mixer.Sound] = hit_sounds
         self._beatmap: BeatMap | None = None
         self._result_scoring = None
 
@@ -61,6 +69,9 @@ class GameplayScreen:
         for result in hit_results:
             combo = self._game_loop._scoring._combo
             self._hud.judgment_display.trigger(result, combo)
+            hit_sound = self._hit_sounds.get(result.judgment)
+            if hit_sound is not None:
+                hit_sound.play()
             if self._beatmap:
                 self._hud.set_target_angles(
                     self._game_loop.get_upcoming_events(500)[0].target_angles
