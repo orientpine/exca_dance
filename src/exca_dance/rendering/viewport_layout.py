@@ -94,7 +94,7 @@ class GameViewportLayout:
         top_center = np.array([2.0, 0.0, 0.0], dtype="f4")
         top_up = np.array([0.0, 1.0, 0.0], dtype="f4")
         view_top = _look_at(top_eye, top_center, top_up)
-        proj_top = _ortho(-6.0, 8.0, -5.0, 8.0)
+        proj_top = _ortho(-3.0, 5.0, -5.0, 5.0, near=-50.0, far=50.0)
         self._mvp_top: np.ndarray = (proj_top @ view_top).astype("f4")
 
         # Side orthographic (XZ plane, looking along +Y)
@@ -102,11 +102,11 @@ class GameViewportLayout:
         side_center = np.array([2.0, 0.0, 3.0], dtype="f4")
         side_up = np.array([0.0, 0.0, 1.0], dtype="f4")
         view_side = _look_at(side_eye, side_center, side_up)
-        proj_side = _ortho(-5.0, 10.0, -2.0, 9.0)
+        proj_side = _ortho(-3.0, 5.0, -4.0, 4.0, near=-50.0, far=50.0)
         self._mvp_side: np.ndarray = (proj_side @ view_side).astype("f4")
 
     def render_all(self, excavator_model, joint_angles: dict[str, float]) -> None:
-        """Render excavator in all 3 viewports."""
+        """Render excavator in main 3D viewport only; 2D panels cleared for overlay."""
         ctx = self._renderer.ctx
 
         # 3D main view
@@ -114,15 +114,9 @@ class GameViewportLayout:
         ctx.clear(0.04, 0.04, 0.10, viewport=self._vm.get_viewport_rect("main_3d"))
         excavator_model.render_3d(self._mvp_3d)
 
-        # Top-down view
-        self._vm.set_viewport(ctx, "top_2d")
-        ctx.clear(0.04, 0.04, 0.10, viewport=self._vm.get_viewport_rect("top_2d"))
-        excavator_model.render_2d_top(self._mvp_top)
-
-        # Side view
-        self._vm.set_viewport(ctx, "side_2d")
-        ctx.clear(0.04, 0.04, 0.10, viewport=self._vm.get_viewport_rect("side_2d"))
-        excavator_model.render_2d_side(self._mvp_side)
+        # 2D panels — clear only (overlay_2d renders the schematic)
+        ctx.clear(0.03, 0.03, 0.07, viewport=self._vm.get_viewport_rect("top_2d"))
+        ctx.clear(0.03, 0.03, 0.07, viewport=self._vm.get_viewport_rect("side_2d"))
 
         # Reset to full viewport
         ctx.viewport = (0, 0, self._width, self._height)
@@ -136,35 +130,35 @@ class GameViewportLayout:
         self._vm.set_viewport(ctx, view_name)
 
         r, g, b = (
-            NeonTheme.TEXT_DIM.r * 0.7,
-            NeonTheme.TEXT_DIM.g * 0.7,
-            NeonTheme.TEXT_DIM.b * 0.7,
+            NeonTheme.TEXT_DIM.r * 0.25,
+            NeonTheme.TEXT_DIM.g * 0.25,
+            NeonTheme.TEXT_DIM.b * 0.30,
         )
 
         gr, gg, gb = (
-            NeonTheme.NEON_GREEN.r * 0.5,
-            NeonTheme.NEON_GREEN.g * 0.5,
-            NeonTheme.NEON_GREEN.b * 0.5,
+            NeonTheme.NEON_GREEN.r * 0.35,
+            NeonTheme.NEON_GREEN.g * 0.35,
+            NeonTheme.NEON_GREEN.b * 0.35,
         )
 
         verts = []
 
         if view_name == "top_2d":
             mvp = self._mvp_top
-            for y in range(-5, 9):
+            for y in range(-5, 5):
                 c = (gr, gg, gb) if y == 0 else (r, g, b)
-                verts += [-6, y, 0, c[0], c[1], c[2], 8, y, 0, c[0], c[1], c[2]]
-            for x in range(-6, 9):
+                verts += [-2, y, 0, c[0], c[1], c[2], 7, y, 0, c[0], c[1], c[2]]
+            for x in range(-2, 8):
                 c = (gr, gg, gb) if x == 0 else (r, g, b)
-                verts += [x, -5, 0, c[0], c[1], c[2], x, 8, 0, c[0], c[1], c[2]]
+                verts += [x, -5, 0, c[0], c[1], c[2], x, 5, 0, c[0], c[1], c[2]]
         else:
             mvp = self._mvp_side
-            for z in range(-2, 9):
+            for z in range(-1, 7):
                 c = (gr, gg, gb) if z == 0 else (r, g, b)
-                verts += [-5, 0, z, c[0], c[1], c[2], 10, 0, z, c[0], c[1], c[2]]
-            for x in range(-5, 11):
+                verts += [-1, 0, z, c[0], c[1], c[2], 7, 0, z, c[0], c[1], c[2]]
+            for x in range(-1, 8):
                 c = (gr, gg, gb) if x == 0 else (r, g, b)
-                verts += [x, 0, -2, c[0], c[1], c[2], x, 0, 9, c[0], c[1], c[2]]
+                verts += [x, 0, -1, c[0], c[1], c[2], x, 0, 7, c[0], c[1], c[2]]
 
         if not verts:
             return

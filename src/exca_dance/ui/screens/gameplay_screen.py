@@ -192,7 +192,7 @@ class GameplayScreen:
         beat_phase = getattr(self._game_loop, "_beat_phase", 0.0)
         self._layout.render_gameplay_background(beat_phase)
 
-        # Render 3D excavator in all viewports
+        # Render 3D excavator in main viewport (2D panels cleared for overlay)
         self._layout.render_all(
             self._game_loop._excavator_model,
             self._game_loop.joint_angles,
@@ -210,6 +210,7 @@ class GameplayScreen:
         self._visual_cues.render_ghost(self._layout.mvp_3d)
         self._visual_cues.render_outline(self._layout.mvp_3d)
 
+        # Prepare overlay data
         cur = None
         tgt = None
         mpct = None
@@ -222,9 +223,8 @@ class GameplayScreen:
                 else None
             )
 
+        # 2D panels — overlay renders the schematic (no ghost/3D model)
         vm.set_viewport(ctx, "top_2d")
-        self._visual_cues.render_ghost(self._layout.mvp_top)
-        self._visual_cues.render_outline(self._layout.mvp_top)
         if self._overlay_2d is not None:
             self._overlay_2d.render(
                 "top_2d",
@@ -236,8 +236,6 @@ class GameplayScreen:
             )
 
         vm.set_viewport(ctx, "side_2d")
-        self._visual_cues.render_ghost(self._layout.mvp_side)
-        self._visual_cues.render_outline(self._layout.mvp_side)
         if self._overlay_2d is not None:
             self._overlay_2d.render(
                 "side_2d",

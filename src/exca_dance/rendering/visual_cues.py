@@ -232,17 +232,15 @@ class VisualCueRenderer:
             [(vbo, "3f 4f", "in_position", "in_color")],
         )
 
-        blend_ctx = cast(_BlendFuncContext, cast(object, ctx))
-        old_blend_func = blend_ctx.blend_func
         ctx.enable(moderngl.BLEND)
-        blend_ctx.blend_func = (moderngl.SRC_ALPHA, moderngl.ONE)
+        ctx.blend_func = (moderngl.SRC_ALPHA, moderngl.ONE)
         ctx.disable(moderngl.DEPTH_TEST)
         try:
             mvp_uniform = cast(moderngl.Uniform, self._renderer.prog_additive["mvp"])
             mvp_uniform.write(np.ascontiguousarray(mvp.astype("f4").T).tobytes())
             vao.render(moderngl.LINES)
         finally:
-            blend_ctx.blend_func = old_blend_func
+            ctx.blend_func = (moderngl.SRC_ALPHA, moderngl.ONE_MINUS_SRC_ALPHA)
             ctx.enable(moderngl.DEPTH_TEST)
             vbo.release()
             vao.release()

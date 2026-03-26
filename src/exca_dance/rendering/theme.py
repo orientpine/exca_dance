@@ -68,6 +68,11 @@ class NeonTheme:
     GHOST_OUTLINE_PULSE_MIN: float = 0.4
     GHOST_OUTLINE_PULSE_SPEED: float = 4.0
 
+    # 2D overlay — match quality indicators
+    MATCH_GOOD: Color = Color(0.0, 1.0, 0.4)      # green  — >80% match
+    MATCH_MEDIUM: Color = Color(1.0, 0.9, 0.0)     # yellow — 50-80%
+    MATCH_BAD: Color = Color(1.0, 0.2, 0.1)        # red    — <50%
+
     @classmethod
     def judgment_color(cls, judgment: Judgment) -> Color:
         return {
