@@ -226,7 +226,7 @@ class GameplayScreen:
             )
 
         # Side view — 2D overlay schematic only (no 3D model)
-
+        vm.set_viewport(ctx, "side_2d")
         # 2D overlay schematic on top (uses static mvp_side, FK zeroes swing)
         if self._overlay_2d is not None:
             self._overlay_2d.render(
