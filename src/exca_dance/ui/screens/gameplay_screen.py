@@ -199,7 +199,6 @@ class GameplayScreen:
         )
 
         self._layout.render_2d_grid("top_2d")
-        self._layout.render_2d_grid("side_2d")
 
         # Ghost overlay — render in each viewport separately
         ctx = renderer.ctx

@@ -158,7 +158,7 @@ class VisualCueRenderer:
             self._active_target = dict(nearest.target_angles)
             self._next_event_time_ms = float(nearest.time_ms)
             # Update ghost model to target pose
-            ghost_angles = dict(current_angles)
+            ghost_angles = {j: 0.0 for j in current_angles}
             ghost_angles.update(nearest.target_angles)
             if self._prev_ghost_angles is None or any(
                 abs(ghost_angles.get(k, 0) - self._prev_ghost_angles.get(k, 0)) > 0.01
@@ -255,83 +255,95 @@ class VisualCueRenderer:
         _ = song_duration_ms
         W = renderer.width
         H = renderer.height
-        bar_w = int(W * 0.75)
-        bar_h = 60
-        bar_x = (W - bar_w) // 2
-        bar_y = H - 70
+
+        # Timeline occupies bottom 28% of screen (matches ViewportManager)
+        timeline_h = int(H * 0.28)
+        margin = 12
+        bar_w = W - margin * 2
+        bar_h = timeline_h - margin * 2
+        bar_x = margin
+        bar_y = H - timeline_h + margin  # screen coords (top-left origin)
         hit_x = bar_x + bar_w // 2
 
+        # Background bar
         self._draw_highway_rect(
-            renderer,
-            bar_x,
-            bar_y,
-            bar_w,
-            bar_h,
-            NeonTheme.BG_PANEL.as_rgb(),
-            alpha=0.8,
-            additive=False,
+            renderer, bar_x, bar_y, bar_w, bar_h,
+            NeonTheme.BG_PANEL.as_rgb(), alpha=0.6, additive=False,
         )
 
+        # Subtle lane dividers (horizontal)
+        lane_count = 4
+        for i in range(1, lane_count):
+            lane_y = bar_y + int(bar_h * i / lane_count)
+            self._draw_highway_rect(
+                renderer, bar_x, lane_y, bar_w, 1,
+                NeonTheme.NEON_BLUE.as_rgb(), alpha=0.08, additive=False,
+            )
+
+        # Hit-line: prominent center marker
+        hit_w = 6
         self._draw_highway_rect(
-            renderer,
-            hit_x - 1,
-            bar_y,
-            2,
-            bar_h,
-            NeonTheme.NEON_BLUE.as_rgb(),
-            alpha=0.95,
-            additive=False,
+            renderer, hit_x - hit_w // 2, bar_y, hit_w, bar_h,
+            NeonTheme.NEON_BLUE.as_rgb(), alpha=0.95, additive=False,
         )
+        # Hit-line glow
+        glow_w = 24
         self._draw_highway_rect(
-            renderer,
-            hit_x - 4,
-            bar_y,
-            8,
-            bar_h,
-            NeonTheme.NEON_BLUE.as_rgb(),
-            alpha=0.35,
-            additive=True,
+            renderer, hit_x - glow_w // 2, bar_y, glow_w, bar_h,
+            NeonTheme.NEON_BLUE.as_rgb(), alpha=0.25, additive=True,
         )
 
+        t = time.perf_counter()
         for event in self._upcoming_events:
             time_to_event = float(event.time_ms) - self._current_time_ms
             if not (-500.0 < time_to_event < 3000.0):
                 continue
 
             x_offset = int((time_to_event / 3000.0) * (bar_w // 2))
-            event_x = hit_x + x_offset - 4
             n_joints = len(event.target_angles)
-            event_h = max(10, int(bar_h * n_joints / 4))
+
+            # Proximity-based scaling: notes grow as they approach
+            proximity = max(0.0, 1.0 - abs(time_to_event) / 1500.0)
+            base_w = 24 + int(16 * proximity)  # 24px → 40px
+            event_h = max(40, int((bar_h - 20) * 0.7 * (0.5 + 0.5 * n_joints / 4)))
+            event_h = int(event_h * (0.85 + 0.15 * proximity))
+            event_x = hit_x + x_offset - base_w // 2
             event_y = bar_y + (bar_h - event_h) // 2
 
-            proximity = max(0.0, 1.0 - abs(time_to_event) / 1500.0)
-            brightness = 0.4 + 0.6 * proximity
+            # Color: orange→white as it approaches, with pulse
+            brightness = 0.5 + 0.5 * proximity
+            pulse = 0.5 + 0.5 * math.sin(t * 4.0 + float(event.time_ms) * 0.01)
             orange = NeonTheme.NEON_ORANGE
             color = (
-                min(1.0, orange.r * brightness),
-                min(1.0, orange.g * brightness),
+                min(1.0, orange.r * brightness + 0.3 * proximity),
+                min(1.0, orange.g * brightness + 0.15 * proximity),
                 min(1.0, orange.b * brightness),
             )
 
+            # Layer 1: Outer glow (additive, wide)
+            glow_alpha = (0.08 + 0.35 * proximity) * (0.7 + 0.3 * pulse)
             self._draw_highway_rect(
-                renderer,
-                event_x,
-                event_y,
-                8,
-                event_h,
-                color,
-                alpha=0.9,
-                additive=False,
+                renderer, event_x - 8, event_y - 6,
+                base_w + 16, event_h + 12,
+                color, alpha=glow_alpha, additive=True,
             )
+
+            # Layer 2: Core note body
+            self._draw_highway_rect(
+                renderer, event_x, event_y, base_w, event_h,
+                color, alpha=0.85 + 0.15 * proximity, additive=False,
+            )
+
+            # Layer 3: Bright inner highlight
+            inner_w = max(6, base_w - 10)
+            inner_h = max(12, event_h - 12)
             self._draw_highway_rect(
                 renderer,
-                event_x - 2,
-                event_y - 2,
-                12,
-                event_h + 4,
-                color,
-                alpha=0.12 + 0.38 * proximity,
-                additive=True,
+                event_x + (base_w - inner_w) // 2,
+                event_y + (event_h - inner_h) // 2,
+                inner_w, inner_h,
+                (1.0, 1.0, 1.0),
+                alpha=0.15 + 0.25 * proximity, additive=True,
             )
 
     def _draw_highway_rect(

@@ -1,10 +1,13 @@
 """Multi-viewport layout for Exca Dance gameplay screen."""
 
 from __future__ import annotations
+
 from typing import Any
+
 import numpy as np
+
+from exca_dance.core.constants import SCREEN_HEIGHT, SCREEN_WIDTH
 from exca_dance.rendering.viewport import ViewportManager
-from exca_dance.core.constants import SCREEN_WIDTH, SCREEN_HEIGHT
 
 
 def _perspective(fov_deg: float, aspect: float, near: float, far: float) -> np.ndarray:
@@ -58,10 +61,19 @@ def _look_at(eye: np.ndarray, target: np.ndarray, up: np.ndarray) -> np.ndarray:
 
 class GameViewportLayout:
     """
-    Manages the 3-panel viewport layout for gameplay:
-      - main_3d:  left 75%, perspective 3D view
-      - top_2d:   right 25% top half, orthographic top-down
-      - side_2d:  right 25% bottom half, orthographic side view
+    Manages the multi-panel viewport layout for gameplay:
+
+      ┌─────────────────┬───────────────────┐
+      │    main_3d       │     side_2d       │  top 72%
+      │   (55% width)    │  kinematic diagram│
+      │   perspective    │  (45%, top 65%)   │
+      │                  ├───────────────────┤
+      │                  │     top_2d        │
+      │                  │  swing view       │
+      │                  │  (45%, bot 35%)   │
+      ├──────────────────┴───────────────────┤
+      │          timeline area               │  bottom 28%
+      └─────────────────────────────────────-┘
     """
 
     # Fixed camera for 3D view — 45° elevation, 30° azimuth
@@ -71,7 +83,7 @@ class GameViewportLayout:
 
     def __init__(
         self,
-        renderer,
+        renderer: Any,
         width: int = SCREEN_WIDTH,
         height: int = SCREEN_HEIGHT,
     ) -> None:
@@ -82,31 +94,54 @@ class GameViewportLayout:
         self._build_matrices()
 
     def _build_matrices(self) -> None:
-        """Pre-compute MVP matrices for each viewport."""
-        # 3D perspective
+        """Pre-compute MVP matrices for each viewport (aspect-matched)."""
+        # ── 3D perspective ───────────────────────────────────────────
         aspect_3d = self._vm.get_aspect_ratio("main_3d")
         proj_3d = _perspective(45.0, aspect_3d, 0.1, 100.0)
         view_3d = _look_at(self._EYE_3D, self._TARGET_3D, self._UP_3D)
         self._mvp_3d: np.ndarray = (proj_3d @ view_3d).astype("f4")
 
-        # Top-down orthographic (XY plane, camera looks down -Z)
-        top_eye = np.array([2.0, 0.0, 15.0], dtype="f4")
-        top_center = np.array([2.0, 0.0, 0.0], dtype="f4")
-        top_up = np.array([0.0, 1.0, 0.0], dtype="f4")
-        view_top = _look_at(top_eye, top_center, top_up)
-        proj_top = _ortho(-3.0, 5.0, -5.0, 5.0, near=-50.0, far=50.0)
-        self._mvp_top: np.ndarray = (proj_top @ view_top).astype("f4")
-
-        # Side orthographic (XZ plane, looking along +Y)
+        # ── Side orthographic (XZ plane, looking along +Y) ──────────
+        # Aspect-matched to avoid distortion in the wider side panel.
+        aspect_side = self._vm.get_aspect_ratio("side_2d")
+        side_half_h = 3.5
+        side_half_w = side_half_h * aspect_side
+        proj_side = _ortho(
+            1.0 - side_half_w,
+            1.0 + side_half_w,
+            -side_half_h,
+            side_half_h,
+            near=-50.0,
+            far=50.0,
+        )
         side_eye = np.array([0.0, -12.0, 3.0], dtype="f4")
         side_center = np.array([2.0, 0.0, 3.0], dtype="f4")
         side_up = np.array([0.0, 0.0, 1.0], dtype="f4")
         view_side = _look_at(side_eye, side_center, side_up)
-        proj_side = _ortho(-3.0, 5.0, -4.0, 4.0, near=-50.0, far=50.0)
         self._mvp_side: np.ndarray = (proj_side @ view_side).astype("f4")
 
-    def render_all(self, excavator_model, joint_angles: dict[str, float]) -> None:
-        """Render excavator in main 3D viewport only; 2D panels cleared for overlay."""
+        # ── Top-down orthographic (XY plane, camera looks down -Z) ──
+        aspect_top = self._vm.get_aspect_ratio("top_2d")
+        top_half_h = 3.5
+        top_half_w = top_half_h * aspect_top
+        proj_top = _ortho(
+            1.0 - top_half_w,
+            1.0 + top_half_w,
+            -top_half_h,
+            top_half_h,
+            near=-50.0,
+            far=50.0,
+        )
+        top_eye = np.array([2.0, 0.0, 15.0], dtype="f4")
+        top_center = np.array([2.0, 0.0, 0.0], dtype="f4")
+        top_up = np.array([0.0, 1.0, 0.0], dtype="f4")
+        view_top = _look_at(top_eye, top_center, top_up)
+        self._mvp_top: np.ndarray = (proj_top @ view_top).astype("f4")
+
+    # ── Rendering ────────────────────────────────────────────────────
+
+    def render_all(self, excavator_model: Any, joint_angles: dict[str, float]) -> None:
+        """Render excavator in main 3D viewport; clear 2D panels and timeline."""
         ctx = self._renderer.ctx
 
         # 3D main view
@@ -115,13 +150,17 @@ class GameViewportLayout:
         excavator_model.render_3d(self._mvp_3d)
 
         # 2D panels — clear only (overlay_2d renders the schematic)
-        ctx.clear(0.03, 0.03, 0.07, viewport=self._vm.get_viewport_rect("top_2d"))
         ctx.clear(0.03, 0.03, 0.07, viewport=self._vm.get_viewport_rect("side_2d"))
+        ctx.clear(0.03, 0.03, 0.07, viewport=self._vm.get_viewport_rect("top_2d"))
+
+        # Timeline — clear to deep dark
+        ctx.clear(0.025, 0.025, 0.065, viewport=self._vm.timeline_rect)
 
         # Reset to full viewport
         ctx.viewport = (0, 0, self._width, self._height)
 
     def render_2d_grid(self, view_name: str) -> None:
+        """Draw reference grid in a 2D viewport (top view only for new layout)."""
         import moderngl
 
         from exca_dance.rendering.theme import NeonTheme
@@ -134,31 +173,31 @@ class GameViewportLayout:
             NeonTheme.TEXT_DIM.g * 0.25,
             NeonTheme.TEXT_DIM.b * 0.30,
         )
-
         gr, gg, gb = (
             NeonTheme.NEON_GREEN.r * 0.35,
             NeonTheme.NEON_GREEN.g * 0.35,
             NeonTheme.NEON_GREEN.b * 0.35,
         )
 
-        verts = []
+        verts: list[float] = []
 
         if view_name == "top_2d":
             mvp = self._mvp_top
-            for y in range(-5, 5):
+            # Wider range for aspect-matched top viewport
+            for y in range(-6, 7):
                 c = (gr, gg, gb) if y == 0 else (r, g, b)
-                verts += [-2, y, 0, c[0], c[1], c[2], 7, y, 0, c[0], c[1], c[2]]
-            for x in range(-2, 8):
+                verts += [-6, y, 0, c[0], c[1], c[2], 12, y, 0, c[0], c[1], c[2]]
+            for x in range(-6, 13):
                 c = (gr, gg, gb) if x == 0 else (r, g, b)
-                verts += [x, -5, 0, c[0], c[1], c[2], x, 5, 0, c[0], c[1], c[2]]
+                verts += [x, -6, 0, c[0], c[1], c[2], x, 6, 0, c[0], c[1], c[2]]
         else:
             mvp = self._mvp_side
-            for z in range(-1, 7):
+            for z in range(-1, 8):
                 c = (gr, gg, gb) if z == 0 else (r, g, b)
-                verts += [-1, 0, z, c[0], c[1], c[2], 7, 0, z, c[0], c[1], c[2]]
-            for x in range(-1, 8):
+                verts += [-3, 0, z, c[0], c[1], c[2], 9, 0, z, c[0], c[1], c[2]]
+            for x in range(-3, 10):
                 c = (gr, gg, gb) if x == 0 else (r, g, b)
-                verts += [x, 0, -1, c[0], c[1], c[2], x, 0, 7, c[0], c[1], c[2]]
+                verts += [x, 0, -1, c[0], c[1], c[2], x, 0, 8, c[0], c[1], c[2]]
 
         if not verts:
             return
@@ -180,6 +219,7 @@ class GameViewportLayout:
             vbo.release()
 
     def render_gameplay_background(self, beat_phase: float = 0.0) -> None:
+        """Render ground grid and neon rings in the 3D viewport."""
         import moderngl
 
         from exca_dance.rendering.theme import NeonTheme
@@ -264,6 +304,7 @@ class GameViewportLayout:
         ctx.viewport = (0, 0, self._width, self._height)
 
     def render_viewport_decorations(self, text_renderer: Any | None) -> None:
+        """Render panel borders and labels for the new layout."""
         import moderngl
 
         from exca_dance.rendering.theme import NeonTheme
@@ -271,131 +312,126 @@ class GameViewportLayout:
         ctx = self._renderer.ctx
         W = self._width
         H = self._height
-
         ctx.viewport = (0, 0, W, H)
 
-        border_r, border_g, border_b = (
-            NeonTheme.BORDER.r,
-            NeonTheme.BORDER.g,
-            NeonTheme.BORDER.b,
-        )
-
-        top_rect = self._vm.get_viewport_rect("top_2d")
-        vx = (top_rect[0] / W) * 2.0 - 1.0
-        hy = (top_rect[1] / H) * 2.0 - 1.0
-
-        lw = 2.0 / W
+        cr, cg, cb = NeonTheme.BORDER.r, NeonTheme.BORDER.g, NeonTheme.BORDER.b
+        lw = 2.0 / W  # ~1px in NDC
         lh = 2.0 / H
 
-        r, g, b = border_r, border_g, border_b
-        verts = [
-            vx,
-            -1.0,
-            0.0,
-            r,
-            g,
-            b,
-            vx + lw,
-            -1.0,
-            0.0,
-            r,
-            g,
-            b,
-            vx + lw,
-            1.0,
-            0.0,
-            r,
-            g,
-            b,
-            vx,
-            -1.0,
-            0.0,
-            r,
-            g,
-            b,
-            vx + lw,
-            1.0,
-            0.0,
-            r,
-            g,
-            b,
-            vx,
-            1.0,
-            0.0,
-            r,
-            g,
-            b,
-            vx,
-            hy,
-            0.0,
-            r,
-            g,
-            b,
-            1.0,
-            hy,
-            0.0,
-            r,
-            g,
-            b,
-            1.0,
-            hy + lh,
-            0.0,
-            r,
-            g,
-            b,
-            vx,
-            hy,
-            0.0,
-            r,
-            g,
-            b,
-            1.0,
-            hy + lh,
-            0.0,
-            r,
-            g,
-            b,
-            vx,
-            hy + lh,
-            0.0,
-            r,
-            g,
-            b,
-        ]
-        data = np.array(verts, dtype="f4")
-        vbo = ctx.buffer(data)
-        prog = self._renderer.prog_solid
-        vao = ctx.vertex_array(prog, [(vbo, "3f 3f", "in_position", "in_color")])
+        main_3d = self._vm.get_viewport_rect("main_3d")
+        top_2d = self._vm.get_viewport_rect("top_2d")
+        tl = self._vm.timeline_rect
 
-        identity = np.eye(4, dtype="f4")
-        prog["mvp"].write(np.ascontiguousarray(identity).tobytes())
-        prog["alpha"].value = NeonTheme.BORDER.a
+        # Helper: GL pixel → NDC
+        def nx(px: float) -> float:
+            return (px / W) * 2.0 - 1.0
 
-        try:
-            ctx.disable_direct(moderngl.DEPTH_TEST)
-            vao.render(moderngl.TRIANGLES)
-        finally:
-            ctx.enable_direct(moderngl.DEPTH_TEST)
-            vao.release()
-            vbo.release()
+        def ny(py: float) -> float:
+            return (py / H) * 2.0 - 1.0
 
+        verts: list[float] = []
+
+        def _quad(x0: float, y0: float, x1: float, y1: float) -> None:
+            verts.extend(
+                [
+                    x0,
+                    y0,
+                    0,
+                    cr,
+                    cg,
+                    cb,
+                    x1,
+                    y0,
+                    0,
+                    cr,
+                    cg,
+                    cb,
+                    x1,
+                    y1,
+                    0,
+                    cr,
+                    cg,
+                    cb,
+                    x0,
+                    y0,
+                    0,
+                    cr,
+                    cg,
+                    cb,
+                    x1,
+                    y1,
+                    0,
+                    cr,
+                    cg,
+                    cb,
+                    x0,
+                    y1,
+                    0,
+                    cr,
+                    cg,
+                    cb,
+                ]
+            )
+
+        # 1) Vertical border — right edge of main_3d → full main area height
+        vx = nx(main_3d[0] + main_3d[2])
+        vy_bot = ny(tl[1] + tl[3])
+        _quad(vx, vy_bot, vx + lw, 1.0)
+
+        # 2) Horizontal border — top of timeline → full width
+        hy = ny(tl[1] + tl[3])
+        _quad(-1.0, hy, 1.0, hy + lh)
+
+        # 3) Horizontal border — between side and top views (right panel only)
+        hy2 = ny(top_2d[1] + top_2d[3])
+        _quad(vx, hy2, 1.0, hy2 + lh)
+
+        if verts:
+            data = np.array(verts, dtype="f4")
+            vbo = ctx.buffer(data)
+            prog = self._renderer.prog_solid
+            vao = ctx.vertex_array(prog, [(vbo, "3f 3f", "in_position", "in_color")])
+
+            identity = np.eye(4, dtype="f4")
+            prog["mvp"].write(np.ascontiguousarray(identity).tobytes())
+            prog["alpha"].value = NeonTheme.BORDER.a
+
+            try:
+                ctx.disable_direct(moderngl.DEPTH_TEST)
+                vao.render(moderngl.TRIANGLES)
+            finally:
+                ctx.enable_direct(moderngl.DEPTH_TEST)
+                vao.release()
+                vbo.release()
+
+        # ── Panel labels ─────────────────────────────────────────────
         if text_renderer is not None:
             label_color = NeonTheme.TEXT_DIM.as_tuple()
-            text_renderer.render("3D VIEW", 10, H - 25, color=label_color, scale=0.7)
+
+            # "3D VIEW" — top-left of 3D viewport (screen y = 0)
+            text_renderer.render("3D VIEW", 12, 8, color=label_color, scale=0.7)
+
+            # "JOINT DIAGRAM" — top-left of side viewport (screen y = 0)
+            side_2d = self._vm.get_viewport_rect("side_2d")
             text_renderer.render(
-                "TOP",
-                top_rect[0] + 10,
-                H - 25,
+                "JOINT DIAGRAM",
+                side_2d[0] + 12,
+                8,
                 color=label_color,
                 scale=0.7,
             )
+
+            # "TOP VIEW" — top-left of top viewport
+            top_screen_y = H - (top_2d[1] + top_2d[3])
             text_renderer.render(
-                "SIDE",
-                top_rect[0] + 10,
-                top_rect[1] - 25,
+                "TOP VIEW",
+                top_2d[0] + 12,
+                top_screen_y + 8,
                 color=label_color,
                 scale=0.7,
             )
+
+    # ── Properties ───────────────────────────────────────────────────
 
     @property
     def mvp_3d(self) -> np.ndarray:

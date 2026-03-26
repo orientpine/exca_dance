@@ -29,7 +29,8 @@ def test_render_timeline_no_crash_empty_events() -> None:
 
     cues.render_timeline(renderer, None, 120000.0)
 
-    assert draw_mock.call_count == 3
+    # Background(1) + lane dividers(3) + hit-line(1) + hit-glow(1) = 6 calls
+    assert draw_mock.call_count == 6
 
 
 def test_rebuild_ghost_glow_no_crash_empty_vbo() -> None:

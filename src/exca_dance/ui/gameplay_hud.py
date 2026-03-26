@@ -66,7 +66,7 @@ class GameplayHUD:
 
         W = self._renderer.width
         H = self._renderer.height
-        main_w = int(W * 0.75)
+        main_w = int(W * 0.55)  # matches new viewport layout
         main_center_x = main_w // 2
         current_ms = self._audio.get_position_ms()
 
@@ -134,11 +134,11 @@ class GameplayHUD:
         # ── Judgment flash (center) ────────────────────────────────────
         self._judgment_display.render(self._renderer, self._text)
 
-        # ── Progress bar (bottom) ──────────────────────────────────────
+        # ── Progress bar (in timeline area) ────────────────────────────────
         bar_y = H - 15
-        bar_h = 8
+        bar_h = 6
         bar_x = 20
-        bar_w = main_w - 40
+        bar_w = W - 40  # full width in timeline area
         progress = min(1.0, current_ms / max(1.0, self._song_duration_ms))
         filled_w = int(bar_w * progress)
 
@@ -148,7 +148,7 @@ class GameplayHUD:
         if filled_w > 0:
             self._draw_rect_2d(bar_x, bar_y, filled_w, bar_h, NeonTheme.NEON_BLUE)
 
-        # Time text
+        # Time text — bottom-right of timeline area
         elapsed_s = int(current_ms / 1000)
         total_s = int(self._song_duration_ms / 1000)
         self._text.render(
@@ -156,11 +156,11 @@ class GameplayHUD:
                 f"{elapsed_s // 60:02d}:{elapsed_s % 60:02d} / "
                 f"{total_s // 60:02d}:{total_s % 60:02d}"
             ),
-            main_center_x,
+            W - 20,
             H - 50,
             color=NeonTheme.TEXT_DIM.as_tuple(),
-            scale=0.9,
-            align="center",
+            scale=0.8,
+            align="right",
         )
 
         # ── Joint status panel (left side) ────────────────────────────

@@ -82,6 +82,20 @@ class NeonTheme:
     MATCH_MEDIUM: Color = Color(1.0, 0.9, 0.0)  # yellow — 50-80%
     MATCH_BAD: Color = Color(1.0, 0.2, 0.1)  # red    — <50%
 
+    # Kinematic diagram
+    DIAGRAM_GROUND: Color = Color(0.0, 0.55, 0.40, 0.6)  # teal ground line
+    DIAGRAM_GRID: Color = Color(0.10, 0.10, 0.20, 0.25)  # subtle reference lines
+    DIAGRAM_ARC_FILL: Color = Color(0.25, 0.25, 0.45, 0.35)  # angle arc fill
+    DIAGRAM_REF_LINE: Color = Color(0.35, 0.35, 0.50, 0.5)  # reference direction line
+
+    # Timeline
+    TIMELINE_BG: Color = Color(0.025, 0.025, 0.065)  # deep dark background
+    TIMELINE_LANE: Color = Color(0.07, 0.07, 0.15, 0.4)  # lane divider lines
+    TIMELINE_HIT: Color = Color(0.0, 0.9, 1.0)  # hit line color
+
+    # Panel label backgrounds
+    PANEL_LABEL_BG: Color = Color(0.05, 0.05, 0.12, 0.7)  # translucent header
+
     @classmethod
     def judgment_color(cls, judgment: Judgment) -> Color:
         return {
