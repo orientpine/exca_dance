@@ -546,7 +546,7 @@ class Overlay2DRenderer:
 
         target_pts: list[tuple[float, float]] | None = None
         if target_angles is not None:
-            full_target = dict(current_angles)
+            full_target: dict[JointName, float] = {j: 0.0 for j in current_angles}
             full_target.update(target_angles)
             if viewport_name == "top_2d":
                 target_pts = self._fk.get_joint_positions_2d_top(full_target)

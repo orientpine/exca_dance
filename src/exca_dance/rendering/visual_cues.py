@@ -158,7 +158,7 @@ class VisualCueRenderer:
             self._active_target = dict(nearest.target_angles)
             self._next_event_time_ms = float(nearest.time_ms)
             # Update ghost model to target pose
-            ghost_angles = dict(current_angles)
+            ghost_angles: dict[JointName, float] = {j: 0.0 for j in JointName}
             ghost_angles.update(nearest.target_angles)
             if self._prev_ghost_angles is None or any(
                 abs(ghost_angles.get(k, 0) - self._prev_ghost_angles.get(k, 0)) > 0.01
