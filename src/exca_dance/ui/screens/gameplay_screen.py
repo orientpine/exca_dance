@@ -209,20 +209,16 @@ class GameplayScreen:
         self._visual_cues.render_ghost(self._layout.mvp_3d)
         self._visual_cues.render_outline(self._layout.mvp_3d)
 
-        # Prepare overlay data
-        cur = None
-        tgt = None
-        mpct = None
-        if self._overlay_2d is not None:
-            cur = self._game_loop.joint_angles
-            tgt = self._visual_cues._active_target
-            mpct = (
-                {j: self._visual_cues.get_angle_match_pct(j) for j in JointName}
-                if tgt is not None
-                else None
-            )
+        # Prepare data for overlay + side-view 3D rendering
+        cur = self._game_loop.joint_angles
+        tgt = self._visual_cues._active_target
+        mpct = (
+            {j: self._visual_cues.get_angle_match_pct(j) for j in JointName}
+            if tgt is not None
+            else None
+        )
 
-        # 2D panels — overlay renders the schematic (no ghost/3D model)
+        # 2D panels — overlay renders the schematic
         vm.set_viewport(ctx, "top_2d")
         if self._overlay_2d is not None:
             self._overlay_2d.render(
@@ -234,7 +230,19 @@ class GameplayScreen:
                 mpct,
             )
 
+        # Side view — 3D excavator + ghost with swing-compensated camera
         vm.set_viewport(ctx, "side_2d")
+        current_swing = cur.get(JointName.SWING, 0.0)
+        side_mvp = self._layout.get_side_mvp_for_swing(current_swing)
+        self._game_loop._excavator_model.render_3d(side_mvp)
+
+        # Ghost in side view (counter-rotate by the ghost's own swing)
+        ghost_swing = tgt.get(JointName.SWING, 0.0) if tgt else 0.0
+        side_mvp_ghost = self._layout.get_side_mvp_for_swing(ghost_swing)
+        self._visual_cues.render_ghost(side_mvp_ghost)
+        self._visual_cues.render_outline(side_mvp_ghost)
+
+        # 2D overlay schematic on top (uses static mvp_side, FK zeroes swing)
         if self._overlay_2d is not None:
             self._overlay_2d.render(
                 "side_2d",

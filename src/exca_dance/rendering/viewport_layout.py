@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 import numpy as np
@@ -106,7 +107,7 @@ class GameViewportLayout:
         aspect_side = self._vm.get_aspect_ratio("side_2d")
         side_half_h = 3.5
         side_half_w = side_half_h * aspect_side
-        proj_side = _ortho(
+        self._proj_side: np.ndarray = _ortho(
             1.0 - side_half_w,
             1.0 + side_half_w,
             -side_half_h,
@@ -117,8 +118,8 @@ class GameViewportLayout:
         side_eye = np.array([0.0, -12.0, 3.0], dtype="f4")
         side_center = np.array([2.0, 0.0, 3.0], dtype="f4")
         side_up = np.array([0.0, 0.0, 1.0], dtype="f4")
-        view_side = _look_at(side_eye, side_center, side_up)
-        self._mvp_side: np.ndarray = (proj_side @ view_side).astype("f4")
+        self._view_side: np.ndarray = _look_at(side_eye, side_center, side_up)
+        self._mvp_side: np.ndarray = (self._proj_side @ self._view_side).astype("f4")
 
         # ── Top-down orthographic (XY plane, camera looks down -Z) ──
         aspect_top = self._vm.get_aspect_ratio("top_2d")
@@ -444,6 +445,28 @@ class GameViewportLayout:
     @property
     def mvp_side(self) -> np.ndarray:
         return self._mvp_side
+
+    def get_side_mvp_for_swing(self, swing_deg: float) -> np.ndarray:
+        """Return a side-view MVP that counter-rotates swing out of the model.
+
+        The 3D excavator has swing rotation baked into its FK geometry.
+        Multiplying by Rz(-swing) undoes that rotation so the arm always
+        faces the fixed side camera, keeping boom/arm/bucket visible.
+        """
+        swing_rad = math.radians(swing_deg)
+        cs = math.cos(swing_rad)
+        ss = math.sin(swing_rad)
+        # Rz(-swing): counter-rotate to cancel swing in the geometry
+        model = np.array(
+            [
+                [cs, ss, 0.0, 0.0],
+                [-ss, cs, 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ],
+            dtype="f4",
+        )
+        return (self._proj_side @ self._view_side @ model).astype("f4")
 
     @property
     def viewport_manager(self) -> ViewportManager:
