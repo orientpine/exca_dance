@@ -111,3 +111,54 @@ def test_grade_s_at_95_percent_or_higher() -> None:
 def test_max_possible_score_for_100_events() -> None:
     engine = ScoringEngine()
     assert engine.get_max_possible_score(100) == 120000
+
+
+def test_angle_accuracy_downgrades_perfect_to_great() -> None:
+    engine = ScoringEngine()
+    angle_errors = {cast(JointName, JointName.BOOM): 8.0}
+    result = engine.judge(angle_errors, 0.0)
+    assert result.judgment == Judgment.GREAT
+
+
+def test_angle_accuracy_downgrades_perfect_to_good() -> None:
+    engine = ScoringEngine()
+    angle_errors = {cast(JointName, JointName.BOOM): 15.0}
+    result = engine.judge(angle_errors, 0.0)
+    assert result.judgment == Judgment.GOOD
+
+
+def test_angle_accuracy_causes_miss_at_high_error() -> None:
+    engine = ScoringEngine()
+    angle_errors = {cast(JointName, JointName.BOOM): 30.0}
+    result = engine.judge(angle_errors, 0.0)
+    assert result.judgment == Judgment.MISS
+    assert result.score == 0
+    assert result.score == 0
+
+
+def test_small_angle_error_keeps_perfect() -> None:
+    engine = ScoringEngine()
+    angle_errors = {cast(JointName, JointName.BOOM): 3.0}
+    result = engine.judge(angle_errors, 0.0)
+    assert result.judgment == Judgment.PERFECT
+
+
+def test_combined_timing_and_angle_picks_worse() -> None:
+    engine = ScoringEngine()
+    angle_errors = {cast(JointName, JointName.BOOM): 15.0}
+    result = engine.judge(angle_errors, 50.0)
+    assert result.judgment == Judgment.GOOD
+
+
+def test_empty_angle_errors_keeps_timing_judgment() -> None:
+    engine = ScoringEngine()
+    result = engine.judge({}, 0.0)
+    assert result.judgment == Judgment.PERFECT
+
+
+def test_angle_thresholds_vary_by_difficulty() -> None:
+    easy_engine = ScoringEngine(difficulty="EASY")
+    hard_engine = ScoringEngine(difficulty="HARD")
+    angle_errors = {cast(JointName, JointName.BOOM): 6.0}
+    assert easy_engine.judge(angle_errors, 0.0).judgment == Judgment.PERFECT
+    assert hard_engine.judge(angle_errors, 0.0).judgment == Judgment.GREAT

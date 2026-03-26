@@ -20,12 +20,26 @@ _WINDOWS: dict[str, dict[Judgment, float]] = {
     "HARD": _window_set(25.0, 50.0, 90.0),
 }
 
+_JUDGMENT_RANK: dict[Judgment, int] = {
+    cast(Judgment, Judgment.PERFECT): 0,
+    cast(Judgment, Judgment.GREAT): 1,
+    cast(Judgment, Judgment.GOOD): 2,
+    cast(Judgment, Judgment.MISS): 3,
+}
+
 
 class ScoringEngine:
+    _ANGLE_THRESHOLDS: dict[str, dict[Judgment, float]] = {
+        "EASY": _window_set(8.0, 18.0, 35.0),
+        "NORMAL": _window_set(5.0, 12.0, 25.0),
+        "HARD": _window_set(3.0, 8.0, 18.0),
+    }
+
     def __init__(self, difficulty: str = "NORMAL") -> None:
         normalized = difficulty.upper()
         self._difficulty: str = normalized if normalized in _WINDOWS else "NORMAL"
         self._windows: dict[Judgment, float] = _WINDOWS[self._difficulty]
+        self._angle_thresholds: dict[Judgment, float] = self._ANGLE_THRESHOLDS[self._difficulty]
         self._total_score: int = 0
         self._combo: int = 0
         self._judgments: dict[Judgment, int] = {j: 0 for j in Judgment}
@@ -39,27 +53,44 @@ class ScoringEngine:
         self._max_combo = 0
 
     def judge(self, angle_errors: dict[JointName, float], timing_error_ms: float) -> HitResult:
-        judgment = cast(Judgment, Judgment.MISS)
+        timing_judgment = cast(Judgment, Judgment.MISS)
         tiers = cast(
             tuple[Judgment, Judgment, Judgment],
             (Judgment.PERFECT, Judgment.GREAT, Judgment.GOOD),
         )
         for tier in tiers:
             if timing_error_ms <= self._windows[tier]:
-                judgment = tier
+                timing_judgment = tier
                 break
 
         if angle_errors:
             avg_err = sum(angle_errors.values()) / len(angle_errors)
         else:
             avg_err = 0.0
+
+        if angle_errors:
+            angle_judgment = cast(Judgment, Judgment.MISS)
+            for tier in tiers:
+                if avg_err <= self._angle_thresholds[tier]:
+                    angle_judgment = tier
+                    break
+            judgment = (
+                timing_judgment
+                if _JUDGMENT_RANK[timing_judgment] >= _JUDGMENT_RANK[angle_judgment]
+                else angle_judgment
+            )
+        else:
+            judgment = timing_judgment
+
         self.update_combo(judgment)
         combo_mult: int = self.get_combo_multiplier()
 
         angle_mult: float = max(0.1, 1.0 - (avg_err / 20.0))
 
-        base: int = SCORE_VALUES[judgment]
+        base: int = SCORE_VALUES[timing_judgment]
         score = int(base * angle_mult * combo_mult)
+        if judgment == Judgment.MISS:
+            score = 0
 
         self._total_score += score
         self._judgments[judgment] += 1

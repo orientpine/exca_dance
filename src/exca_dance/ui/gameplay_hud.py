@@ -35,6 +35,8 @@ class GameplayHUD:
         self._show_fps = False
         self._song_duration_ms: float = 60_000.0  # default 60s
         self._target_angles: dict[JointName, float] = {}
+        self._combo_pulse_time: float = 0.0
+        self._last_combo: int = 0
 
     def set_song_duration(self, ms: float) -> None:
         self._song_duration_ms = ms
@@ -51,6 +53,11 @@ class GameplayHUD:
 
     def update(self, dt: float) -> None:
         self._judgment_display.update(dt)
+        self._combo_pulse_time = max(0.0, self._combo_pulse_time - dt)
+        combo = self._scoring._combo
+        if combo > self._last_combo and combo > 0:
+            self._combo_pulse_time = 0.2
+        self._last_combo = combo
 
     def render(self, joint_angles: dict[JointName, float]) -> None:
         """Render all HUD elements."""
@@ -77,13 +84,30 @@ class GameplayHUD:
         # ── Combo (top-center) ─────────────────────────────────────────
         combo = self._scoring._combo
         if combo > 0:
-            mult = self._scoring.get_combo_multiplier()
-            if combo in (10, 25, 50):
+            pulse = 1.0
+            if self._combo_pulse_time > 0:
+                t = self._combo_pulse_time / 0.2
+                pulse = 1.0 + 0.3 * t
+
+            # Color grading by combo count
+            if combo >= 50:
                 combo_color = NeonTheme.NEON_PINK
-                combo_scale = 2.0
+                combo_scale = 2.0 * pulse
+            elif combo >= 25:
+                combo_color = NeonTheme.PERFECT
+                combo_scale = 1.8 * pulse
+            elif combo >= 10:
+                combo_color = NeonTheme.NEON_GREEN
+                combo_scale = 1.5 * pulse
             else:
-                combo_color = NeonTheme.NEON_GREEN if mult > 1 else NeonTheme.TEXT_WHITE
-                combo_scale = 1.5
+                combo_color = NeonTheme.TEXT_WHITE
+                combo_scale = 1.5 * pulse
+
+            # Extra pulse at milestone combos
+            if combo in (10, 25, 50):
+                if self._combo_pulse_time > 0.15:
+                    combo_scale *= 1.15
+
             self._text.render(
                 f"x{combo}",
                 main_center_x,
@@ -92,6 +116,7 @@ class GameplayHUD:
                 scale=combo_scale,
                 align="center",
             )
+            mult = self._scoring.get_combo_multiplier()
             if mult > 1:
                 self._text.render(
                     f"{mult}× COMBO",

@@ -49,6 +49,15 @@ class NeonTheme:
     GOOD: Color = Color(0.0, 1.0, 0.53)  # green  #00FF88
     MISS: Color = Color(1.0, 0.0, 0.27)  # red    #FF0044
 
+    PERFECT_GLOW: Color = Color(1.0, 0.95, 0.4, 0.6)
+    GREAT_GLOW: Color = Color(0.3, 0.9, 1.0, 0.5)
+    GOOD_GLOW: Color = Color(0.3, 1.0, 0.7, 0.4)
+    MISS_GLOW: Color = Color(1.0, 0.3, 0.3, 0.3)
+
+    PARTICLE_GOLD: Color = Color(1.0, 0.9, 0.3)
+    PARTICLE_CYAN: Color = Color(0.4, 0.9, 1.0)
+    PARTICLE_WHITE: Color = Color(1.0, 1.0, 1.0, 0.8)
+
     # Panel borders (electric blue, semi-transparent)
     BORDER: Color = Color(0.0, 0.83, 1.0, 0.6)
 
@@ -69,9 +78,9 @@ class NeonTheme:
     GHOST_OUTLINE_PULSE_SPEED: float = 4.0
 
     # 2D overlay — match quality indicators
-    MATCH_GOOD: Color = Color(0.0, 1.0, 0.4)      # green  — >80% match
-    MATCH_MEDIUM: Color = Color(1.0, 0.9, 0.0)     # yellow — 50-80%
-    MATCH_BAD: Color = Color(1.0, 0.2, 0.1)        # red    — <50%
+    MATCH_GOOD: Color = Color(0.0, 1.0, 0.4)  # green  — >80% match
+    MATCH_MEDIUM: Color = Color(1.0, 0.9, 0.0)  # yellow — 50-80%
+    MATCH_BAD: Color = Color(1.0, 0.2, 0.1)  # red    — <50%
 
     @classmethod
     def judgment_color(cls, judgment: Judgment) -> Color:
@@ -80,4 +89,13 @@ class NeonTheme:
             Judgment.GREAT: cls.GREAT,
             Judgment.GOOD: cls.GOOD,
             Judgment.MISS: cls.MISS,
+        }[judgment]
+
+    @classmethod
+    def judgment_glow_color(cls, judgment: Judgment) -> Color:
+        return {
+            Judgment.PERFECT: cls.PERFECT_GLOW,
+            Judgment.GREAT: cls.GREAT_GLOW,
+            Judgment.GOOD: cls.GOOD_GLOW,
+            Judgment.MISS: cls.MISS_GLOW,
         }[judgment]
