@@ -43,6 +43,20 @@ def test_miss_judgment_at_121ms_score_zero() -> None:
     assert result.score == 0
 
 
+def test_easy_difficulty_perfect_at_45ms() -> None:
+    engine = ScoringEngine(difficulty="EASY")
+    angle_errors: dict[JointName, float] = {cast(JointName, JointName.BOOM): 0.0}
+    result = engine.judge(angle_errors, 45.0)
+    assert result.judgment == Judgment.PERFECT
+
+
+def test_hard_difficulty_great_at_30ms() -> None:
+    engine = ScoringEngine(difficulty="HARD")
+    angle_errors: dict[JointName, float] = {cast(JointName, JointName.BOOM): 0.0}
+    result = engine.judge(angle_errors, 30.0)
+    assert result.judgment == Judgment.GREAT
+
+
 def test_angle_accuracy_scaling_uses_20_degree_floor() -> None:
     engine = ScoringEngine()
     boom = cast(JointName, JointName.BOOM)

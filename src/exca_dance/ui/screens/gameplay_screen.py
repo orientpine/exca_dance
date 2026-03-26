@@ -1,6 +1,7 @@
 """Gameplay screen — integrates game loop, HUD, visual cues."""
 
 from __future__ import annotations
+import numpy as np
 import pygame
 import moderngl
 from exca_dance.core.models import BeatMap, Judgment, JointName
@@ -32,6 +33,7 @@ class GameplayScreen:
         self._beatmap: BeatMap | None = None
         self._overlay_2d = overlay_2d
         self._result_scoring = None
+        self._pause_selected: int = 0
 
     def on_enter(self, beatmap: BeatMap | None = None, **kwargs) -> None:
         self._beatmap = beatmap
@@ -48,7 +50,98 @@ class GameplayScreen:
     def _on_song_end(self, scoring) -> None:
         self._result_scoring = scoring
 
+    def _draw_pause_panel(self, renderer) -> None:
+        ctx = renderer.ctx
+        W, H = renderer.width, renderer.height
+        panel_w, panel_h = 400, 300
+        panel_x = (W - panel_w) // 2
+        panel_y = (H - panel_h) // 2
+        x, y, w, h = panel_x, panel_y, panel_w, panel_h
+        x0 = (x / W) * 2 - 1
+        x1 = ((x + w) / W) * 2 - 1
+        y0 = 1 - (y / H) * 2
+        y1 = 1 - ((y + h) / H) * 2
+        verts = [
+            x0,
+            y1,
+            0,
+            0.0,
+            0.0,
+            0.0,
+            x1,
+            y1,
+            0,
+            0.0,
+            0.0,
+            0.0,
+            x1,
+            y0,
+            0,
+            0.0,
+            0.0,
+            0.0,
+            x0,
+            y1,
+            0,
+            0.0,
+            0.0,
+            0.0,
+            x1,
+            y0,
+            0,
+            0.0,
+            0.0,
+            0.0,
+            x0,
+            y0,
+            0,
+            0.0,
+            0.0,
+            0.0,
+        ]
+        vbo = ctx.buffer(np.array(verts, dtype="f4"))
+        prog = renderer.prog_solid
+        vao = ctx.vertex_array(prog, [(vbo, "3f 3f", "in_position", "in_color")])
+        identity = np.eye(4, dtype="f4")
+        prog["mvp"].write(np.ascontiguousarray(identity).tobytes())
+        prog["alpha"].value = 0.8
+        ctx.disable(moderngl.DEPTH_TEST)
+        vao.render(moderngl.TRIANGLES)
+        vao.release()
+        vbo.release()
+
     def handle_event(self, event: pygame.event.Event):
+        paused = self._game_loop.state == LoopState.PAUSED
+        if paused and event.type == pygame.KEYUP:
+            self._game_loop.handle_event(event)
+            return None
+
+        if paused and event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_F3:
+                self._hud.toggle_fps()
+            elif event.key == pygame.K_UP:
+                self._pause_selected = max(0, self._pause_selected - 1)
+            elif event.key == pygame.K_DOWN:
+                self._pause_selected = min(3, self._pause_selected + 1)
+            elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_SPACE):
+                if self._pause_selected == 0:
+                    self._game_loop.resume()
+                elif self._pause_selected == 1:
+                    self._game_loop.stop()
+                    if self._beatmap is not None:
+                        self._game_loop.start_song(self._beatmap)
+                elif self._pause_selected == 2:
+                    return ScreenName.SETTINGS
+                else:
+                    self._game_loop.stop()
+                    return ScreenName.MAIN_MENU
+            elif event.key == pygame.K_ESCAPE:
+                self._game_loop.resume()
+            elif event.key == pygame.K_q:
+                self._game_loop.stop()
+                return ScreenName.MAIN_MENU
+            return None
+
         self._game_loop.handle_event(event)
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_F3:
@@ -76,11 +169,8 @@ class GameplayScreen:
             if hit_sound is not None:
                 hit_sound.play()
             if self._beatmap:
-                self._hud.set_target_angles(
-                    self._game_loop.get_upcoming_events(500)[0].target_angles
-                    if self._game_loop.get_upcoming_events(500)
-                    else {}
-                )
+                _upcoming = self._game_loop.get_upcoming_events(500)
+                self._hud.set_target_angles(_upcoming[0].target_angles if _upcoming else {})
 
         self._hud.update(dt)
 
@@ -99,6 +189,9 @@ class GameplayScreen:
         return None
 
     def render(self, renderer, text_renderer) -> None:
+        beat_phase = getattr(self._game_loop, "_beat_phase", 0.0)
+        self._layout.render_gameplay_background(beat_phase)
+
         # Render 3D excavator in all viewports
         self._layout.render_all(
             self._game_loop._excavator_model,
@@ -169,20 +262,29 @@ class GameplayScreen:
 
         # Pause overlay
         if self._game_loop.state == LoopState.PAUSED and text_renderer:
+            self._draw_pause_panel(renderer)
             W, H = renderer.width, renderer.height
             text_renderer.render(
                 "PAUSED",
                 W // 2,
-                H // 2 - 60,
+                H // 2 - 95,
                 color=NeonTheme.NEON_BLUE.as_tuple(),
                 scale=3.0,
                 align="center",
             )
-            text_renderer.render(
-                "ESC Resume  |  Q Main Menu",
-                W // 2,
-                H // 2 + 20,
-                color=NeonTheme.TEXT_DIM.as_tuple(),
-                scale=1.2,
-                align="center",
-            )
+            items = ["RESUME", "RESTART", "SETTINGS", "QUIT TO MENU"]
+            start_y = H // 2 - 20
+            for i, label in enumerate(items):
+                color = (
+                    NeonTheme.NEON_PINK.as_tuple()
+                    if i == self._pause_selected
+                    else NeonTheme.TEXT_WHITE.as_tuple()
+                )
+                text_renderer.render(
+                    label,
+                    W // 2,
+                    start_y + i * 60,
+                    color=color,
+                    scale=1.5,
+                    align="center",
+                )

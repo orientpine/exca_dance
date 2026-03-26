@@ -92,7 +92,14 @@ class SongSelectScreen:
                 color = (NeonTheme.TEXT_WHITE if audio_ok else NeonTheme.TEXT_DIM).as_tuple()
                 scale = 1.2
 
-            text_renderer.render(bm.title, W // 2, y, color=color, scale=scale, align="center")
+            text_renderer.render(
+                f"{bm.title} [{getattr(bm, 'difficulty', 'NORMAL')}]",
+                W // 2,
+                y,
+                color=color,
+                scale=scale,
+                align="center",
+            )
             text_renderer.render(
                 f"{bm.artist}  |  {bm.bpm:.0f} BPM  |  {len(bm.events)} events",
                 W // 2,

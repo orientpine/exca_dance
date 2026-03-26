@@ -20,6 +20,7 @@ from exca_dance.rendering.theme import NeonTheme
 
 MENU_ITEMS = [
     ("PLAY", ScreenName.SONG_SELECT),
+    ("HOW TO PLAY", ScreenName.TUTORIAL),
     ("EDITOR", ScreenName.EDITOR),
     ("LEADERBOARD", ScreenName.LEADERBOARD),
     ("SETTINGS", ScreenName.SETTINGS),

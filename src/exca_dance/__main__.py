@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import argparse
+from importlib import import_module
 import logging
 import os
 import sys
@@ -16,6 +17,71 @@ def _setup_logging(debug: bool) -> None:
         level=level,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     )
+
+
+def _draw_fade_overlay(renderer, alpha: float) -> None:
+    import moderngl
+    import numpy as np
+
+    if alpha <= 0.0:
+        return
+
+    ctx = renderer.ctx
+    verts = np.array(
+        [
+            -1.0,
+            -1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            -1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        ],
+        dtype="f4",
+    )
+    vbo = ctx.buffer(verts)
+    prog = renderer.prog_solid
+    vao = ctx.vertex_array(prog, [(vbo, "3f 3f", "in_position", "in_color")])
+
+    identity = np.eye(4, dtype="f4")
+    prog["mvp"].write(np.ascontiguousarray(identity).tobytes())
+    prog["alpha"].value = alpha
+
+    ctx.disable(moderngl.DEPTH_TEST)
+    vao.render(moderngl.TRIANGLES)
+
+    vao.release()
+    vbo.release()
+    prog["alpha"].value = 1.0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -165,6 +231,10 @@ def main(argv: list[str] | None = None) -> int:
         state_mgr.register(
             ScreenName.SETTINGS, SettingsScreen(renderer, text_renderer, keybinding, audio)
         )
+        tutorial_screen_class = import_module(
+            "exca_dance.ui.screens.tutorial_screen"
+        ).TutorialScreen
+        state_mgr.register(ScreenName.TUTORIAL, tutorial_screen_class(renderer, text_renderer))
         state_mgr.register(
             ScreenName.EDITOR,
             PoseEditorScreen(renderer, text_renderer, audio, viewport_layout, excavator_model, fk),
@@ -190,6 +260,8 @@ def main(argv: list[str] | None = None) -> int:
 
             renderer.begin_frame()
             state_mgr.render(renderer, text_renderer)
+            if state_mgr.is_transitioning:
+                _draw_fade_overlay(renderer, state_mgr.fade_alpha)
             renderer.end_frame()
 
         # Cleanup

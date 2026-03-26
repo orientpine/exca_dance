@@ -30,6 +30,7 @@ class _Screen(Protocol):
 @final
 class ScreenName:
     MAIN_MENU = "main_menu"
+    TUTORIAL = "tutorial"
     SONG_SELECT = "song_select"
     GAMEPLAY = "gameplay"
     RESULTS = "results"
@@ -49,16 +50,30 @@ class GameStateManager:
         self._current: str = ScreenName.MAIN_MENU
         self._transition_data: dict[str, object] = {}
         self._quit_requested: bool = False
+        self._fade_state: str = "none"
+        self._fade_alpha: float = 0.0
+        self._pending_screen: str | None = None
+        self._pending_kwargs: dict[str, object] = {}
+        self._fade_duration: float = 0.3
+        self._fade_elapsed: float = 0.0
 
     def register(self, name: str, screen: _Screen) -> None:
         self._screens[name] = screen
 
     def transition_to(self, name: str, **kwargs: object) -> None:
-        self._current = name
-        self._transition_data = kwargs
-        screen = self._screens.get(name)
-        if screen and hasattr(screen, "on_enter"):
-            screen.on_enter(**kwargs)
+        self._pending_screen = name
+        self._pending_kwargs = kwargs
+        self._fade_state = "out"
+        self._fade_elapsed = 0.0
+        self._fade_alpha = 0.0
+
+    @property
+    def is_transitioning(self) -> bool:
+        return self._fade_state != "none"
+
+    @property
+    def fade_alpha(self) -> float:
+        return self._fade_alpha
 
     def get_current_state(self) -> str:
         return self._current
@@ -73,6 +88,30 @@ class GameStateManager:
     def update(self, dt: float) -> str | None:
         if self._quit_requested:
             return "quit"
+
+        if self._fade_state == "out":
+            self._fade_elapsed += dt
+            self._fade_alpha = min(1.0, self._fade_elapsed / self._fade_duration)
+            if self._fade_elapsed >= self._fade_duration:
+                if self._pending_screen is not None:
+                    self._current = self._pending_screen
+                    self._transition_data = self._pending_kwargs
+                    screen = self._screens.get(self._current)
+                    if screen and hasattr(screen, "on_enter"):
+                        screen.on_enter(**self._pending_kwargs)
+                self._pending_screen = None
+                self._pending_kwargs = {}
+                self._fade_state = "in"
+                self._fade_elapsed = 0.0
+                self._fade_alpha = 1.0
+        elif self._fade_state == "in":
+            self._fade_elapsed += dt
+            self._fade_alpha = max(0.0, 1.0 - (self._fade_elapsed / self._fade_duration))
+            if self._fade_elapsed >= self._fade_duration:
+                self._fade_state = "none"
+                self._fade_alpha = 0.0
+                self._fade_elapsed = 0.0
+
         screen = self._screens.get(self._current)
         if screen and hasattr(screen, "update"):
             result = screen.update(dt)
@@ -93,6 +132,6 @@ class GameStateManager:
                 self._quit_requested = True
                 return
             self.transition_to(result)
-        elif isinstance(result, tuple) and len(result) == 2:
+        elif len(result) == 2:
             name, kwargs = result
             self.transition_to(name, **kwargs)

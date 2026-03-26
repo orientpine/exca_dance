@@ -199,7 +199,7 @@ class VisualCueRenderer:
                 mvp_uniform.write(np.ascontiguousarray(mvp.astype("f4").T).tobytes())
                 self._ghost_glow_vao.render(moderngl.TRIANGLES)
             finally:
-                ctx.blend_func = moderngl.DEFAULT_BLENDING
+                ctx.blend_func = (moderngl.SRC_ALPHA, moderngl.ONE_MINUS_SRC_ALPHA)
 
     def render_outline(self, mvp: np.ndarray) -> None:
         if self._active_target is None:
@@ -253,43 +253,234 @@ class VisualCueRenderer:
         text_renderer: TextRendererProtocol | None,
         song_duration_ms: float,
     ) -> None:
+        _ = text_renderer
         _ = song_duration_ms
-        if text_renderer is None:
+        W = renderer.width
+        H = renderer.height
+        bar_w = int(W * 0.75)
+        bar_h = 60
+        bar_x = (W - bar_w) // 2
+        bar_y = H - 70
+        hit_x = bar_x + bar_w // 2
+
+        self._draw_highway_rect(
+            renderer,
+            bar_x,
+            bar_y,
+            bar_w,
+            bar_h,
+            NeonTheme.BG_PANEL.as_rgb(),
+            alpha=0.8,
+            additive=False,
+        )
+
+        self._draw_highway_rect(
+            renderer,
+            hit_x - 1,
+            bar_y,
+            2,
+            bar_h,
+            NeonTheme.NEON_BLUE.as_rgb(),
+            alpha=0.95,
+            additive=False,
+        )
+        self._draw_highway_rect(
+            renderer,
+            hit_x - 4,
+            bar_y,
+            8,
+            bar_h,
+            NeonTheme.NEON_BLUE.as_rgb(),
+            alpha=0.35,
+            additive=True,
+        )
+
+        for event in self._upcoming_events:
+            time_to_event = float(event.time_ms) - self._current_time_ms
+            if not (-500.0 < time_to_event < 3000.0):
+                continue
+
+            x_offset = int((time_to_event / 3000.0) * (bar_w // 2))
+            event_x = hit_x + x_offset - 4
+            n_joints = len(event.target_angles)
+            event_h = max(10, int(bar_h * n_joints / 4))
+            event_y = bar_y + (bar_h - event_h) // 2
+
+            proximity = max(0.0, 1.0 - abs(time_to_event) / 1500.0)
+            brightness = 0.4 + 0.6 * proximity
+            orange = NeonTheme.NEON_ORANGE
+            color = (
+                min(1.0, orange.r * brightness),
+                min(1.0, orange.g * brightness),
+                min(1.0, orange.b * brightness),
+            )
+
+            self._draw_highway_rect(
+                renderer,
+                event_x,
+                event_y,
+                8,
+                event_h,
+                color,
+                alpha=0.9,
+                additive=False,
+            )
+            self._draw_highway_rect(
+                renderer,
+                event_x - 2,
+                event_y - 2,
+                12,
+                event_h + 4,
+                color,
+                alpha=0.12 + 0.38 * proximity,
+                additive=True,
+            )
+
+    def _draw_highway_rect(
+        self,
+        renderer: GameRenderer,
+        x: int,
+        y: int,
+        w: int,
+        h: int,
+        color: tuple[float, float, float],
+        *,
+        alpha: float,
+        additive: bool,
+    ) -> None:
+        if w <= 0 or h <= 0 or alpha <= 0.0:
             return
 
+        ctx = renderer.ctx
         W = renderer.width
         H = renderer.height
 
-        timeline_x = 0
-        timeline_y = H - 40
-        timeline_w = int(W * 0.75)
-        timeline_h = 30
+        x0_ndc = (x / W) * 2.0 - 1.0
+        x1_ndc = ((x + w) / W) * 2.0 - 1.0
+        y0_ndc = 1.0 - (y / H) * 2.0
+        y1_ndc = 1.0 - ((y + h) / H) * 2.0
+        r, g, b = color
 
-        cx = timeline_w // 2
+        if additive:
+            verts = np.array(
+                [
+                    x0_ndc,
+                    y1_ndc,
+                    0.0,
+                    r,
+                    g,
+                    b,
+                    alpha,
+                    x1_ndc,
+                    y1_ndc,
+                    0.0,
+                    r,
+                    g,
+                    b,
+                    alpha,
+                    x1_ndc,
+                    y0_ndc,
+                    0.0,
+                    r,
+                    g,
+                    b,
+                    alpha,
+                    x0_ndc,
+                    y1_ndc,
+                    0.0,
+                    r,
+                    g,
+                    b,
+                    alpha,
+                    x1_ndc,
+                    y0_ndc,
+                    0.0,
+                    r,
+                    g,
+                    b,
+                    alpha,
+                    x0_ndc,
+                    y0_ndc,
+                    0.0,
+                    r,
+                    g,
+                    b,
+                    alpha,
+                ],
+                dtype="f4",
+            )
+            vbo = ctx.buffer(verts.tobytes())
+            vao = ctx.vertex_array(
+                renderer.prog_additive,
+                [(vbo, "3f 4f", "in_position", "in_color")],
+            )
+            identity = np.eye(4, dtype="f4")
+            mvp_uniform = cast(moderngl.Uniform, renderer.prog_additive["mvp"])
+            mvp_uniform.write(np.ascontiguousarray(identity.T).tobytes())
+            ctx.disable(moderngl.DEPTH_TEST)
+            ctx.blend_func = (moderngl.SRC_ALPHA, moderngl.ONE)
+            try:
+                vao.render(moderngl.TRIANGLES)
+            finally:
+                ctx.blend_func = (moderngl.SRC_ALPHA, moderngl.ONE_MINUS_SRC_ALPHA)
+                vao.release()
+                vbo.release()
+            return
 
-        for event in self._upcoming_events:
-            time_to_event = event.time_ms - self._current_time_ms
-            if 0 < time_to_event <= 3000:
-                x_offset = int((time_to_event / 3000.0) * (timeline_w // 2))
-                dot_x = timeline_x + cx + x_offset
-                dot_y = timeline_y + timeline_h // 2
-                text_renderer.render(
-                    "●",
-                    dot_x,
-                    dot_y,
-                    color=NeonTheme.NEON_ORANGE.as_tuple(),
-                    scale=0.6,
-                    align="center",
-                )
-
-        text_renderer.render(
-            "▼",
-            timeline_x + cx,
-            timeline_y,
-            color=NeonTheme.NEON_PINK.as_tuple(),
-            scale=0.8,
-            align="center",
+        verts = np.array(
+            [
+                x0_ndc,
+                y1_ndc,
+                0.0,
+                r,
+                g,
+                b,
+                x1_ndc,
+                y1_ndc,
+                0.0,
+                r,
+                g,
+                b,
+                x1_ndc,
+                y0_ndc,
+                0.0,
+                r,
+                g,
+                b,
+                x0_ndc,
+                y1_ndc,
+                0.0,
+                r,
+                g,
+                b,
+                x1_ndc,
+                y0_ndc,
+                0.0,
+                r,
+                g,
+                b,
+                x0_ndc,
+                y0_ndc,
+                0.0,
+                r,
+                g,
+                b,
+            ],
+            dtype="f4",
         )
+        vbo = ctx.buffer(verts.tobytes())
+        vao = ctx.vertex_array(renderer.prog_solid, [(vbo, "3f 3f", "in_position", "in_color")])
+        identity = np.eye(4, dtype="f4")
+        mvp_uniform = cast(moderngl.Uniform, renderer.prog_solid["mvp"])
+        alpha_uniform = cast(moderngl.Uniform, renderer.prog_solid["alpha"])
+        mvp_uniform.write(np.ascontiguousarray(identity.T).tobytes())
+        alpha_uniform.value = alpha
+        ctx.disable(moderngl.DEPTH_TEST)
+        try:
+            vao.render(moderngl.TRIANGLES)
+        finally:
+            vao.release()
+            vbo.release()
 
     def get_angle_match_pct(self, joint: JointName) -> float:
         """Return 0-1 how close current angle is to target (1=perfect match)."""

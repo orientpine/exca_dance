@@ -1,56 +1,127 @@
-"""Settings screen: key bindings, volume, mode."""
-
 from __future__ import annotations
+
+from typing import Protocol, cast
+
 import pygame
+from exca_dance.core.game_state import ScreenName
 from exca_dance.core.models import JointName
 from exca_dance.rendering.theme import NeonTheme
-from exca_dance.core.game_state import ScreenName
+
+
+class _RendererLike(Protocol):
+    width: int
+    height: int
+
+
+class _TextRendererLike(Protocol):
+    def render(
+        self,
+        text: str,
+        x: int,
+        y: int,
+        *,
+        color: tuple[float, float, float, float] | tuple[int, int, int, int],
+        scale: float = 1.0,
+        align: str = "left",
+    ) -> None: ...
+
+
+class _KeybindingLike(Protocol):
+    def save(self) -> None: ...
+
+    def get_binding(self, joint: JointName) -> tuple[int, int]: ...
+
+    def set_binding(self, joint: JointName, positive_key: int, negative_key: int) -> None: ...
+
+
+class _AudioLike(Protocol):
+    def get_bgm_volume(self) -> float: ...
+
+    def get_sfx_volume(self) -> float: ...
+
+    def set_volume(self, volume: float) -> None: ...
+
+    def set_sfx_volume(self, volume: float) -> None: ...
+
+    def save_volume_settings(self, path: str) -> None: ...
 
 
 class SettingsScreen:
-    SECTIONS = ["KEY BINDINGS", "AUDIO", "MODE"]
+    SECTIONS: list[str] = ["KEY BINDINGS", "AUDIO", "MODE"]
 
-    def __init__(self, renderer, text_renderer, keybinding, audio, bridge_factory=None) -> None:
-        self._renderer = renderer
-        self._text = text_renderer
-        self._kb = keybinding
-        self._audio = audio
-        self._bridge_factory = bridge_factory
-        self._section = 0
-        self._row = 0
-        self._waiting_key = False
+    def __init__(
+        self,
+        renderer: _RendererLike,
+        text_renderer: _TextRendererLike,
+        keybinding: _KeybindingLike,
+        audio: _AudioLike,
+        bridge_factory: object | None = None,
+    ) -> None:
+        self._renderer: _RendererLike = renderer
+        self._text: _TextRendererLike = text_renderer
+        self._kb: _KeybindingLike = keybinding
+        self._audio: _AudioLike = audio
+        self._bridge_factory: object | None = bridge_factory
+        self._section: int = 0
+        self._row: int = 0
+        self._waiting_key: bool = False
         self._waiting_joint: JointName | None = None
         self._waiting_positive: bool = True
-        self._volume = 1.0
-        self._mode = "virtual"
+        self._volume: float = 1.0
+        self._sfx_volume: float = 1.0
+        self._mode: str = "virtual"
 
-    def on_enter(self, **kwargs) -> None:
+    def on_enter(self, **_kwargs: object) -> None:
         self._section = 0
         self._row = 0
         self._waiting_key = False
+        self._volume = self._audio.get_bgm_volume()
+        self._sfx_volume = self._audio.get_sfx_volume()
 
-    def handle_event(self, event: pygame.event.Event):
+    def handle_event(self, event: pygame.event.Event) -> str | tuple[str, dict[str, object]] | None:
         if event.type == pygame.KEYDOWN:
+            key = cast(int, event.key)
             if self._waiting_key:
-                return self._capture_key(event.key)
-            if event.key == pygame.K_ESCAPE:
+                return self._capture_key(key)
+            if key == pygame.K_ESCAPE:
                 self._kb.save()
+                self._audio.save_volume_settings("data/volume.json")
                 return ScreenName.MAIN_MENU
-            if event.key in (pygame.K_LEFT, pygame.K_a):
-                self._section = (self._section - 1) % len(self.SECTIONS)
-                self._row = 0
-            elif event.key in (pygame.K_RIGHT, pygame.K_d):
-                self._section = (self._section + 1) % len(self.SECTIONS)
-                self._row = 0
-            elif event.key in (pygame.K_UP, pygame.K_w):
-                self._row = max(0, self._row - 1)
-            elif event.key in (pygame.K_DOWN, pygame.K_s):
-                self._row += 1
-            elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+            if key in (pygame.K_LEFT, pygame.K_a):
+                if self._section == 1:
+                    self._adjust_volume(-0.1)
+                else:
+                    self._section = (self._section - 1) % len(self.SECTIONS)
+                    self._row = 0
+            elif key in (pygame.K_RIGHT, pygame.K_d):
+                if self._section == 1:
+                    self._adjust_volume(0.1)
+                else:
+                    self._section = (self._section + 1) % len(self.SECTIONS)
+                    self._row = 0
+            elif key in (pygame.K_UP, pygame.K_w):
+                if self._section == 1:
+                    self._row = max(0, self._row - 1)
+                else:
+                    self._row = max(0, self._row - 1)
+            elif key in (pygame.K_DOWN, pygame.K_s):
+                if self._section == 1:
+                    self._row = min(1, self._row + 1)
+                else:
+                    self._row += 1
+            elif key in (pygame.K_RETURN, pygame.K_SPACE):
                 self._activate_row()
         return None
 
-    def _capture_key(self, key: int):
+    def _adjust_volume(self, delta: float) -> None:
+        if self._row == 0:
+            self._volume = max(0.0, min(1.0, self._volume + delta))
+            self._audio.set_volume(self._volume)
+        elif self._row == 1:
+            self._sfx_volume = max(0.0, min(1.0, self._sfx_volume + delta))
+            self._audio.set_sfx_volume(self._sfx_volume)
+
+    def _capture_key(self, key: int) -> None:
         if self._waiting_joint is not None:
             pk, nk = self._kb.get_binding(self._waiting_joint)
             if self._waiting_positive:
@@ -59,25 +130,27 @@ class SettingsScreen:
                 self._kb.set_binding(self._waiting_joint, pk, key)
         self._waiting_key = False
         self._waiting_joint = None
-        return None
 
     def _activate_row(self) -> None:
-        if self._section == 0:  # Key bindings
+        if self._section == 0:
             joints = list(JointName)
             joint_idx = self._row // 2
             if joint_idx < len(joints):
                 self._waiting_joint = joints[joint_idx]
                 self._waiting_positive = self._row % 2 == 0
                 self._waiting_key = True
-        elif self._section == 1:  # Audio
-            pass  # handled by left/right
-        elif self._section == 2:  # Mode
+        elif self._section == 1:
+            if self._row == 0:
+                self._volume = max(0.0, min(1.0, self._volume))
+            elif self._row == 1:
+                self._sfx_volume = max(0.0, min(1.0, self._sfx_volume))
+        elif self._section == 2:
             self._mode = "real" if self._mode == "virtual" else "virtual"
 
-    def update(self, dt: float):
+    def update(self, _dt: float) -> None:
         return None
 
-    def render(self, renderer, text_renderer) -> None:
+    def render(self, renderer: _RendererLike, text_renderer: _TextRendererLike | None) -> None:
         if text_renderer is None:
             return
         W, H = renderer.width, renderer.height
@@ -86,7 +159,6 @@ class SettingsScreen:
             "SETTINGS", W // 2, 30, color=NeonTheme.NEON_BLUE.as_tuple(), scale=2.0, align="center"
         )
 
-        # Section tabs
         for i, sec in enumerate(self.SECTIONS):
             x = W // 4 * (i + 1)
             color = NeonTheme.NEON_PINK if i == self._section else NeonTheme.TEXT_DIM
@@ -109,7 +181,7 @@ class SettingsScreen:
                 pk, nk = self._kb.get_binding(jname)
                 color = NeonTheme.JOINT_BOOM if jname == JointName.BOOM else NeonTheme.TEXT_WHITE
                 text_renderer.render(
-                    f"{jname.value.upper()}", 200, y, color=color.as_tuple(), scale=1.0
+                    f"{cast(str, jname.value).upper()}", 200, y, color=color.as_tuple(), scale=1.0
                 )
                 sel_p = NeonTheme.NEON_PINK if self._row == i * 2 else NeonTheme.TEXT_WHITE
                 sel_n = NeonTheme.NEON_PINK if self._row == i * 2 + 1 else NeonTheme.TEXT_WHITE
@@ -130,16 +202,26 @@ class SettingsScreen:
             )
 
         elif self._section == 1:
+            bgm_color = NeonTheme.NEON_PINK if self._row == 0 else NeonTheme.TEXT_WHITE
+            sfx_color = NeonTheme.NEON_PINK if self._row == 1 else NeonTheme.TEXT_WHITE
             text_renderer.render(
-                f"Volume: {int(self._volume * 100)}%",
+                f"BGM Volume: {int(self._volume * 100)}%",
                 W // 2,
                 y,
-                color=NeonTheme.TEXT_WHITE.as_tuple(),
+                color=bgm_color.as_tuple(),
                 scale=1.2,
                 align="center",
             )
             text_renderer.render(
-                "ESC Save & Back",
+                f"SFX Volume: {int(self._sfx_volume * 100)}%",
+                W // 2,
+                y + 50,
+                color=sfx_color.as_tuple(),
+                scale=1.2,
+                align="center",
+            )
+            text_renderer.render(
+                "LEFT/RIGHT adjust  |  ESC Save & Back",
                 W // 2,
                 H - 40,
                 color=NeonTheme.TEXT_DIM.as_tuple(),

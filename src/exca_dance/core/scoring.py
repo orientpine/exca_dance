@@ -2,12 +2,30 @@ from __future__ import annotations
 
 from typing import cast
 
-from exca_dance.core.constants import COMBO_THRESHOLDS, JUDGMENT_WINDOWS, SCORE_VALUES
+from exca_dance.core.constants import COMBO_THRESHOLDS, SCORE_VALUES
 from exca_dance.core.models import HitResult, JointName, Judgment
 
 
+def _window_set(perfect: float, great: float, good: float) -> dict[Judgment, float]:
+    windows: dict[Judgment, float] = {}
+    windows[cast(Judgment, Judgment.PERFECT)] = perfect
+    windows[cast(Judgment, Judgment.GREAT)] = great
+    windows[cast(Judgment, Judgment.GOOD)] = good
+    return windows
+
+
+_WINDOWS: dict[str, dict[Judgment, float]] = {
+    "EASY": _window_set(50.0, 100.0, 170.0),
+    "NORMAL": _window_set(35.0, 70.0, 120.0),
+    "HARD": _window_set(25.0, 50.0, 90.0),
+}
+
+
 class ScoringEngine:
-    def __init__(self) -> None:
+    def __init__(self, difficulty: str = "NORMAL") -> None:
+        normalized = difficulty.upper()
+        self._difficulty: str = normalized if normalized in _WINDOWS else "NORMAL"
+        self._windows: dict[Judgment, float] = _WINDOWS[self._difficulty]
         self._total_score: int = 0
         self._combo: int = 0
         self._judgments: dict[Judgment, int] = {j: 0 for j in Judgment}
@@ -27,7 +45,7 @@ class ScoringEngine:
             (Judgment.PERFECT, Judgment.GREAT, Judgment.GOOD),
         )
         for tier in tiers:
-            if timing_error_ms <= JUDGMENT_WINDOWS[tier]:
+            if timing_error_ms <= self._windows[tier]:
                 judgment = tier
                 break
 

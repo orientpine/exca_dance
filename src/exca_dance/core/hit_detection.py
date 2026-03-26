@@ -39,17 +39,33 @@ class JudgmentDisplay:
 
     def __init__(self) -> None:
         self._active: list[_JudgmentEntry] = []
+        self.flash_alpha: float = 0.0
+        self.flash_color: tuple[float, float, float] = (1.0, 1.0, 1.0)
+        self.flash_start: float = 0.0
+        self.flash_duration: float = 0.0
 
     def trigger(self, hit_result: HitResult, combo: int) -> None:
         """Show a new judgment result."""
+        now = time.perf_counter()
         self._active.append(
             {
                 "judgment": hit_result.judgment,
                 "score": hit_result.score,
                 "combo": combo,
-                "start_time": time.perf_counter(),
+                "start_time": now,
             }
         )
+
+        if hit_result.judgment == Judgment.PERFECT:
+            self.flash_alpha = 0.15
+            self.flash_color = (1.0, 1.0, 1.0)
+            self.flash_duration = 0.05
+            self.flash_start = now
+        elif hit_result.judgment == Judgment.MISS:
+            self.flash_alpha = 0.08
+            self.flash_color = (1.0, 0.1, 0.1)
+            self.flash_duration = 0.03
+            self.flash_start = now
 
     def update(self, _dt: float) -> None:
         """Remove expired judgments."""
@@ -77,11 +93,16 @@ class JudgmentDisplay:
             progress = elapsed / self.DISPLAY_DURATION  # 0→1
             alpha = max(0.0, 1.0 - progress * 1.5)
             y_offset = int(progress * -40)  # float upward
+            base_scale = 2.0
+            if elapsed < 0.3:
+                scale = base_scale * (1.5 - 0.5 * (elapsed / 0.3))
+            else:
+                scale = base_scale
 
             color = NeonTheme.judgment_color(item["judgment"])
             rgba = (color.r, color.g, color.b, alpha)
             label = LABELS[item["judgment"]]
-            text_renderer.render(label, cx, cy + y_offset, color=rgba, scale=2.0, align="center")
+            text_renderer.render(label, cx, cy + y_offset, color=rgba, scale=scale, align="center")
 
             # Score increment
             if item["score"] > 0:
@@ -98,3 +119,16 @@ class JudgmentDisplay:
     @property
     def active_count(self) -> int:
         return len(self._active)
+
+    @property
+    def current_flash(self) -> tuple[tuple[float, float, float] | None, float]:
+        if self.flash_duration <= 0.0 or self.flash_alpha <= 0.0:
+            return (None, 0.0)
+
+        elapsed = time.perf_counter() - self.flash_start
+        if elapsed >= self.flash_duration:
+            return (None, 0.0)
+
+        remaining = 1.0 - (elapsed / self.flash_duration)
+        alpha = max(0.0, self.flash_alpha * remaining)
+        return (self.flash_color, alpha)
