@@ -44,3 +44,20 @@
 
 ### Test Strategy
 - Added focused state-manager tests (`tests/test_game_state.py`) that advance time in deterministic `0.01s` steps to validate transition start (`is_transitioning=True`) and completion (`False` after total fade budget).
+
+## [2026-03-26] Session: ses_2d82d2b00ffeqsjEV3TCaAWZkQ
+### Task 5-2: PyInstaller Packaging
+- pyinstaller 6.19.0 installed via pip, works in .venv
+- Used onedir mode (not onefile) for OpenGL/ModernGL compatibility
+- Runtime hook `runtime_hooks/frozen_path.py` does os.chdir(sys._MEIPASS) — cleanest approach for relative asset paths without modifying src/
+- Hidden imports needed: moderngl.mgl, OpenGL.platform.glx/egl, pygame._sdl2.*, numpy, exca_dance.ui.screens.tutorial_screen
+- Excluded: tkinter, unittest, email, xml, pydoc, doctest, rclpy, sensor_msgs
+- dist/exca_dance/exca_dance = 3.9MB executable, _internal/ contains bundled assets
+- Build command: .venv/bin/pyinstaller exca_dance.spec
+
+### Task 5-3: Final QA
+- 78 tests pass, lint clean (ruff)
+- 30s headless smoke test: started clean, timeout exit 124 (not a crash)
+- Zero TODO/FIXME/type:ignore in entire codebase
+- Task 5-1 (WAV→OGG) permanently blocked: ffmpeg not installed, sudo unavailable
+- "최소 5곡" permanently blocked: requires actual music files (content, not code)
