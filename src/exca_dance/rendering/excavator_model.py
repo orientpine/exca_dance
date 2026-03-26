@@ -364,49 +364,6 @@ class ExcavatorModel:
         bt = pos["bucket_tip"]
         verts += _make_octagonal_prism_verts(ap, bt, 0.14, self._joint_colors[JointName.BUCKET])
 
-        def _perpendicular_axis(
-            p_start: tuple[float, float, float], p_end: tuple[float, float, float]
-        ) -> np.ndarray:
-            link = np.array(
-                [
-                    p_end[0] - p_start[0],
-                    p_end[1] - p_start[1],
-                    p_end[2] - p_start[2],
-                ],
-                dtype="f4",
-            )
-            link_len = float(np.linalg.norm(link))
-            if link_len < 1e-6:
-                return np.array([0.0, 1.0, 0.0], dtype="f4")
-            link /= link_len
-            ref = (
-                np.array([0.0, 0.0, 1.0], dtype="f4")
-                if abs(float(link[2])) < 0.95
-                else np.array([0.0, 1.0, 0.0], dtype="f4")
-            )
-            perp = np.cross(link, ref)
-            perp_len = float(np.linalg.norm(perp))
-            if perp_len < 1e-6:
-                return np.array([0.0, 1.0, 0.0], dtype="f4")
-            return perp / perp_len
-
-        marker_color = (1.0, 1.0, 1.0)
-        bp_perp = _perpendicular_axis(bp, ap)
-        ap_perp = _perpendicular_axis(ap, bt)
-        bp_arr = np.array(bp, dtype="f4")
-        ap_arr = np.array(ap, dtype="f4")
-        verts += _make_octagonal_prism_verts(
-            tuple((bp_arr - 0.02 * bp_perp).tolist()),
-            tuple((bp_arr + 0.02 * bp_perp).tolist()),
-            0.18,
-            marker_color,
-        )
-        verts += _make_octagonal_prism_verts(
-            tuple((ap_arr - 0.02 * ap_perp).tolist()),
-            tuple((ap_arr + 0.02 * ap_perp).tolist()),
-            0.16,
-            marker_color,
-        )
 
         data = np.array(verts, dtype="f4")
         self._vertex_count = len(data) // 9  # 3 pos + 3 color + 3 normal

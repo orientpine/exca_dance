@@ -225,17 +225,7 @@ class GameplayScreen:
                 mpct,
             )
 
-        # Side view — 3D excavator + ghost with swing-compensated camera
-        vm.set_viewport(ctx, "side_2d")
-        current_swing = cur.get(JointName.SWING, 0.0)
-        side_mvp = self._layout.get_side_mvp_for_swing(current_swing)
-        self._game_loop._excavator_model.render_3d(side_mvp)
-
-        # Ghost in side view (counter-rotate by the ghost's own swing)
-        ghost_swing = tgt.get(JointName.SWING, 0.0) if tgt else 0.0
-        side_mvp_ghost = self._layout.get_side_mvp_for_swing(ghost_swing)
-        self._visual_cues.render_ghost(side_mvp_ghost)
-        self._visual_cues.render_outline(side_mvp_ghost)
+        # Side view — 2D overlay schematic only (no 3D model)
 
         # 2D overlay schematic on top (uses static mvp_side, FK zeroes swing)
         if self._overlay_2d is not None:

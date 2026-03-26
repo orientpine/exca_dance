@@ -473,20 +473,15 @@ class Overlay2DRenderer:
         link_width: float,
         joint_radius: float,
     ) -> list[float]:
-        """Build all geometry for one pose (links + joint circles)."""
+        """Build link geometry for one pose (thick lines between joints)."""
         verts: list[float] = []
         is_top = viewport_name == "top_2d"
         line_fn = self._thick_line_top if is_top else self._thick_line_side
-        circle_fn = self._circle_top if is_top else self._circle_side
 
         # Links between consecutive joints
         for i in range(len(positions) - 1):
             color = link_colors[min(i, len(link_colors) - 1)]
             verts += line_fn(positions[i], positions[i + 1], link_width, color)
-
-        # Joint circles
-        for pos in positions:
-            verts += circle_fn(pos, joint_radius, joint_color, self.CIRCLE_SEGMENTS)
 
         return verts
 
@@ -820,11 +815,6 @@ class Overlay2DRenderer:
             if target_verts:
                 self._draw_triangles(ctx, prog, mvp, target_verts, alpha=0.70)
 
-        # ── Layer 3: Match-quality rings ─────────────────────────
-        if match_pct is not None and target_pts is not None:
-            ring_verts = self._build_match_rings(viewport_name, current_pts, match_pct)
-            if ring_verts:
-                self._draw_triangles(ctx, prog, mvp, ring_verts, alpha=0.75)
 
         # ── Layer 4: Current pose (on top, fully opaque) ─────────
         current_verts = self._build_pose(
