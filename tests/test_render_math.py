@@ -4,7 +4,6 @@ from typing import cast
 
 import numpy as np
 
-import exca_dance.rendering.excavator_model as excavator_model
 from exca_dance.rendering.render_math import (
     direction_vector,
     make_oriented_box,
@@ -88,20 +87,24 @@ def test_validate_gl_matrix_nan() -> None:
     assert not validate_gl_matrix(mat)
 
 
-def test_make_octagonal_prism_verts_vertex_count() -> None:
-    make_octagonal_prism_verts = getattr(excavator_model, "_make_octagonal_prism_verts")
-    p1 = (0.0, 0.0, 0.0)
-    p2 = (1.0, 0.0, 0.0)
-    verts = make_octagonal_prism_verts(p1, p2, radius=0.1, color=(1.0, 0.5, 0.0), sides=8)
+def test_stl_loader_parses_binary_stl() -> None:
+    from exca_dance.rendering.stl_loader import load_binary_stl
+    from exca_dance.rendering.excavator_model import _find_mesh_dir
 
-    assert len(verts) == 8 * 12 * 9
+    mesh_dir = _find_mesh_dir()
+    verts, norms = load_binary_stl(mesh_dir / "boom.stl")
+
+    assert verts.shape[0] > 0
+    assert verts.shape[1] == 3
+    assert norms.shape == verts.shape
+    assert verts.dtype == np.dtype("f4")
 
 
-def test_octagonal_prism_vertex_count_greater_than_single_box() -> None:
-    make_octagonal_prism_verts = getattr(excavator_model, "_make_octagonal_prism_verts")
-    p1 = (0.0, 0.0, 0.0)
-    p2 = (2.5, 0.0, 0.0)
-    verts = make_octagonal_prism_verts(p1, p2, radius=0.12, color=(1.0, 0.4, 0.0), sides=8)
+def test_urdf_kin_base_link_is_identity() -> None:
+    from exca_dance.core.models import JointName
+    from exca_dance.rendering.urdf_kin import compute_link_transforms
 
-    assert len(verts) == 8 * 12 * 9
-    assert len(verts) > 36 * 9
+    transforms = compute_link_transforms({j: 0.0 for j in JointName})
+
+    assert "base_link" in transforms
+    assert np.allclose(transforms["base_link"], np.eye(4))
