@@ -1,0 +1,20 @@
+{
+  "key_bindings": {
+    "swing": {
+      "positive": 97,
+      "negative": 100
+    },
+    "boom": {
+      "positive": 119,
+      "negative": 115
+    },
+    "arm": {
+      "positive": 1073741906,
+      "negative": 1073741905
+    },
+    "bucket": {
+      "positive": 1073741904,
+      "negative": 1073741903
+    }
+  }
+}

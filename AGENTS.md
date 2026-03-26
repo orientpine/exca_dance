@@ -100,6 +100,10 @@ from exca_dance.ros2_bridge.ros2_node import ROS2ExcavatorNode  # subprocess onl
 # FORBIDDEN — suppressing type errors (zero in codebase, keep it that way)
 # type: ignore
 # noqa
+
+# FORBIDDEN — blend_func is WRITE-ONLY in ModernGL 5.x (getter raises NotImplementedError)
+old = ctx.blend_func              # crashes at runtime
+# Use: set desired blend, restore with moderngl.DEFAULT_BLENDING in finally block
 ```
 
 ---

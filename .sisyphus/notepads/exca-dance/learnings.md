@@ -84,3 +84,75 @@
 - `GameLoop` now records `_all_events_consumed_at_ms` and uses a 3-second fallback after all events are consumed to force `FINISHED` transition.
 - `_all_events_consumed_at_ms` is reset in `start_song()` to avoid state leakage across songs.
 - Evidence file: `.sisyphus/evidence/task-2-song-end.txt` (`54 passed`).
+
+## Test & Lint Conventions (surveyed 2026-03-26)
+
+### Test Run Command
+```bash
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest tests/ -v
+```
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` is REQUIRED to avoid ROS launch plugin conflicts (noted in learnings)
+- README documents `pytest tests/ -v` but the env var is needed in this environment
+- 56 tests collected across 6 test files
+
+### Ruff Configuration (pyproject.toml)
+- `line-length = 100`
+- `target-version = "py310"`
+- **No explicit `select` or `ignore` keys** — uses ruff defaults (E + F rules only)
+- Active rule sets: E4xx, E7xx, E9xx (pycodestyle errors), F4xx–F9xx (pyflakes)
+- No W (warnings), no I (isort), no N (pep8-naming), no ANN (annotations) enforced by ruff
+- Run: `.venv/bin/ruff check src/ tests/`
+- Format: `.venv/bin/ruff format src/ tests/`
+
+### pytest Configuration
+- **No `[tool.pytest.ini_options]`** in pyproject.toml — zero pytest config
+- No custom markers defined anywhere (only `@pytest.mark.parametrize` used)
+- No `conftest.py` fixtures — conftest.py is a 1-line docstring only
+- `tmp_path` is the only fixture used (built-in pytest fixture for temp dirs)
+- Test paths: `tests/` directory, flat structure, no subdirectories
+
+### Test File Patterns
+All test files follow these conventions:
+1. `from __future__ import annotations` at top (all except test_ros2_interface.py)
+2. Imports from `exca_dance.*` directly (editable install via `pip install -e ".[dev]"`)
+3. Function names: `test_<what>_<condition>_<expected_result>()` — descriptive snake_case
+4. No classes — all module-level test functions
+5. Return type annotation `-> None` on all test functions (except test_ros2_interface.py)
+6. `typing.cast` used in tests to satisfy basedpyright when NumPy returns ambiguous types
+
+### Fixture Patterns
+- `tmp_path: Path` — used for file I/O tests (leaderboard, beatmap, keybinding)
+- `_valid_payload()` helper function pattern (not a fixture) — returns dict for beatmap tests
+- No `@pytest.fixture` decorators anywhere in the test suite
+- No mocking/patching used anywhere
+
+### ModernGL / GL Testing
+- **NO GL tests exist** — ModernGL is NOT tested in the test suite
+- `test_render_math.py` tests pure-Python/NumPy geometry math (no GL context needed)
+- GL rendering code (`renderer.py`, `excavator_model.py`, etc.) has zero test coverage
+- Headless GL approach documented in learnings: `xvfb-run -a` + `SDL_AUDIODRIVER=dummy`
+- `__main__.py` auto-sets `SDL_AUDIODRIVER=dummy` when no DISPLAY/WAYLAND_DISPLAY env var
+- Mesa llvmpipe (software rendering) confirmed working on headless Ubuntu (GL 4.5)
+- `moderngl.create_context()` called after `pygame.init()` with `pygame.OPENGL | pygame.DOUBLEBUF`
+- If GL tests were needed: `xvfb-run -a PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest tests/ -v`
+
+### Exception Testing Pattern
+```python
+with pytest.raises(ValueError):
+    some_call(...)
+```
+
+### Parametrize Pattern
+```python
+@pytest.mark.parametrize("initials", ["", "ab", "abcd", "  ab  "])
+def test_name(tmp_path, initials: str) -> None:
+```
+
+### AST-based Import Testing Pattern (test_ros2_interface.py)
+```python
+import ast
+source = Path("/absolute/path/to/file.py").read_text()
+tree = ast.parse(source)
+imported_modules = {node.module for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)}
+assert "forbidden_module" not in imported_modules
+```

@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/home/cha/Documents/exca_dance/src/exca_dance/__main__.py", line 192, in main
+    state_mgr.render(renderer, text_renderer)
+  File "/home/cha/Documents/exca_dance/src/exca_dance/core/game_state.py", line 88, in render
+    screen.render(renderer, text_renderer)
+  File "/home/cha/Documents/exca_dance/src/exca_dance/ui/screens/gameplay_screen.py", line 118, in render
+    self._visual_cues.render_outline(self._layout.mvp_3d)
+  File "/home/cha/Documents/exca_dance/src/exca_dance/rendering/visual_cues.py", line 236, in render_outline
+    old_blend_func = blend_ctx.blend_func
+                     ^^^^^^^^^^^^^^^^^^^^
+  File "/home/cha/Documents/exca_dance/.venv/lib/python3.12/site-packages/moderngl/__init__.py", line 1559, in blend_func
+    raise NotImplementedError()
+NotImplementedError

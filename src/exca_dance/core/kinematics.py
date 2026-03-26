@@ -74,7 +74,12 @@ class ExcavatorFK:
         self,
         joints: dict[JointName, float],
     ) -> list[tuple[float, float]]:
-        pos = self.forward_kinematics(joints)
+        """Side-view projection: always swing=0 so the arm profile is shown
+        regardless of swing rotation.  Horizontal = radial distance from base,
+        vertical = height."""
+        side_joints = dict(joints)
+        side_joints[JointName.SWING] = 0.0
+        pos = self.forward_kinematics(side_joints)
         keys = ["base", "swing_pivot", "boom_pivot", "arm_pivot", "bucket_tip"]
         return [(pos[k][0], pos[k][2]) for k in keys]
 

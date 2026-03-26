@@ -127,4 +127,10 @@ prog["mvp"].write(mvp.astype("f4").tobytes())  # still missing .T
 
 # FORBIDDEN — modifying shader source at runtime
 renderer.prog_solid = ctx.program(...)    # shaders are compiled once
+
+# FORBIDDEN — blend_func is WRITE-ONLY in ModernGL 5.x (getter raises NotImplementedError)
+old = ctx.blend_func              # crashes at runtime
+# Instead: set what you need, restore with DEFAULT_BLENDING in finally block
+ctx.blend_func = (moderngl.SRC_ALPHA, moderngl.ONE)  # set
+ctx.blend_func = moderngl.DEFAULT_BLENDING            # restore
 ```
