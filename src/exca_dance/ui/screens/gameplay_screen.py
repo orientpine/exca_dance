@@ -51,60 +51,55 @@ class GameplayScreen:
         self._result_scoring = scoring
 
     def _draw_pause_panel(self, renderer) -> None:
+        """Draw pause overlay panel with neon border glow — resolution-aware."""
         ctx = renderer.ctx
         W, H = renderer.width, renderer.height
-        panel_w, panel_h = 400, 300
+        s = H / 1080.0
+        panel_w = int(max(520 * s, 340))
+        panel_h = int(max(400 * s, 270))
         panel_x = (W - panel_w) // 2
         panel_y = (H - panel_h) // 2
-        x, y, w, h = panel_x, panel_y, panel_w, panel_h
+
+        # Border glow (slightly larger rect in NEON_BLUE)
+        border = int(max(3 * s, 2))
+        self._draw_panel_rect(
+            ctx, renderer,
+            panel_x - border, panel_y - border,
+            panel_w + 2 * border, panel_h + 2 * border,
+            NeonTheme.NEON_BLUE, 0.25,
+        )
+
+        # Inner panel (dark background)
+        self._draw_panel_rect(
+            ctx, renderer,
+            panel_x, panel_y, panel_w, panel_h,
+            NeonTheme.BG, 0.88,
+        )
+
+    def _draw_panel_rect(
+        self, ctx, renderer, x: int, y: int, w: int, h: int, color, alpha: float,
+    ) -> None:
+        """Draw a 2D rectangle in NDC via prog_solid."""
+        W, H = renderer.width, renderer.height
         x0 = (x / W) * 2 - 1
         x1 = ((x + w) / W) * 2 - 1
         y0 = 1 - (y / H) * 2
         y1 = 1 - ((y + h) / H) * 2
+        r, g, b = color.r, color.g, color.b
         verts = [
-            x0,
-            y1,
-            0,
-            0.0,
-            0.0,
-            0.0,
-            x1,
-            y1,
-            0,
-            0.0,
-            0.0,
-            0.0,
-            x1,
-            y0,
-            0,
-            0.0,
-            0.0,
-            0.0,
-            x0,
-            y1,
-            0,
-            0.0,
-            0.0,
-            0.0,
-            x1,
-            y0,
-            0,
-            0.0,
-            0.0,
-            0.0,
-            x0,
-            y0,
-            0,
-            0.0,
-            0.0,
-            0.0,
+            x0, y1, 0, r, g, b,
+            x1, y1, 0, r, g, b,
+            x1, y0, 0, r, g, b,
+            x0, y1, 0, r, g, b,
+            x1, y0, 0, r, g, b,
+            x0, y0, 0, r, g, b,
         ]
         vbo = ctx.buffer(np.array(verts, dtype="f4"))
         prog = renderer.prog_solid
         vao = ctx.vertex_array(prog, [(vbo, "3f 3f", "in_position", "in_color")])
         identity = np.eye(4, dtype="f4")
         prog["mvp"].write(np.ascontiguousarray(identity).tobytes())
-        prog["alpha"].value = 0.8
+        prog["alpha"].value = alpha
         ctx.disable(moderngl.DEPTH_TEST)
         vao.render(moderngl.TRIANGLES)
         vao.release()
@@ -265,31 +260,65 @@ class GameplayScreen:
         # HUD overlay
         self._hud.render(self._game_loop.joint_angles)
 
-        # Pause overlay
+        # Pause overlay (resolution-aware)
         if self._game_loop.state == LoopState.PAUSED and text_renderer:
             self._draw_pause_panel(renderer)
             W, H = renderer.width, renderer.height
+            s = H / 1080.0
+
+            panel_h = int(max(400 * s, 270))
+            panel_y = (H - panel_h) // 2
+
+            # "PAUSED" title
+            title_scale = max(3.5 * s, 1.8)
             text_renderer.render(
                 "PAUSED",
                 W // 2,
-                H // 2 - 95,
+                panel_y + int(35 * s),
                 color=NeonTheme.NEON_BLUE.as_tuple(),
-                scale=3.0,
+                scale=title_scale,
                 align="center",
+                large=True,
             )
+
             items = ["RESUME", "RESTART", "SETTINGS", "QUIT TO MENU"]
-            start_y = H // 2 - 20
+            item_start_y = panel_y + int(125 * s)
+            item_spacing = int(max(65 * s, 40))
+            item_scale = max(1.8 * s, 1.0)
+
             for i, label in enumerate(items):
-                color = (
-                    NeonTheme.NEON_PINK.as_tuple()
-                    if i == self._pause_selected
-                    else NeonTheme.TEXT_WHITE.as_tuple()
-                )
+                iy = item_start_y + i * item_spacing
+
+                if i == self._pause_selected:
+                    # Highlight bar behind selected item
+                    bar_h = int(max(32 * s, 22))
+                    bar_w = int(max(320 * s, 200))
+                    self._draw_panel_rect(
+                        renderer.ctx, renderer,
+                        (W - bar_w) // 2, iy - int(3 * s),
+                        bar_w, bar_h,
+                        NeonTheme.NEON_PINK, 0.12,
+                    )
+                    color = NeonTheme.NEON_PINK.as_tuple()
+                else:
+                    color = NeonTheme.TEXT_WHITE.with_alpha(0.7).as_tuple()
+
                 text_renderer.render(
                     label,
                     W // 2,
-                    start_y + i * 60,
+                    iy,
                     color=color,
-                    scale=1.5,
+                    scale=item_scale,
                     align="center",
                 )
+
+            # Footer hint
+            hint_y = panel_y + panel_h - int(25 * s)
+            text_renderer.render(
+                "ESC Resume  |  Q Quit",
+                W // 2,
+                hint_y,
+                color=NeonTheme.TEXT_DIM.with_alpha(0.4).as_tuple(),
+                scale=max(0.8 * s, 0.55),
+                align="center",
+            )

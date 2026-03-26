@@ -76,51 +76,59 @@ class TutorialScreen:
         if text_renderer is None:
             return
 
-        width, height = renderer.width, renderer.height
+        W, H = renderer.width, renderer.height
+        s = H / 1080.0
         step = STEPS[self._step - 1]
 
         text_renderer.render(
             f"TUTORIAL ({self._step}/4)",
-            width // 2,
-            40,
+            W // 2,
+            int(40 * s),
             color=NeonTheme.NEON_BLUE.as_tuple(),
-            scale=1.5,
+            scale=max(1.6 * s, 0.9),
             align="center",
         )
         text_renderer.render(
             step["title"],
-            width // 2,
-            120,
+            W // 2,
+            int(120 * s),
             color=NeonTheme.NEON_PINK.as_tuple(),
-            scale=2.0,
+            scale=max(2.2 * s, 1.2),
             align="center",
+            large=True,
         )
 
+        body_start_y = int(220 * s)
+        body_spacing = int(max(50 * s, 30))
         for index, line in enumerate(step["body"].split("\n")):
             text_renderer.render(
                 line,
-                width // 2,
-                220 + index * 50,
+                W // 2,
+                body_start_y + index * body_spacing,
                 color=NeonTheme.TEXT_WHITE.as_tuple(),
-                scale=1.2,
+                scale=max(1.3 * s, 0.75),
                 align="center",
             )
 
         text_renderer.render(
             step["hint"],
-            width // 2,
-            height - 80,
+            W // 2,
+            H - int(80 * s),
             color=NeonTheme.TEXT_DIM.as_tuple(),
-            scale=1.0,
+            scale=max(1.1 * s, 0.65),
             align="center",
         )
 
-        nav = "ENTER: Next  |  ESC: Menu" if self._step < 4 else "ENTER: Back to Menu  |  ESC: Menu"
+        nav = (
+            "ENTER: Next  |  ESC: Menu"
+            if self._step < 4
+            else "ENTER: Back to Menu  |  ESC: Menu"
+        )
         text_renderer.render(
             nav,
-            width // 2,
-            height - 40,
+            W // 2,
+            H - int(40 * s),
             color=NeonTheme.TEXT_DIM.as_tuple(),
-            scale=0.9,
+            scale=max(0.95 * s, 0.6),
             align="center",
         )

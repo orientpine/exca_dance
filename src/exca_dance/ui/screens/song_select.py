@@ -61,14 +61,16 @@ class SongSelectScreen:
         if text_renderer is None:
             return
         W, H = renderer.width, renderer.height
+        s = H / 1080.0
 
         text_renderer.render(
             "SELECT SONG",
             W // 2,
-            40,
+            int(40 * s),
             color=NeonTheme.NEON_BLUE.as_tuple(),
-            scale=2.0,
+            scale=max(2.2 * s, 1.2),
             align="center",
+            large=True,
         )
 
         if not self._songs:
@@ -77,20 +79,21 @@ class SongSelectScreen:
                 W // 2,
                 H // 2,
                 color=NeonTheme.MISS.as_tuple(),
-                scale=1.2,
+                scale=max(1.3 * s, 0.8),
                 align="center",
             )
             return
 
-        start_y = 120
+        start_y = int(120 * s)
+        item_spacing = int(max(80 * s, 48))
         for i, (bm, audio_ok) in enumerate(self._songs):
-            y = start_y + i * 80
+            y = start_y + i * item_spacing
             if i == self._selected:
                 color = NeonTheme.NEON_PINK.as_tuple()
-                scale = 1.5
+                scale = max(1.6 * s, 0.95)
             else:
                 color = (NeonTheme.TEXT_WHITE if audio_ok else NeonTheme.TEXT_DIM).as_tuple()
-                scale = 1.2
+                scale = max(1.3 * s, 0.8)
 
             text_renderer.render(
                 f"{bm.title} [{getattr(bm, 'difficulty', 'NORMAL')}]",
@@ -103,26 +106,26 @@ class SongSelectScreen:
             text_renderer.render(
                 f"{bm.artist}  |  {bm.bpm:.0f} BPM  |  {len(bm.events)} events",
                 W // 2,
-                y + 30,
+                y + int(30 * s),
                 color=NeonTheme.TEXT_DIM.as_tuple(),
-                scale=0.85,
+                scale=max(0.9 * s, 0.6),
                 align="center",
             )
             if not audio_ok:
                 text_renderer.render(
                     "[AUDIO MISSING]",
                     W // 2,
-                    y + 50,
+                    y + int(50 * s),
                     color=NeonTheme.MISS.as_tuple(),
-                    scale=0.8,
+                    scale=max(0.85 * s, 0.55),
                     align="center",
                 )
 
         text_renderer.render(
-            "↑↓ Navigate  |  ENTER Play  |  ESC Back",
+            "\u2191\u2193 Navigate  |  ENTER Play  |  ESC Back",
             W // 2,
-            H - 40,
+            H - int(40 * s),
             color=NeonTheme.TEXT_DIM.as_tuple(),
-            scale=0.85,
+            scale=max(0.9 * s, 0.6),
             align="center",
         )

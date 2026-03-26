@@ -253,21 +253,22 @@ class MainMenuScreen:
         # Layer 8: Menu items
         self._render_menu(text_renderer, W, H)
 
-        # Layer 9: Footer
+        # Layer 9: Footer (resolution-aware)
+        s = H / 1080.0
         text_renderer.render(
             f"MODE: {self._mode_label}",
             W // 2,
-            H - 35,
+            H - int(30 * s),
             color=NeonTheme.TEXT_DIM.with_alpha(0.5).as_tuple(),
-            scale=0.85,
+            scale=max(0.9 * s, 0.6),
             align="center",
         )
         text_renderer.render(
             "\u2191\u2193 SELECT   ENTER CONFIRM   Q QUIT",
             W // 2,
-            H - 65,
+            H - int(60 * s),
             color=NeonTheme.TEXT_DIM.with_alpha(0.3).as_tuple(),
-            scale=0.7,
+            scale=max(0.8 * s, 0.55),
             align="center",
         )
 
@@ -552,51 +553,98 @@ class MainMenuScreen:
         vao.release()
         vbo.release()
 
+    def _draw_highlight_bar(
+        self,
+        ctx: moderngl.Context,
+        renderer: GameRenderer,
+        cx: int,
+        y: int,
+        w: int,
+        h: int,
+        color,
+        alpha: float,
+    ) -> None:
+        """Draw a centered semi-transparent highlight bar behind selected item."""
+        W, H = renderer.width, renderer.height
+        x0_px = cx - w // 2
+        x0 = (x0_px / W) * 2 - 1
+        x1 = ((x0_px + w) / W) * 2 - 1
+        y0 = 1 - (y / H) * 2
+        y1 = 1 - ((y + h) / H) * 2
+        r, g, b = color.r, color.g, color.b
+        verts = np.array(
+            [
+                x0, y1, 0, r, g, b,
+                x1, y1, 0, r, g, b,
+                x1, y0, 0, r, g, b,
+                x0, y1, 0, r, g, b,
+                x1, y0, 0, r, g, b,
+                x0, y0, 0, r, g, b,
+            ],
+            dtype="f4",
+        )
+        vbo = ctx.buffer(verts)
+        prog = renderer.prog_solid
+        vao = ctx.vertex_array(
+            prog,
+            [(vbo, "3f 3f", "in_position", "in_color")],
+        )
+        identity = np.eye(4, dtype="f4")
+        prog["mvp"].write(np.ascontiguousarray(identity).tobytes())
+        prog["alpha"].value = alpha
+        ctx.disable(moderngl.DEPTH_TEST)
+        vao.render(moderngl.TRIANGLES)
+        vao.release()
+        vbo.release()
+
     def _render_title(
         self,
         text_renderer: GLTextRenderer,
         W: int,
         H: int,
     ) -> None:
-        """Render pulsing neon title with glow layer."""
+        """Render pulsing neon title with glow layer — resolution-aware."""
         t = self._time
+        s = H / 1080.0
         cx = W // 2
+        title_y = int(H * 0.18)
 
-        # Glow layer (slightly larger, semi-transparent)
-        glow_s = 4.3 + 0.2 * math.sin(t * 1.5)
-        glow_a = 0.2 + 0.1 * math.sin(t * 2.0)
+        # Glow layer (large=True → 48px base for crisp rendering)
+        glow_s = max((2.4 + 0.15 * math.sin(t * 1.5)) * s, 1.2)
+        glow_a = 0.18 + 0.10 * math.sin(t * 2.0)
         text_renderer.render(
             "EXCA DANCE",
             cx,
-            H // 4 - 3,
+            title_y - 3,
             color=NeonTheme.NEON_BLUE.with_alpha(glow_a).as_tuple(),
             scale=glow_s,
             align="center",
+            large=True,
         )
 
         # Main title
         title_a = 0.85 + 0.15 * math.sin(t * 1.0)
+        title_s = max(2.2 * s, 1.1)
         text_renderer.render(
             "EXCA DANCE",
             cx,
-            H // 4,
-            color=NeonTheme.NEON_BLUE.with_alpha(
-                title_a,
-            ).as_tuple(),
-            scale=4.0,
+            title_y,
+            color=NeonTheme.NEON_BLUE.with_alpha(title_a).as_tuple(),
+            scale=title_s,
             align="center",
+            large=True,
         )
 
         # Subtitle (neon pink accent)
+        sub_y = title_y + int(80 * s)
         sub_a = 0.4 + 0.15 * math.sin(t * 0.8 + 1.0)
+        sub_s = max(1.4 * s, 0.75)
         text_renderer.render(
             "EXCAVATOR  RHYTHM  TRAINING",
             cx,
-            H // 4 + 85,
-            color=NeonTheme.NEON_PINK.with_alpha(
-                sub_a,
-            ).as_tuple(),
-            scale=1.2,
+            sub_y,
+            color=NeonTheme.NEON_PINK.with_alpha(sub_a).as_tuple(),
+            scale=sub_s,
             align="center",
         )
 
@@ -606,21 +654,40 @@ class MainMenuScreen:
         W: int,
         H: int,
     ) -> None:
-        """Render animated menu items."""
+        """Render animated menu items with highlight bar — resolution-aware."""
         t = self._time
+        s = H / 1080.0
         cx = W // 2
-        start_y = H // 2
+        start_y = int(H * 0.44)
+        spacing = int(max(62 * s, 36))
+        ctx = self._renderer.ctx
 
         for i, (label, _) in enumerate(MENU_ITEMS):
-            y = start_y + i * 65
+            y = start_y + i * spacing
 
             if i == self._selected:
+                # Neon highlight bar behind selected item
+                bar_h = int(max(38 * s, 25))
+                bar_w = int(max(360 * s, 220))
+                self._draw_highlight_bar(
+                    ctx,
+                    self._renderer,
+                    cx,
+                    y - int(4 * s),
+                    bar_w,
+                    bar_h,
+                    NeonTheme.NEON_PINK,
+                    0.08 + 0.04 * math.sin(t * 3.0),
+                )
+
                 # Selected: pulsing neon pink
                 pulse = 0.85 + 0.15 * math.sin(t * 3.5)
                 color = NeonTheme.NEON_PINK.with_alpha(
                     pulse,
                 ).as_tuple()
-                scale = 1.9 + 0.06 * math.sin(t * 2.5)
+                scale = max(
+                    (2.2 + 0.06 * math.sin(t * 2.5)) * s, 1.15
+                )
 
                 # Glow behind selected text
                 glow_c = NeonTheme.NEON_PINK.with_alpha(
@@ -631,33 +698,35 @@ class MainMenuScreen:
                     cx,
                     y - 2,
                     color=glow_c,
-                    scale=scale + 0.3,
+                    scale=scale + max(0.3 * s, 0.15),
                     align="center",
                 )
 
                 # Animated arrow indicators
                 arrow_off = int(5.0 * math.sin(t * 4.0))
+                arrow_x = int(max(150 * s, 85))
+                arrow_s = max(1.5 * s, 0.85)
                 text_renderer.render(
                     "\u25b6",
-                    cx - 130 - arrow_off,
-                    y + 2,
+                    cx - arrow_x - arrow_off,
+                    y + int(2 * s),
                     color=color,
-                    scale=1.3,
+                    scale=arrow_s,
                     align="center",
                 )
                 text_renderer.render(
                     "\u25c0",
-                    cx + 130 + arrow_off,
-                    y + 2,
+                    cx + arrow_x + arrow_off,
+                    y + int(2 * s),
                     color=color,
-                    scale=1.3,
+                    scale=arrow_s,
                     align="center",
                 )
             else:
                 color = NeonTheme.TEXT_WHITE.with_alpha(
                     0.55,
                 ).as_tuple()
-                scale = 1.4
+                scale = max(1.6 * s, 0.9)
 
             text_renderer.render(
                 label,

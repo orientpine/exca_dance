@@ -154,15 +154,24 @@ class SettingsScreen:
         if text_renderer is None:
             return
         W, H = renderer.width, renderer.height
+        s = H / 1080.0
 
         text_renderer.render(
-            "SETTINGS", W // 2, 30, color=NeonTheme.NEON_BLUE.as_tuple(), scale=2.0, align="center"
+            "SETTINGS",
+            W // 2,
+            int(30 * s),
+            color=NeonTheme.NEON_BLUE.as_tuple(),
+            scale=max(2.2 * s, 1.2),
+            align="center",
         )
 
         for i, sec in enumerate(self.SECTIONS):
             x = W // 4 * (i + 1)
             color = NeonTheme.NEON_PINK if i == self._section else NeonTheme.TEXT_DIM
-            text_renderer.render(sec, x, 80, color=color.as_tuple(), scale=1.1, align="center")
+            text_renderer.render(
+                sec, x, int(80 * s),
+                color=color.as_tuple(), scale=max(1.2 * s, 0.7), align="center",
+            )
 
         if self._waiting_key:
             text_renderer.render(
@@ -170,34 +179,44 @@ class SettingsScreen:
                 W // 2,
                 H // 2,
                 color=NeonTheme.NEON_ORANGE.as_tuple(),
-                scale=2.0,
+                scale=max(2.2 * s, 1.2),
                 align="center",
             )
             return
 
-        y = 140
+        content_y = int(140 * s)
+        row_spacing = int(max(50 * s, 32))
         if self._section == 0:
+            col_name = int(W * 0.15)
+            col_pos = int(W * 0.40)
+            col_neg = int(W * 0.60)
             for i, jname in enumerate(JointName):
                 pk, nk = self._kb.get_binding(jname)
                 color = NeonTheme.JOINT_BOOM if jname == JointName.BOOM else NeonTheme.TEXT_WHITE
                 text_renderer.render(
-                    f"{cast(str, jname.value).upper()}", 200, y, color=color.as_tuple(), scale=1.0
+                    f"{cast(str, jname.value).upper()}",
+                    col_name, content_y,
+                    color=color.as_tuple(), scale=max(1.1 * s, 0.65),
                 )
                 sel_p = NeonTheme.NEON_PINK if self._row == i * 2 else NeonTheme.TEXT_WHITE
                 sel_n = NeonTheme.NEON_PINK if self._row == i * 2 + 1 else NeonTheme.TEXT_WHITE
                 text_renderer.render(
-                    f"+ [{pygame.key.name(pk)}]", 400, y, color=sel_p.as_tuple(), scale=1.0
+                    f"+ [{pygame.key.name(pk)}]",
+                    col_pos, content_y,
+                    color=sel_p.as_tuple(), scale=max(1.1 * s, 0.65),
                 )
                 text_renderer.render(
-                    f"- [{pygame.key.name(nk)}]", 600, y, color=sel_n.as_tuple(), scale=1.0
+                    f"- [{pygame.key.name(nk)}]",
+                    col_neg, content_y,
+                    color=sel_n.as_tuple(), scale=max(1.1 * s, 0.65),
                 )
-                y += 50
+                content_y += row_spacing
             text_renderer.render(
                 "ENTER to rebind  |  ESC Save & Back",
                 W // 2,
-                H - 40,
+                H - int(40 * s),
                 color=NeonTheme.TEXT_DIM.as_tuple(),
-                scale=0.9,
+                scale=max(0.95 * s, 0.6),
                 align="center",
             )
 
@@ -207,25 +226,25 @@ class SettingsScreen:
             text_renderer.render(
                 f"BGM Volume: {int(self._volume * 100)}%",
                 W // 2,
-                y,
+                content_y,
                 color=bgm_color.as_tuple(),
-                scale=1.2,
+                scale=max(1.3 * s, 0.75),
                 align="center",
             )
             text_renderer.render(
                 f"SFX Volume: {int(self._sfx_volume * 100)}%",
                 W // 2,
-                y + 50,
+                content_y + row_spacing,
                 color=sfx_color.as_tuple(),
-                scale=1.2,
+                scale=max(1.3 * s, 0.75),
                 align="center",
             )
             text_renderer.render(
                 "LEFT/RIGHT adjust  |  ESC Save & Back",
                 W // 2,
-                H - 40,
+                H - int(40 * s),
                 color=NeonTheme.TEXT_DIM.as_tuple(),
-                scale=0.9,
+                scale=max(0.95 * s, 0.6),
                 align="center",
             )
 
@@ -234,16 +253,16 @@ class SettingsScreen:
             text_renderer.render(
                 f"Mode: {self._mode.upper()}",
                 W // 2,
-                y,
+                content_y,
                 color=mode_color.as_tuple(),
-                scale=1.5,
+                scale=max(1.6 * s, 0.9),
                 align="center",
             )
             text_renderer.render(
                 "ENTER to toggle  |  ESC Save & Back",
                 W // 2,
-                H - 40,
+                H - int(40 * s),
                 color=NeonTheme.TEXT_DIM.as_tuple(),
-                scale=0.9,
+                scale=max(0.95 * s, 0.6),
                 align="center",
             )

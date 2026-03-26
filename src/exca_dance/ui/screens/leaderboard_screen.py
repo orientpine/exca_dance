@@ -62,73 +62,83 @@ class LeaderboardScreen:
         if text_renderer is None:
             return
         W, H = renderer.width, renderer.height
+        s = H / 1080.0
 
         if self._mode == "enter":
-            self._render_entry(renderer, text_renderer, W, H)
+            self._render_entry(renderer, text_renderer, W, H, s)
         else:
-            self._render_view(renderer, text_renderer, W, H)
+            self._render_view(renderer, text_renderer, W, H, s)
 
-    def _render_entry(self, renderer, text_renderer, W, H) -> None:
+    def _render_entry(self, renderer, text_renderer, W, H, s) -> None:
         text_renderer.render(
             "ENTER YOUR INITIALS",
             W // 2,
-            80,
+            int(80 * s),
             color=NeonTheme.NEON_BLUE.as_tuple(),
-            scale=2.0,
+            scale=max(2.2 * s, 1.2),
             align="center",
+            large=True,
         )
         if self._scoring:
             text_renderer.render(
                 f"SCORE: {self._scoring.get_total_score():,}",
                 W // 2,
-                140,
+                int(140 * s),
                 color=NeonTheme.NEON_GREEN.as_tuple(),
-                scale=1.5,
+                scale=max(1.6 * s, 0.9),
                 align="center",
             )
 
         # 3 character slots
-        slot_y = H // 2 - 40
+        slot_y = int(H * 0.44)
+        slot_spacing = int(max(100 * s, 60))
+        char_scale = max(4.0 * s, 2.0)
+        arrow_scale = max(1.6 * s, 0.9)
         for i in range(3):
-            x = W // 2 + (i - 1) * 100
+            x = W // 2 + (i - 1) * slot_spacing
             char = CHARS[self._slots[i]]
             color = NeonTheme.NEON_PINK if i == self._cursor else NeonTheme.TEXT_WHITE
-            text_renderer.render(char, x, slot_y, color=color.as_tuple(), scale=4.0, align="center")
+            text_renderer.render(
+                char, x, slot_y,
+                color=color.as_tuple(), scale=char_scale, align="center",
+                large=True,
+            )
             if i == self._cursor:
                 text_renderer.render(
-                    "▲",
+                    "\u25b2",
                     x,
-                    slot_y - 60,
+                    slot_y - int(60 * s),
                     color=NeonTheme.NEON_PINK.as_tuple(),
-                    scale=1.5,
+                    scale=arrow_scale,
                     align="center",
                 )
                 text_renderer.render(
-                    "▼",
+                    "\u25bc",
                     x,
-                    slot_y + 80,
+                    slot_y + int(80 * s),
                     color=NeonTheme.NEON_PINK.as_tuple(),
-                    scale=1.5,
+                    scale=arrow_scale,
                     align="center",
                 )
 
         text_renderer.render(
-            "↑↓ Change  |  ←→ Move  |  ENTER Confirm",
+            "\u2191\u2193 Change  |  \u2190\u2192 Move  |  ENTER Confirm",
             W // 2,
-            H - 60,
+            H - int(60 * s),
             color=NeonTheme.TEXT_DIM.as_tuple(),
-            scale=0.9,
+            scale=max(0.95 * s, 0.6),
             align="center",
         )
 
-    def _render_view(self, renderer, text_renderer, W, H) -> None:
+    def _render_view(self, renderer, text_renderer, W, H, s) -> None:
         text_renderer.render(
             "LEADERBOARD",
             W // 2,
-            40,
+            int(40 * s),
             color=NeonTheme.NEON_BLUE.as_tuple(),
-            scale=2.5,
+            scale=max(2.5 * s, 1.3),
             align="center",
+            large=True,
         )
 
         entries = self._lb.get_top_scores(limit=10)
@@ -138,28 +148,30 @@ class LeaderboardScreen:
                 W // 2,
                 H // 2,
                 color=NeonTheme.TEXT_DIM.as_tuple(),
-                scale=1.5,
+                scale=max(1.6 * s, 0.9),
                 align="center",
             )
         else:
             rank_colors = [NeonTheme.PERFECT, NeonTheme.TEXT_DIM, NeonTheme.NEON_ORANGE]
+            entry_start_y = int(120 * s)
+            entry_spacing = int(max(55 * s, 32))
             for i, entry in enumerate(entries):
-                y = 120 + i * 55
+                y = entry_start_y + i * entry_spacing
                 color = rank_colors[i] if i < 3 else NeonTheme.TEXT_WHITE
                 text_renderer.render(
                     f"#{i + 1:2d}  {entry.initials}  {entry.score:>10,}  {entry.song_title[:20]}",
                     W // 2,
                     y,
                     color=color.as_tuple(),
-                    scale=1.1,
+                    scale=max(1.2 * s, 0.7),
                     align="center",
                 )
 
         text_renderer.render(
             "ESC Back",
             W // 2,
-            H - 40,
+            H - int(40 * s),
             color=NeonTheme.TEXT_DIM.as_tuple(),
-            scale=0.9,
+            scale=max(0.95 * s, 0.6),
             align="center",
         )
