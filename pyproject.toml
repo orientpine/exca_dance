@@ -17,6 +17,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "ruff>=0.1"]
 ros2 = []  # rclpy and sensor_msgs installed separately via ROS2
+packaging = ["pyinstaller>=6.0"]
 
 [project.scripts]
 exca-dance = "exca_dance.__main__:main"
