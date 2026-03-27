@@ -91,6 +91,15 @@
 - **재발 방지**: 소스 URDF 값을 그대로 복사하지 말고, 물리 동작 테스트(`test_boom_pitch_moves_stick_in_sagittal_plane`)로 반드시 검증. zero-pose 렌더만으로는 축 방향 오류를 잡을 수 없음.
 ---
 
+#### ERR-008: 측정 피벗으로 origin_xyz를 직접 교체하면 zero-pose 조립이 깨짐
+
+- **발견일**: 2026-03-27
+- **모듈**: `src/exca_dance/rendering/urdf_kin.py`
+- **증상**: 측정 피벗 좌표로 `origin_xyz`를 교체하면 default 자세에서 boom/arm/bucket이 엉뚱한 위치에 렌더링됨.
+- **원인**: `origin_xyz`는 메시 프레임(urdfpy FK)과 피벗 프레임 두 가지 용도로 사용됨. 측정값으로 교체하면 메시 프레임도 변해서 `compute_mesh_corrections()`가 잘못된 보정 행렬을 생성.
+- **수정**: `origin_xyz`는 원본 URDF 값 유지(메시 프레임). 측정 피벗은 별도 `MEASURED_PIVOTS` dict에 저장. `_build_parent_relative_origins()`만 측정값 사용.
+- **관련 파일**: `rendering/urdf_kin.py`, `skills/rendering-pipeline.md`
+- **재발 방지**: `origin_xyz`와 `MEASURED_PIVOTS`는 독립적으로 관리. 동시에 변경 금지. `skills/rendering-pipeline.md` §이중 프레임 구조 참조.
 ### audio/
 
 #### ERR-003: pygame.mixer.music.get_pos() 타이밍 드리프트

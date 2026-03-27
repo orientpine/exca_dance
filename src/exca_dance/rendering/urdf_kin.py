@@ -106,7 +106,7 @@ JOINTS: list[URDFJoint] = [
         "base_link",
         "center_link",
         "continuous",
-        (0.033333, -0.01235, 0.497222),
+        (0.0, -0.251134, 0.549174),
         (0, 0, 1),
     ),
     URDFJoint("body_joint", "center_link", "body_link", "fixed", (0.0, 0.0, 0.0), (0, 0, 0)),
@@ -132,7 +132,7 @@ JOINTS: list[URDFJoint] = [
         "body_link",
         "boom_link",
         "revolute",
-        (0.030949, 0.892745, 1.072785),
+        (0.028356, 0.807231, 1.835171),
         (1, 0, 0),
     ),
     URDFJoint(
@@ -165,7 +165,7 @@ JOINTS: list[URDFJoint] = [
         "boom_link",
         "stick_link",
         "revolute",
-        (0.02915, 2.768744, 2.618858),
+        (0.028356, 2.817397, 1.835171),
         (1, 0, 0),
     ),
     URDFJoint(
@@ -190,7 +190,7 @@ JOINTS: list[URDFJoint] = [
         "stick_link",
         "bucket_link",
         "revolute",
-        (0.032427, 2.358864, 1.335591),
+        (0.026002, 3.086246, 2.090338),
         (1, 0, 0),
     ),
     URDFJoint(
@@ -336,14 +336,23 @@ def _translation_matrix(xyz: tuple[float, float, float]) -> np.ndarray:
     return m
 
 
+MEASURED_PIVOTS: dict[str, tuple[float, float, float]] = {
+    "swing_joint": (0.033333, -0.01235, 0.497222),
+    "boom_joint": (0.030949, 0.892745, 1.072785),
+    "stick_joint": (0.02915, 2.768744, 2.618858),
+    "bucket_joint": (0.032427, 2.358864, 1.335591),
+}
+
+
 def _build_parent_relative_origins() -> dict[str, tuple[float, float, float]]:
     world_pos: dict[str, tuple[float, float, float]] = {"base_link": (0.0, 0.0, 0.0)}
     result: dict[str, tuple[float, float, float]] = {}
     for joint in JOINTS:
         px, py, pz = world_pos.get(joint.parent_link, (0.0, 0.0, 0.0))
-        ox, oy, oz = joint.origin_xyz
+        origin = MEASURED_PIVOTS.get(joint.name, joint.origin_xyz)
+        ox, oy, oz = origin
         if joint.parent_link == "base_link" or (ox, oy, oz) == (0.0, 0.0, 0.0):
-            rel = joint.origin_xyz
+            rel = origin
         else:
             rel = (ox - px, oy - py, oz - pz)
         result[joint.name] = rel

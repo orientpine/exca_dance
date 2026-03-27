@@ -128,9 +128,9 @@ def test_zero_pose_collision_mesh_centroids_match_reference_assembly() -> None:
     mesh_dir = Path(__file__).resolve().parent.parent / "assets" / "meshes" / "collision"
     zero = compute_zero_angle_transforms()
     expected = {
-        "boom": (0.064522, 2.007944, 1.321781),
-        "stick": (0.06354, 3.136575, 2.408814),
-        "bucket": (0.069969, 1.963073, 0.243078),
+        "boom": (0.028596, 1.683646, 2.136119),
+        "stick": (0.02682, 2.86093, 2.439465),
+        "bucket": (0.026824, 2.41481, 1.028476),
     }
     link_names = {
         "boom": "boom_link",

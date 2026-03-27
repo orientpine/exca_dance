@@ -238,27 +238,52 @@ class Color:
 
 ---
 
-## URDF FK 시스템 (`rendering/urdf_kin.py`)
+## URDF FK — 이중 프레임 구조 (`rendering/urdf_kin.py`)
 
-```python
-GAME_JOINT_MAP: dict[JointName, str] = {
-    JointName.SWING: "swing_joint",
-    JointName.BOOM: "boom_joint",
-    JointName.ARM: "stick_joint",
-    JointName.BUCKET: "bucket_joint",
-}
+STL 메시와 FK 피벗이 서로 다른 좌표 기준을 사용한다.
 
-def compute_link_transforms(joint_angles: dict[JointName, float]) -> dict[str, np.ndarray]:
-    # 입력: 각도(도), 출력: link_name → 4×4 float64 월드 트랜스폼
-    ...
+### 두 프레임
+
+| 프레임 | 데이터 소스 | 용도 |
+|--------|-----------|------|
+| **메시 프레임** | 원본 URDF `origin_xyz` (urdfpy FK) | STL 메시 정점 배치 — export 시 bake됨 |
+| **피벗 프레임** | 측정된 조인트 핀 위치 (`MEASURED_PIVOTS`) | FK 회전 피벗 — 물리적으로 정확한 핀 위치 |
+
+### 왜 분리해야 하는가
+
+- STL 메시는 `urdfpy.URDF.load().link_fk()` 기반으로 export됨 → 원본 URDF origin 기준
+- 원본 URDF origin은 피벗 위치가 부정확 (CAD export 아티팩트)
+- 측정 피벗으로 origin을 직접 교체하면 메시 프레임도 바뀌어 zero-pose 조립이 깨짐
+
+### 데이터 흐름
+
+```
+JOINTS[].origin_xyz (원본)  ─→ _compute_raw_origin_fk()     → 메시 zero-pose 프레임
+MEASURED_PIVOTS (측정값)    ─→ _build_parent_relative_origins() → FK 피벗 (회전 중심)
+                              ↓
+                           compute_mesh_corrections()
+                           = inv(피벗FK_zero) @ 메시FK_zero
+                              ↓
+                           model = link_T @ correction
 ```
 
-**차분 트랜스폼 패턴:**
+### 모델 행렬 계산
+
 ```python
-model = link_T @ part.inv_zero_T
-self._write_model_matrix(prog, model)
-part.vao.render(moderngl.TRIANGLES, vertices=part.vertex_count)
+correction = compute_mesh_corrections()  # 사전 계산, 프레임당 불변
+model = link_T_current @ correction[link_name]
 ```
+
+- zero-pose: `link_T_zero @ inv(link_T_zero) @ raw_zero = raw_zero` → 메시 원위치 ✓
+- 회전 시: 피벗FK 기준 회전 → 올바른 핀 위치에서 회전 ✓
+
+### 데이터 변경 규칙
+
+| 변경 사항 | 수정 위치 |
+|----------|----------|
+| 메시 re-export | `JOINTS[].origin_xyz` 갱신 |
+| 핀 위치 교정 | `MEASURED_PIVOTS` 갱신 |
+| 둘 다 변경 금지 — 각각 독립적으로 관리 |
 
 ---
 
