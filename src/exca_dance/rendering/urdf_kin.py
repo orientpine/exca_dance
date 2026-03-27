@@ -39,14 +39,6 @@ class URDFJoint:
 JOINTS: list[URDFJoint] = [
     # --- base children (fixed / continuous - wheels & tracks) ---
     URDFJoint(
-        "lower_frame_shadow_joint",
-        "base_link",
-        "lower_frame_shadow_link",
-        "fixed",
-        (0.0, -0.251134, 0.307028),
-        (0, 0, 0),
-    ),
-    URDFJoint(
         "left_track_joint",
         "base_link",
         "left_track_link",
@@ -97,9 +89,6 @@ JOINTS: list[URDFJoint] = [
     URDFJoint(
         "blade_joint", "base_link", "blade_link", "revolute", (0.0, 0.700199, 0.362182), (0, 1, 0)
     ),
-    URDFJoint(
-        "blade_shadow_joint", "blade_link", "blade_shadow_link", "fixed", (0.0, 0.0, 0.0), (0, 0, 0)
-    ),
     # --- swing → upper body ---
     URDFJoint(
         "swing_joint",
@@ -135,30 +124,6 @@ JOINTS: list[URDFJoint] = [
         (0.028356, 0.807231, 1.835171),
         (1, 0, 0),
     ),
-    URDFJoint(
-        "boom_stick_joint",
-        "boom_link",
-        "boom_stick_link",
-        "fixed",
-        (0.341806, 0.632914, 0.611229),
-        (0, 0, 0),
-    ),
-    URDFJoint(
-        "boom_cylinder_joint",
-        "boom_link",
-        "boom_cylinder_link",
-        "fixed",
-        (0.013234, 1.252810, 1.190373),
-        (0, 0, 0),
-    ),
-    URDFJoint(
-        "boom_piston_joint",
-        "boom_link",
-        "boom_piston_link",
-        "fixed",
-        (0.029507, 1.416225, 1.545614),
-        (0, 0, 0),
-    ),
     # --- stick (= game "arm") ---
     URDFJoint(
         "stick_joint",
@@ -167,22 +132,6 @@ JOINTS: list[URDFJoint] = [
         "revolute",
         (0.028356, 2.817397, 1.835171),
         (1, 0, 0),
-    ),
-    URDFJoint(
-        "stick_cylinder_joint",
-        "stick_link",
-        "stick_cylinder_link",
-        "fixed",
-        (0.029916, 1.887204, 2.579915),
-        (0, 0, 0),
-    ),
-    URDFJoint(
-        "stick_piston_joint",
-        "stick_link",
-        "stick_piston_link",
-        "fixed",
-        (0.029506, 2.498188, 2.719850),
-        (0, 0, 0),
     ),
     # --- bucket ---
     URDFJoint(
@@ -193,44 +142,11 @@ JOINTS: list[URDFJoint] = [
         (0.026002, 3.086246, 2.090338),
         (1, 0, 0),
     ),
-    URDFJoint(
-        "bucket_cylinder_joint",
-        "bucket_link",
-        "bucket_cylinder_link",
-        "fixed",
-        (0.026002, 2.907623, 1.998876),
-        (0, 0, 0),
-    ),
-    URDFJoint(
-        "bucket_piston_joint",
-        "bucket_link",
-        "bucket_piston_link",
-        "fixed",
-        (0.025784, 2.850467, 1.776733),
-        (0, 0, 0),
-    ),
-    URDFJoint(
-        "bucket_link1_joint",
-        "bucket_link",
-        "bucket_link1_link",
-        "fixed",
-        (0.026002, 2.602376, 1.442937),
-        (0, 0, 0),
-    ),
-    URDFJoint(
-        "bucket_link2_joint",
-        "bucket_link",
-        "bucket_link2_link",
-        "fixed",
-        (0.028439, 2.661966, 1.304928),
-        (0, 0, 0),
-    ),
 ]
 
 # Mapping: URDF visual mesh filename stem → link name
 # (extracted from URDF <visual><mesh filename> attributes)
 MESH_TO_LINK: dict[str, str] = {
-    "lower_frame_shadow_volume": "lower_frame_shadow_link",
     "left_track": "left_track_link",
     "right_track": "right_track_link",
     "wheel1_l": "wheel1_l_link",
@@ -238,23 +154,13 @@ MESH_TO_LINK: dict[str, str] = {
     "wheel2_l": "wheel2_l_link",
     "wheel2_r": "wheel2_r_link",
     "blade": "blade_link",
-    "blade_shadow_volume": "blade_shadow_link",
     "center": "center_link",
     "main_body": "body_link",
     "inner_features_l": "inner_features_l_link",
     "inner_features_r": "inner_features_r_link",
     "boom": "boom_link",
-    "boom_stick": "boom_stick_link",
-    "boom_cylinder": "boom_cylinder_link",
-    "boom_piston": "boom_piston_link",
     "stick": "stick_link",
-    "stick_cylinder": "stick_cylinder_link",
-    "stick_piston": "stick_piston_link",
     "bucket": "bucket_link",
-    "bucket_cylinder": "bucket_cylinder_link",
-    "bucket_piston": "bucket_piston_link",
-    "bucket_link_1": "bucket_link1_link",
-    "bucket_link_2": "bucket_link2_link",
 }
 
 # Game JointName → URDF joint name
@@ -263,7 +169,6 @@ MESH_TO_LINK: dict[str, str] = {
 LINK_COLOR_GROUPS: dict[str, list[str]] = {
     "base": [
         "base_link",
-        "lower_frame_shadow_link",
         "left_track_link",
         "right_track_link",
         "wheel1_l_link",
@@ -271,7 +176,6 @@ LINK_COLOR_GROUPS: dict[str, list[str]] = {
         "wheel2_l_link",
         "wheel2_r_link",
         "blade_link",
-        "blade_shadow_link",
     ],
     "turret": [
         "center_link",
@@ -281,21 +185,12 @@ LINK_COLOR_GROUPS: dict[str, list[str]] = {
     ],
     JointName.BOOM: [
         "boom_link",
-        "boom_stick_link",
-        "boom_cylinder_link",
-        "boom_piston_link",
     ],
     JointName.ARM: [
         "stick_link",
-        "stick_cylinder_link",
-        "stick_piston_link",
     ],
     JointName.BUCKET: [
         "bucket_link",
-        "bucket_cylinder_link",
-        "bucket_piston_link",
-        "bucket_link1_link",
-        "bucket_link2_link",
     ],
 }
 
