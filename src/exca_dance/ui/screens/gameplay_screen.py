@@ -260,7 +260,7 @@ class GameplayScreen:
             panel_y = (H - panel_h) // 2
 
             # "PAUSED" title
-            title_scale = max(3.5 * s, 1.8)
+            title_scale = max(1.3125 * s, 0.675)
             text_renderer.render(
                 "PAUSED",
                 W // 2,
@@ -268,7 +268,7 @@ class GameplayScreen:
                 color=NeonTheme.NEON_BLUE.as_tuple(),
                 scale=title_scale,
                 align="center",
-                large=True,
+                title=True,
             )
 
             items = ["RESUME", "RESTART", "SETTINGS", "QUIT TO MENU"]

@@ -18,6 +18,7 @@ class GLTextRenderer:
         pygame.font.init()
         self._font = pygame.font.Font(font_path, font_size)
         self._judgment_font = pygame.font.Font(font_path, 48)
+        self._title_font = pygame.font.Font(font_path, 128)
         self._texture_cache: dict[tuple[str, int], tuple[moderngl.Texture, int, int]] = {}
 
     def _get_or_create_texture(
@@ -56,16 +57,23 @@ class GLTextRenderer:
         align: str = "left",
         *,
         large: bool = False,
+        title: bool = False,
     ) -> None:
         """
         Render text at screen pixel position (x, y).
         color: (r, g, b, a) as floats 0-1
         align: "left", "center", "right"
         large: use 48px judgment font for crisp large text
+        title: use 128px title font for high-res title text
         """
         if not text:
             return
-        font = self._judgment_font if large else None
+        if title:
+            font = self._title_font
+        elif large:
+            font = self._judgment_font
+        else:
+            font = None
         tex, w, h = self._get_or_create_texture(text, font=font)
         rw, rh = w * scale, h * scale
         if align == "center":

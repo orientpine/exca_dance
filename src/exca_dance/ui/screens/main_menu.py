@@ -604,8 +604,8 @@ class MainMenuScreen:
         cx = W // 2
         title_y = int(H * 0.18)
 
-        # Glow layer (large=True → 48px base for crisp rendering)
-        glow_s = max((2.4 + 0.15 * math.sin(t * 1.5)) * s, 1.2)
+        # Glow layer (title=True → 128px base for high-res rendering)
+        glow_s = max((0.9 + 0.056 * math.sin(t * 1.5)) * s, 0.45)
         glow_a = 0.18 + 0.10 * math.sin(t * 2.0)
         text_renderer.render(
             "EXCA DANCE",
@@ -614,12 +614,12 @@ class MainMenuScreen:
             color=NeonTheme.NEON_BLUE.with_alpha(glow_a).as_tuple(),
             scale=glow_s,
             align="center",
-            large=True,
+            title=True,
         )
 
         # Main title
         title_a = 0.85 + 0.15 * math.sin(t * 1.0)
-        title_s = max(2.2 * s, 1.1)
+        title_s = max(0.825 * s, 0.45)
         text_renderer.render(
             "EXCA DANCE",
             cx,
@@ -627,7 +627,7 @@ class MainMenuScreen:
             color=NeonTheme.NEON_BLUE.with_alpha(title_a).as_tuple(),
             scale=title_s,
             align="center",
-            large=True,
+            title=True,
         )
 
         # Subtitle (neon pink accent)
