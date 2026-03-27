@@ -22,6 +22,7 @@ class GameplayScreen:
         hit_sounds: dict[Judgment, pygame.mixer.Sound],
         *,
         overlay_2d=None,
+        camera_settings=None,
     ) -> None:
         self._renderer = renderer
         self._text = text_renderer
@@ -32,11 +33,16 @@ class GameplayScreen:
         self._hit_sounds: dict[Judgment, pygame.mixer.Sound] = hit_sounds
         self._beatmap: BeatMap | None = None
         self._overlay_2d = overlay_2d
+        self._camera = camera_settings
+        self._mouse_dragging: bool = False
+        self._mouse_prev: tuple[int, int] = (0, 0)
         self._result_scoring = None
         self._pause_selected: int = 0
 
     def on_enter(self, beatmap: BeatMap | None = None, **kwargs) -> None:
         self._beatmap = beatmap
+        if self._camera is not None:
+            self._layout.rebuild_camera()
         if beatmap is not None:
             if beatmap.events:
                 last_event = beatmap.events[-1]
@@ -63,21 +69,38 @@ class GameplayScreen:
         # Border glow (slightly larger rect in NEON_BLUE)
         border = int(max(3 * s, 2))
         self._draw_panel_rect(
-            ctx, renderer,
-            panel_x - border, panel_y - border,
-            panel_w + 2 * border, panel_h + 2 * border,
-            NeonTheme.NEON_BLUE, 0.25,
+            ctx,
+            renderer,
+            panel_x - border,
+            panel_y - border,
+            panel_w + 2 * border,
+            panel_h + 2 * border,
+            NeonTheme.NEON_BLUE,
+            0.25,
         )
 
         # Inner panel (dark background)
         self._draw_panel_rect(
-            ctx, renderer,
-            panel_x, panel_y, panel_w, panel_h,
-            NeonTheme.BG, 0.88,
+            ctx,
+            renderer,
+            panel_x,
+            panel_y,
+            panel_w,
+            panel_h,
+            NeonTheme.BG,
+            0.88,
         )
 
     def _draw_panel_rect(
-        self, ctx, renderer, x: int, y: int, w: int, h: int, color, alpha: float,
+        self,
+        ctx,
+        renderer,
+        x: int,
+        y: int,
+        w: int,
+        h: int,
+        color,
+        alpha: float,
     ) -> None:
         """Draw a 2D rectangle in NDC via prog_solid."""
         W, H = renderer.width, renderer.height
@@ -87,12 +110,42 @@ class GameplayScreen:
         y1 = 1 - ((y + h) / H) * 2
         r, g, b = color.r, color.g, color.b
         verts = [
-            x0, y1, 0, r, g, b,
-            x1, y1, 0, r, g, b,
-            x1, y0, 0, r, g, b,
-            x0, y1, 0, r, g, b,
-            x1, y0, 0, r, g, b,
-            x0, y0, 0, r, g, b,
+            x0,
+            y1,
+            0,
+            r,
+            g,
+            b,
+            x1,
+            y1,
+            0,
+            r,
+            g,
+            b,
+            x1,
+            y0,
+            0,
+            r,
+            g,
+            b,
+            x0,
+            y1,
+            0,
+            r,
+            g,
+            b,
+            x1,
+            y0,
+            0,
+            r,
+            g,
+            b,
+            x0,
+            y0,
+            0,
+            r,
+            g,
+            b,
         ]
         vbo = ctx.buffer(np.array(verts, dtype="f4"))
         prog = renderer.prog_solid
@@ -106,6 +159,25 @@ class GameplayScreen:
         vbo.release()
 
     def handle_event(self, event: pygame.event.Event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 2:
+            self._mouse_dragging = True
+            self._mouse_prev = event.pos
+            return None
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 2:
+            self._mouse_dragging = False
+            if self._camera is not None:
+                self._camera.save()
+            return None
+        if event.type == pygame.MOUSEMOTION and self._mouse_dragging:
+            if self._camera is not None:
+                dx = event.pos[0] - self._mouse_prev[0]
+                dy = event.pos[1] - self._mouse_prev[1]
+                self._camera.azimuth += dx * 0.3
+                self._camera.elevation += dy * 0.3
+                self._layout.rebuild_camera()
+            self._mouse_prev = event.pos
+            return None
+
         paused = self._game_loop.state == LoopState.PAUSED
         if paused and event.type == pygame.KEYUP:
             self._game_loop.handle_event(event)
@@ -283,10 +355,14 @@ class GameplayScreen:
                     bar_h = int(max(32 * s, 22))
                     bar_w = int(max(320 * s, 200))
                     self._draw_panel_rect(
-                        renderer.ctx, renderer,
-                        (W - bar_w) // 2, iy - int(3 * s),
-                        bar_w, bar_h,
-                        NeonTheme.NEON_PINK, 0.12,
+                        renderer.ctx,
+                        renderer,
+                        (W - bar_w) // 2,
+                        iy - int(3 * s),
+                        bar_w,
+                        bar_h,
+                        NeonTheme.NEON_PINK,
+                        0.12,
                     )
                     color = NeonTheme.NEON_PINK.as_tuple()
                 else:

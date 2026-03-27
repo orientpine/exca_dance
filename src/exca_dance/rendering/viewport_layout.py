@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 
+from exca_dance.core.camera_settings import CameraSettings
 from exca_dance.core.constants import SCREEN_HEIGHT, SCREEN_WIDTH
 from exca_dance.rendering.viewport import ViewportManager
 
@@ -87,11 +88,13 @@ class GameViewportLayout:
         renderer: Any,
         width: int = SCREEN_WIDTH,
         height: int = SCREEN_HEIGHT,
+        camera_settings: CameraSettings | None = None,
     ) -> None:
         self._renderer = renderer
         self._vm = ViewportManager(width, height)
         self._width = width
         self._height = height
+        self._camera = camera_settings
         self._build_matrices()
 
         # ── Cached static VBOs (lazy-init) ──
@@ -99,19 +102,20 @@ class GameViewportLayout:
         self._bg_grid_cache: tuple[object, object, int] | None = None
         self._bg_ring_cache: tuple[object, object, int, int] | None = None
         self._deco_cache: tuple[object, object, int] | None = None
-        self._identity_bytes: bytes = np.ascontiguousarray(
-            np.eye(4, dtype="f4")
-        ).tobytes()
-        self._mvp_3d_bytes: bytes = np.ascontiguousarray(
-            self._mvp_3d.astype("f4").T
-        ).tobytes()
+        self._identity_bytes: bytes = np.ascontiguousarray(np.eye(4, dtype="f4")).tobytes()
+        self._mvp_3d_bytes: bytes = np.ascontiguousarray(self._mvp_3d.astype("f4").T).tobytes()
 
     def _build_matrices(self) -> None:
         """Pre-compute MVP matrices for each viewport (aspect-matched)."""
         # ── 3D perspective ───────────────────────────────────────────
         aspect_3d = self._vm.get_aspect_ratio("main_3d")
         proj_3d = _perspective(45.0, aspect_3d, 0.1, 100.0)
-        view_3d = _look_at(self._EYE_3D, self._TARGET_3D, self._UP_3D)
+        if self._camera is not None:
+            ex, ey, ez = self._camera.compute_eye((2.0, 0.0, 1.5))
+            eye_3d = np.array([ex, ey, ez], dtype="f4")
+        else:
+            eye_3d = np.array([6.0, -8.0, 5.0], dtype="f4")
+        view_3d = _look_at(eye_3d, self._TARGET_3D, self._UP_3D)
         self._mvp_3d: np.ndarray = (proj_3d @ view_3d).astype("f4")
 
         # ── Side orthographic (XZ plane, looking along +Y) ──────────
@@ -150,6 +154,10 @@ class GameViewportLayout:
         top_up = np.array([0.0, 1.0, 0.0], dtype="f4")
         view_top = _look_at(top_eye, top_center, top_up)
         self._mvp_top: np.ndarray = (proj_top @ view_top).astype("f4")
+
+    def rebuild_camera(self) -> None:
+        self._build_matrices()
+        self._mvp_3d_bytes = np.ascontiguousarray(self._mvp_3d.astype("f4").T).tobytes()
 
     # ── Rendering ────────────────────────────────────────────────────
 
@@ -247,13 +255,33 @@ class GameViewportLayout:
             verts: list[float] = []
             for y in range(-4, 5):
                 verts += [
-                    -4, y, 0.0, grid_r, grid_g, grid_b,
-                    8, y, 0.0, grid_r, grid_g, grid_b,
+                    -4,
+                    y,
+                    0.0,
+                    grid_r,
+                    grid_g,
+                    grid_b,
+                    8,
+                    y,
+                    0.0,
+                    grid_r,
+                    grid_g,
+                    grid_b,
                 ]
             for x in range(-4, 9):
                 verts += [
-                    x, -4, 0.0, grid_r, grid_g, grid_b,
-                    x, 4, 0.0, grid_r, grid_g, grid_b,
+                    x,
+                    -4,
+                    0.0,
+                    grid_r,
+                    grid_g,
+                    grid_b,
+                    x,
+                    4,
+                    0.0,
+                    grid_r,
+                    grid_g,
+                    grid_b,
                 ]
             data = np.array(verts, dtype="f4")
             vbo = ctx.buffer(data)
@@ -284,8 +312,18 @@ class GameViewportLayout:
                     x1 = cx + radius * np.cos(a1)
                     y1 = cy + radius * np.sin(a1)
                     circle_verts += [
-                        x0, y0, cz, color.r * 0.6, color.g * 0.6, color.b * 0.6,
-                        x1, y1, cz, color.r * 0.6, color.g * 0.6, color.b * 0.6,
+                        x0,
+                        y0,
+                        cz,
+                        color.r * 0.6,
+                        color.g * 0.6,
+                        color.b * 0.6,
+                        x1,
+                        y1,
+                        cz,
+                        color.r * 0.6,
+                        color.g * 0.6,
+                        color.b * 0.6,
                     ]
             rdata = np.array(circle_verts, dtype="f4")
             rvbo = ctx.buffer(rdata)
@@ -333,11 +371,46 @@ class GameViewportLayout:
             verts: list[float] = []
 
             def _quad(x0: float, y0: float, x1: float, y1: float) -> None:
-                verts.extend([
-                    x0, y0, 0, cr, cg, cb,  x1, y0, 0, cr, cg, cb,
-                    x1, y1, 0, cr, cg, cb,  x0, y0, 0, cr, cg, cb,
-                    x1, y1, 0, cr, cg, cb,  x0, y1, 0, cr, cg, cb,
-                ])
+                verts.extend(
+                    [
+                        x0,
+                        y0,
+                        0,
+                        cr,
+                        cg,
+                        cb,
+                        x1,
+                        y0,
+                        0,
+                        cr,
+                        cg,
+                        cb,
+                        x1,
+                        y1,
+                        0,
+                        cr,
+                        cg,
+                        cb,
+                        x0,
+                        y0,
+                        0,
+                        cr,
+                        cg,
+                        cb,
+                        x1,
+                        y1,
+                        0,
+                        cr,
+                        cg,
+                        cb,
+                        x0,
+                        y1,
+                        0,
+                        cr,
+                        cg,
+                        cb,
+                    ]
+                )
 
             vx = nx(main_3d[0] + main_3d[2])
             vy_bot = ny(tl[1] + tl[3])

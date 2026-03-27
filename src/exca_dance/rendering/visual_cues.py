@@ -43,7 +43,7 @@ class VisualCueRenderer:
     - Beat timeline: scrolling event markers at bottom
     """
 
-    GHOST_FADE_MS: float = 5000.0  # fade in over ~5 s before event
+    GHOST_FADE_MS: float = 8000.0  # fade in over ~8 s before event
 
     # Pre-allocated buffer sizes (vertices)
     _TL_SOLID_RESERVE: int = 256  # ~42 solid rects

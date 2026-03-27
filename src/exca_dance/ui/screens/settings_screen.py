@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Protocol, cast
 
 import pygame
+from exca_dance.core.camera_settings import CameraSettings
 from exca_dance.core.game_state import ScreenName
 from exca_dance.core.models import JointName
 from exca_dance.rendering.theme import NeonTheme
@@ -47,7 +48,7 @@ class _AudioLike(Protocol):
 
 
 class SettingsScreen:
-    SECTIONS: list[str] = ["KEY BINDINGS", "AUDIO", "MODE"]
+    SECTIONS: list[str] = ["KEY BINDINGS", "AUDIO", "MODE", "CAMERA"]
 
     def __init__(
         self,
@@ -55,12 +56,14 @@ class SettingsScreen:
         text_renderer: _TextRendererLike,
         keybinding: _KeybindingLike,
         audio: _AudioLike,
+        camera_settings: CameraSettings | None = None,
         bridge_factory: object | None = None,
     ) -> None:
         self._renderer: _RendererLike = renderer
         self._text: _TextRendererLike = text_renderer
         self._kb: _KeybindingLike = keybinding
         self._audio: _AudioLike = audio
+        self._camera: CameraSettings | None = camera_settings
         self._bridge_factory: object | None = bridge_factory
         self._section: int = 0
         self._row: int = 0
@@ -86,6 +89,8 @@ class SettingsScreen:
             if key == pygame.K_ESCAPE:
                 self._kb.save()
                 self._audio.save_volume_settings("data/volume.json")
+                if self._camera is not None:
+                    self._camera.save()
                 return ScreenName.MAIN_MENU
             if key in (pygame.K_LEFT, pygame.K_a):
                 if self._section == 1:
@@ -100,18 +105,21 @@ class SettingsScreen:
                     self._section = (self._section + 1) % len(self.SECTIONS)
                     self._row = 0
             elif key in (pygame.K_UP, pygame.K_w):
-                if self._section == 1:
-                    self._row = max(0, self._row - 1)
-                else:
-                    self._row = max(0, self._row - 1)
+                self._row = max(0, self._row - 1)
             elif key in (pygame.K_DOWN, pygame.K_s):
-                if self._section == 1:
-                    self._row = min(1, self._row + 1)
-                else:
-                    self._row += 1
+                self._row = min(self._max_row_for_section(), self._row + 1)
             elif key in (pygame.K_RETURN, pygame.K_SPACE):
                 self._activate_row()
         return None
+
+    def _max_row_for_section(self) -> int:
+        if self._section == 0:
+            return len(list(JointName)) * 2 - 1
+        if self._section == 1:
+            return 1
+        if self._section == 2:
+            return 0
+        return 2
 
     def _adjust_volume(self, delta: float) -> None:
         if self._row == 0:
@@ -146,6 +154,10 @@ class SettingsScreen:
                 self._sfx_volume = max(0.0, min(1.0, self._sfx_volume))
         elif self._section == 2:
             self._mode = "real" if self._mode == "virtual" else "virtual"
+        elif self._section == 3:
+            if self._row == 2 and self._camera is not None:
+                self._camera.reset_to_defaults()
+                self._camera.save()
 
     def update(self, _dt: float) -> None:
         return None
@@ -169,8 +181,12 @@ class SettingsScreen:
             x = W // 4 * (i + 1)
             color = NeonTheme.NEON_PINK if i == self._section else NeonTheme.TEXT_DIM
             text_renderer.render(
-                sec, x, int(80 * s),
-                color=color.as_tuple(), scale=max(1.2 * s, 0.7), align="center",
+                sec,
+                x,
+                int(80 * s),
+                color=color.as_tuple(),
+                scale=max(1.2 * s, 0.7),
+                align="center",
             )
 
         if self._waiting_key:
@@ -195,20 +211,26 @@ class SettingsScreen:
                 color = NeonTheme.JOINT_BOOM if jname == JointName.BOOM else NeonTheme.TEXT_WHITE
                 text_renderer.render(
                     f"{cast(str, jname.value).upper()}",
-                    col_name, content_y,
-                    color=color.as_tuple(), scale=max(1.1 * s, 0.65),
+                    col_name,
+                    content_y,
+                    color=color.as_tuple(),
+                    scale=max(1.1 * s, 0.65),
                 )
                 sel_p = NeonTheme.NEON_PINK if self._row == i * 2 else NeonTheme.TEXT_WHITE
                 sel_n = NeonTheme.NEON_PINK if self._row == i * 2 + 1 else NeonTheme.TEXT_WHITE
                 text_renderer.render(
                     f"+ [{pygame.key.name(pk)}]",
-                    col_pos, content_y,
-                    color=sel_p.as_tuple(), scale=max(1.1 * s, 0.65),
+                    col_pos,
+                    content_y,
+                    color=sel_p.as_tuple(),
+                    scale=max(1.1 * s, 0.65),
                 )
                 text_renderer.render(
                     f"- [{pygame.key.name(nk)}]",
-                    col_neg, content_y,
-                    color=sel_n.as_tuple(), scale=max(1.1 * s, 0.65),
+                    col_neg,
+                    content_y,
+                    color=sel_n.as_tuple(),
+                    scale=max(1.1 * s, 0.65),
                 )
                 content_y += row_spacing
             text_renderer.render(
@@ -260,6 +282,44 @@ class SettingsScreen:
             )
             text_renderer.render(
                 "ENTER to toggle  |  ESC Save & Back",
+                W // 2,
+                H - int(40 * s),
+                color=NeonTheme.TEXT_DIM.as_tuple(),
+                scale=max(0.95 * s, 0.6),
+                align="center",
+            )
+        elif self._section == 3:
+            azimuth = self._camera.azimuth if self._camera is not None else 0.0
+            elevation = self._camera.elevation if self._camera is not None else 0.0
+            row0_color = NeonTheme.NEON_PINK if self._row == 0 else NeonTheme.TEXT_WHITE
+            row1_color = NeonTheme.NEON_PINK if self._row == 1 else NeonTheme.TEXT_WHITE
+            row2_color = NeonTheme.NEON_ORANGE if self._row == 2 else NeonTheme.TEXT_DIM
+            text_renderer.render(
+                f"Azimuth: {azimuth:.1f} deg",
+                W // 2,
+                content_y,
+                color=row0_color.as_tuple(),
+                scale=max(1.3 * s, 0.75),
+                align="center",
+            )
+            text_renderer.render(
+                f"Elevation: {elevation:.1f} deg",
+                W // 2,
+                content_y + row_spacing,
+                color=row1_color.as_tuple(),
+                scale=max(1.3 * s, 0.75),
+                align="center",
+            )
+            text_renderer.render(
+                "RESET CAMERA TO DEFAULT",
+                W // 2,
+                content_y + row_spacing * 2,
+                color=row2_color.as_tuple(),
+                scale=max(1.15 * s, 0.7),
+                align="center",
+            )
+            text_renderer.render(
+                "UP/DOWN select  |  ENTER reset  |  ESC Save & Back",
                 W // 2,
                 H - int(40 * s),
                 color=NeonTheme.TEXT_DIM.as_tuple(),

@@ -126,10 +126,14 @@ def main(argv: list[str] | None = None) -> int:
 
         renderer = GameRenderer(W, H, "Exca Dance")
 
-        # GL text renderer (use system default font)
+        # GL text renderer (prefer bundled D2Coding Nerd Font)
         from exca_dance.rendering.gl_text import GLTextRenderer
 
-        text_renderer = GLTextRenderer(renderer, font_path=None, font_size=20)
+        bundled_font = Path("assets/fonts/D2CodingLigatureNerdFont-Regular.ttf")
+        font_path = str(bundled_font) if bundled_font.exists() else None
+        if font_path is None:
+            logger.warning("Bundled D2Coding font not found, falling back to system default font")
+        text_renderer = GLTextRenderer(renderer, font_path=font_path, font_size=20)
 
         # Audio
         from exca_dance.audio.audio_system import AudioSystem
@@ -151,11 +155,13 @@ def main(argv: list[str] | None = None) -> int:
         from exca_dance.core.scoring import ScoringEngine
         from exca_dance.core.keybinding import KeyBindingManager
         from exca_dance.core.leaderboard import LeaderboardManager
+        from exca_dance.core.camera_settings import CameraSettings
 
         fk = ExcavatorFK()
         scoring = ScoringEngine()
         keybinding = KeyBindingManager()
         leaderboard = LeaderboardManager()
+        camera_settings = CameraSettings()
 
         # Bridge
         from exca_dance.ros2_bridge import create_bridge
@@ -167,7 +173,7 @@ def main(argv: list[str] | None = None) -> int:
         from exca_dance.rendering.viewport_layout import GameViewportLayout
 
         excavator_model = ExcavatorModel(renderer, fk)
-        viewport_layout = GameViewportLayout(renderer, W, H)
+        viewport_layout = GameViewportLayout(renderer, W, H, camera_settings=camera_settings)
 
         # Game loop
         from exca_dance.core.game_loop import GameLoop
@@ -222,6 +228,7 @@ def main(argv: list[str] | None = None) -> int:
                 viewport_layout,
                 hit_sounds,
                 overlay_2d=overlay_2d,
+                camera_settings=camera_settings,
             ),
         )
         state_mgr.register(ScreenName.RESULTS, ResultsScreen(renderer, text_renderer))
@@ -229,7 +236,14 @@ def main(argv: list[str] | None = None) -> int:
             ScreenName.LEADERBOARD, LeaderboardScreen(renderer, text_renderer, leaderboard)
         )
         state_mgr.register(
-            ScreenName.SETTINGS, SettingsScreen(renderer, text_renderer, keybinding, audio)
+            ScreenName.SETTINGS,
+            SettingsScreen(
+                renderer,
+                text_renderer,
+                keybinding,
+                audio,
+                camera_settings=camera_settings,
+            ),
         )
         tutorial_screen_class = import_module(
             "exca_dance.ui.screens.tutorial_screen"
@@ -266,6 +280,7 @@ def main(argv: list[str] | None = None) -> int:
 
         # Cleanup
         keybinding.save()
+        camera_settings.save()
         audio.destroy()
         bridge.disconnect()
         visual_cues.destroy()
