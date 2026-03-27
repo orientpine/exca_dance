@@ -101,26 +101,34 @@ class VisualCueRenderer:
     # ------------------------------------------------------------------
 
     def _rebuild_outline_cache(self) -> None:
-        """Extract edges from ghost model and cache as a persistent VBO."""
+        """Build outline edge VBO from ghost model (fully vectorized, no Python loops)."""
         raw_9 = self._ghost_model.get_transformed_vertices()
-        if raw_9.shape[0] == 0:
+        if raw_9.shape[0] < 3:
             self._outline_vertex_count = 0
             return
 
-        edge_positions = self._extract_edges(raw_9)
-        if edge_positions.size == 0:
-            self._outline_vertex_count = 0
-            return
+        positions = raw_9[:, :3]
+        n_tris = positions.shape[0] // 3
+        tris = positions[: n_tris * 3].reshape(n_tris, 3, 3)
+
+        # 3 edges per triangle, 2 vertices per edge = 6 verts per tri (LINES)
+        # Duplicate edges overdraw harmlessly under additive blend.
+        n_edge_verts = n_tris * 6
+        edge_verts = np.empty((n_edge_verts, 3), dtype="f4")
+        edge_verts[0::6] = tris[:, 0]
+        edge_verts[1::6] = tris[:, 1]
+        edge_verts[2::6] = tris[:, 1]
+        edge_verts[3::6] = tris[:, 2]
+        edge_verts[4::6] = tris[:, 2]
+        edge_verts[5::6] = tris[:, 0]
 
         outline = NeonTheme.GHOST_OUTLINE
-        n = edge_positions.shape[0]
-
-        line_data = np.empty((n, 7), dtype="f4")
-        line_data[:, :3] = edge_positions
+        line_data = np.empty((n_edge_verts, 7), dtype="f4")
+        line_data[:, :3] = edge_verts
         line_data[:, 3] = outline.r
         line_data[:, 4] = outline.g
         line_data[:, 5] = outline.b
-        line_data[:, 6] = 1.0  # base alpha (pulse applied via alpha_mult uniform)
+        line_data[:, 6] = 1.0  # pulse applied via alpha_mult uniform
 
         ctx = self._renderer.ctx
         data_bytes = line_data.tobytes()
@@ -135,48 +143,7 @@ class VisualCueRenderer:
             self._renderer.prog_additive,
             [(self._outline_vbo, "3f 4f", "in_position", "in_color")],
         )
-        self._outline_vertex_count = n
-
-    def _extract_edges(self, vertices_9: np.ndarray) -> np.ndarray:
-        if vertices_9.shape[0] < 3:
-            return np.empty((0, 3), dtype="f4")
-
-        positions = vertices_9[:, :3]
-        edge_keys: set[frozenset[tuple[float, float, float]]] = set()
-        edge_segments: list[tuple[tuple[float, float, float], tuple[float, float, float]]] = []
-
-        triangle_count = positions.shape[0] // 3
-
-        def _vec3(row: np.ndarray) -> tuple[float, float, float]:
-            return (float(row[0]), float(row[1]), float(row[2]))
-
-        def _round_vec3(v: tuple[float, float, float]) -> tuple[float, float, float]:
-            return (round(v[0], 4), round(v[1], 4), round(v[2], 4))
-
-        for idx in range(triangle_count):
-            tri = positions[idx * 3 : idx * 3 + 3]
-            v0 = _vec3(tri[0])
-            v1 = _vec3(tri[1])
-            v2 = _vec3(tri[2])
-            for a, b in ((v0, v1), (v1, v2), (v2, v0)):
-                key: frozenset[tuple[float, float, float]] = frozenset(
-                    {_round_vec3(a), _round_vec3(b)}
-                )
-                if key in edge_keys:
-                    continue
-                edge_keys.add(key)
-                edge_segments.append((a, b))
-
-        if not edge_segments:
-            return np.empty((0, 3), dtype="f4")
-
-        edge_positions = np.empty((len(edge_segments) * 2, 3), dtype="f4")
-        out_i = 0
-        for a, b in edge_segments:
-            edge_positions[out_i] = a
-            edge_positions[out_i + 1] = b
-            out_i += 2
-        return edge_positions
+        self._outline_vertex_count = n_edge_verts
 
     # ------------------------------------------------------------------
     # Per-frame update
