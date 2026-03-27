@@ -4,6 +4,18 @@ ModernGL-based 3D rendering pipeline. All rendering is OpenGL — no pygame Surf
 
 ---
 
+## REQUIRED SKILLS
+
+> 이 모듈 작업 전 반드시 읽어야 할 스킬 문서:
+
+| 스킬 | 파일 | 핵심 내용 |
+|------|------|-----------|
+| Python 컨벤션 | `skills/python-conventions.md` | 임포트 규칙, 타입, 코드 스타일 |
+| 렌더링 파이프라인 | `skills/rendering-pipeline.md` | ModernGL, 셰이더, VBO/VAO, 뷰포트, 테마 |
+| 안티패턴 | `skills/anti-patterns.md` | 금지 패턴, 명령어, blend_func getter 금지 |
+
+---
+
 ## STRUCTURE
 
 ```

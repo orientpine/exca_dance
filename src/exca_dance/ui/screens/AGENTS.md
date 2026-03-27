@@ -4,6 +4,19 @@ Duck-typed screen implementations. No base class — all screens implement the s
 
 ---
 
+## REQUIRED SKILLS
+
+> 이 모듈 작업 전 반드시 읽어야 할 스킬 문서:
+
+| 스킬 | 파일 | 핵심 내용 |
+|------|------|-----------|
+| Python 컨벤션 | `skills/python-conventions.md` | 임포트 규칙, 타입, 코드 스타일 |
+| UI 스크린 | `skills/ui-screens.md` | 스크린 프로토콜, 전환 맵, HUD |
+| 아키텍처 | `skills/architecture.md` | 스크린 등록 위치(__main__.py) |
+| 안티패턴 | `skills/anti-patterns.md` | 금지 패턴, 명령어 |
+
+---
+
 ## STRUCTURE
 
 ```

@@ -6,6 +6,25 @@ DDR-style rhythm game where the player controls a 3D excavator's 4 joints (swing
 
 ---
 
+## REQUIRED SKILLS
+
+> 이 프로젝트 작업 전 반드시 읽어야 할 스킬 문서. 각 AGENTS.md는 해당 모듈에 필요한 스킬만 인용한다.
+
+| 스킬 | 파일 | 핵심 내용 |
+|------|------|-----------|
+| Python 컨벤션 | `skills/python-conventions.md` | 임포트 규칙, 타입, 코드 스타일, 데이터 단위 |
+| 아키텍처 | `skills/architecture.md` | 서브시스템 와이어링, 메인 루프, 설계 원칙 |
+| Core 게임 로직 | `skills/core-game-logic.md` | 모델, 상수, 스코어링, FK, GameLoop, 비트맵 |
+| 렌더링 파이프라인 | `skills/rendering-pipeline.md` | ModernGL, 셰이더, VBO/VAO, 뷰포트, 테마 |
+| 오디오 타이밍 | `skills/audio-timing.md` | perf_counter, 비트 동기화, 사일런트 모드 |
+| UI 스크린 | `skills/ui-screens.md` | 스크린 프로토콜, 전환 맵, HUD |
+| ROS2 브릿지 | `skills/ros2-bridge.md` | 서브프로세스 격리, IPC, 메시지 포맷 |
+| 테스팅 | `skills/testing.md` | 테스트 실행, 작성 규칙, 단언 스타일 |
+| 안티패턴 | `skills/anti-patterns.md` | 금지 패턴, 명령어, 작업별 참조 테이블 |
+| 에러 로그 | `skills/error-log.md` | 발견된 에러와 수정 이력, 재발 방지 규칙 |
+
+---
+
 ## STRUCTURE
 
 ```

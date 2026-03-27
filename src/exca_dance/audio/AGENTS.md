@@ -4,6 +4,18 @@ AudioSystem with precise timing via `time.perf_counter()`. Critical constraints 
 
 ---
 
+## REQUIRED SKILLS
+
+> 이 모듈 작업 전 반드시 읽어야 할 스킬 문서:
+
+| 스킬 | 파일 | 핵심 내용 |
+|------|------|-----------|
+| Python 컨벤션 | `skills/python-conventions.md` | 임포트 규칙, 타입, 코드 스타일 |
+| 오디오 타이밍 | `skills/audio-timing.md` | perf_counter, 비트 동기화, 사일런트 모드 |
+| 안티패턴 | `skills/anti-patterns.md` | pygame.mixer.music.get_pos() 금지 |
+
+---
+
 ## STRUCTURE
 
 ```
