@@ -9,6 +9,7 @@ per draw call.
 from __future__ import annotations
 
 import importlib.resources
+from typing import Any, Protocol
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -21,7 +22,6 @@ from exca_dance.rendering.stl_loader import load_binary_stl
 from exca_dance.rendering.urdf_kin import (
     MESH_TO_LINK,
     build_link_to_color_key,
-    compute_inv_zero_transforms,
     compute_link_transforms,
 )
 
@@ -84,9 +84,17 @@ class _RenderPart:
     vbo: moderngl.Buffer
     vao: moderngl.VertexArray
     vertex_count: int
-    inv_zero_T: np.ndarray  # 4×4 float64 — cached inv(link_T_zero)
     # CPU-side vertex data kept for ghost glow / outline extraction
     raw_vertices: np.ndarray  # (N, 3) float32
+
+
+class _RendererLike(Protocol):
+    ctx: Any
+    prog_solid: Any
+
+
+def build_model_matrix(link_transform: np.ndarray) -> np.ndarray:
+    return link_transform
 
 
 # ---------------------------------------------------------------------------
@@ -109,20 +117,18 @@ class ExcavatorModel:
 
     def __init__(
         self,
-        renderer: object,
+        renderer: _RendererLike,
         fk: ExcavatorFK | None = None,
         joint_colors: (dict[str | JointName, tuple[float, float, float]] | None) = None,
     ) -> None:
-        self._renderer = renderer  # type: ignore[assignment]
-        self._fk = fk or ExcavatorFK()
+        self._renderer: _RendererLike = renderer
+        self._fk: ExcavatorFK = fk or ExcavatorFK()
         self._joint_colors: dict[str | JointName, tuple[float, float, float]] = (
             joint_colors if joint_colors is not None else JOINT_COLORS
         )
         self._current_angles: dict[JointName, float] = {j: 0.0 for j in JointName}
 
-        # Precompute inverse zero-angle transforms (assembly→link-local)
-        self._inv_zero_transforms = compute_inv_zero_transforms()
-        self._link_color_map = build_link_to_color_key()
+        self._link_color_map: dict[str, str | JointName] = build_link_to_color_key()
 
         # Current link transforms — updated each frame
         self._link_transforms: dict[str, np.ndarray] = compute_link_transforms(self._current_angles)
@@ -138,8 +144,8 @@ class ExcavatorModel:
     def _load_and_upload_meshes(self) -> None:
         """Load all STL files and create one static VBO+VAO per part."""
         mesh_dir = _find_mesh_dir()
-        ctx = self._renderer.ctx  # type: ignore[attr-defined]
-        prog = self._renderer.prog_solid  # type: ignore[attr-defined]
+        ctx = self._renderer.ctx
+        prog = self._renderer.prog_solid
 
         for stem, link_name in MESH_TO_LINK.items():
             stl_path = mesh_dir / f"{stem}.stl"
@@ -176,18 +182,12 @@ class ExcavatorModel:
                 ],
             )
 
-            inv_zero = self._inv_zero_transforms.get(
-                link_name,
-                np.eye(4, dtype=np.float64),
-            )
-
             self._parts.append(
                 _RenderPart(
                     link_name=link_name,
                     vbo=vbo,
                     vao=vao,
                     vertex_count=n,
-                    inv_zero_T=inv_zero,
                     raw_vertices=vertices,
                 )
             )
@@ -205,7 +205,7 @@ class ExcavatorModel:
     # Rendering
     # ------------------------------------------------------------------
 
-    def _write_model_matrix(self, prog: moderngl.Program, mat: np.ndarray) -> None:
+    def _write_model_matrix(self, prog: Any, mat: np.ndarray) -> None:
         """Write a 4×4 model matrix to the ``model`` uniform."""
         prog["model"].write(np.ascontiguousarray(mat.astype("f4").T).tobytes())
 
@@ -214,8 +214,8 @@ class ExcavatorModel:
         if not self._parts:
             return
 
-        prog = self._renderer.prog_solid  # type: ignore[attr-defined]
-        ctx = self._renderer.ctx  # type: ignore[attr-defined]
+        prog = self._renderer.prog_solid
+        ctx = self._renderer.ctx
 
         prog["mvp"].write(np.ascontiguousarray(mvp.astype("f4").T).tobytes())
         prog["alpha"].value = alpha
@@ -225,8 +225,7 @@ class ExcavatorModel:
             link_T = self._link_transforms.get(part.link_name)
             if link_T is None:
                 continue
-            # Differential transform: link_T(current) × inv(link_T(zero))
-            model = link_T @ part.inv_zero_T
+            model = build_model_matrix(link_T)
             self._write_model_matrix(prog, model)
             part.vao.render(moderngl.TRIANGLES, vertices=part.vertex_count)
 
@@ -250,13 +249,13 @@ class ExcavatorModel:
         """
         if not self._parts:
             return
-        prog = self._renderer.prog_solid  # type: ignore[attr-defined]
+        prog = self._renderer.prog_solid
         prog["alpha"].value = alpha
         for part in self._parts:
             link_T = self._link_transforms.get(part.link_name)
             if link_T is None:
                 continue
-            model = link_T @ part.inv_zero_T
+            model = build_model_matrix(link_T)
             self._write_model_matrix(prog, model)
             part.vao.render(moderngl.TRIANGLES, vertices=part.vertex_count)
         self._write_model_matrix(prog, np.eye(4, dtype=np.float64))
@@ -279,7 +278,7 @@ class ExcavatorModel:
             link_T = self._link_transforms.get(part.link_name)
             if link_T is None:
                 continue
-            model = link_T @ part.inv_zero_T
+            model = build_model_matrix(link_T)
             rot = model[:3, :3].astype(np.float32)
             trans = model[:3, 3].astype(np.float32)
 

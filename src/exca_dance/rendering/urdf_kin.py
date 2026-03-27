@@ -18,9 +18,6 @@ from exca_dance.core.models import JointName
 # ---------------------------------------------------------------------------
 # Joint / link data straight from the URDF
 #
-# NOTE: origin_xyz values below are WORLD-FRAME coordinates as extracted
-# from the CAD-exported URDF.  ``_build_parent_relative_origins()`` converts
-# them to parent-relative offsets at module load time.
 # ---------------------------------------------------------------------------
 
 
@@ -136,7 +133,7 @@ JOINTS: list[URDFJoint] = [
         "boom_link",
         "revolute",
         (0.028356, 0.807231, 1.835171),
-        (1, 0, 0),
+        (0, 1, 0),
     ),
     URDFJoint(
         "boom_stick_joint",
@@ -169,7 +166,7 @@ JOINTS: list[URDFJoint] = [
         "stick_link",
         "revolute",
         (0.028356, 2.817397, 1.835171),
-        (1, 0, 0),
+        (0, 1, 0),
     ),
     URDFJoint(
         "stick_cylinder_joint",
@@ -194,7 +191,7 @@ JOINTS: list[URDFJoint] = [
         "bucket_link",
         "revolute",
         (0.026002, 3.086246, 2.090338),
-        (1, 0, 0),
+        (0, 1, 0),
     ),
     URDFJoint(
         "bucket_cylinder_joint",
@@ -261,13 +258,6 @@ MESH_TO_LINK: dict[str, str] = {
 }
 
 # Game JointName → URDF joint name
-GAME_JOINT_MAP: dict[JointName, str] = {
-    JointName.SWING: "swing_joint",
-    JointName.BOOM: "boom_joint",
-    JointName.ARM: "stick_joint",
-    JointName.BUCKET: "bucket_joint",
-}
-
 # Colour groups: which links belong to which visual group.
 # The key is used to look up colors in the joint_colors dict.
 LINK_COLOR_GROUPS: dict[str, list[str]] = {
@@ -308,46 +298,6 @@ LINK_COLOR_GROUPS: dict[str, list[str]] = {
         "bucket_link2_link",
     ],
 }
-
-
-# ---------------------------------------------------------------------------
-# World-frame → parent-relative origin conversion
-# ---------------------------------------------------------------------------
-
-
-def _build_parent_relative_origins() -> dict[str, tuple[float, float, float]]:
-    """Convert world-frame ``origin_xyz`` to parent-relative offsets.
-
-    The CAD-exported URDF stores every joint origin in the global assembly
-    frame.  For correct FK the origins must be relative to the parent link.
-    Base-link children and zero-offset joints are already correct.
-    """
-    world_pos: dict[str, tuple[float, float, float]] = {
-        "base_link": (0.0, 0.0, 0.0),
-    }
-    result: dict[str, tuple[float, float, float]] = {}
-
-    for joint in JOINTS:
-        px, py, pz = world_pos.get(joint.parent_link, (0.0, 0.0, 0.0))
-        ox, oy, oz = joint.origin_xyz
-
-        # base_link is at origin → world coords = parent-relative.
-        # Zero offsets are trivially correct.
-        if joint.parent_link == "base_link" or (ox, oy, oz) == (0.0, 0.0, 0.0):
-            rel = joint.origin_xyz
-        else:
-            rel = (ox - px, oy - py, oz - pz)
-
-        result[joint.name] = rel
-        world_pos[joint.child_link] = (px + rel[0], py + rel[1], pz + rel[2])
-
-    return result
-
-
-# Pre-computed at import time — used by compute_link_transforms.
-_PARENT_RELATIVE: dict[str, tuple[float, float, float]] = (
-    _build_parent_relative_origins()
-)
 
 
 # ---------------------------------------------------------------------------
@@ -407,9 +357,12 @@ def compute_link_transforms(
     dict[str, ndarray] — link_name → 4×4 float64 world transform matrix.
     """
     # Build URDF joint name → angle (radians) lookup
+    joint_angles_by_name = {joint.value: angle for joint, angle in joint_angles.items()}
     urdf_angles: dict[str, float] = {}
-    for game_j, urdf_j_name in GAME_JOINT_MAP.items():
-        urdf_angles[urdf_j_name] = math.radians(joint_angles.get(game_j, 0.0))
+    urdf_angles["swing_joint"] = math.radians(joint_angles_by_name.get("swing", 0.0))
+    urdf_angles["boom_joint"] = math.radians(joint_angles_by_name.get("boom", 0.0))
+    urdf_angles["stick_joint"] = math.radians(joint_angles_by_name.get("arm", 0.0))
+    urdf_angles["bucket_joint"] = math.radians(joint_angles_by_name.get("bucket", 0.0))
 
     # base_link is at world origin
     transforms: dict[str, np.ndarray] = {"base_link": np.eye(4, dtype=np.float64)}
@@ -420,8 +373,7 @@ def compute_link_transforms(
             # Parent not yet computed — skip (shouldn't happen with correct ordering)
             continue
 
-        # Joint transform = translate to joint origin (parent-relative), then rotate
-        T_joint = _translation_matrix(_PARENT_RELATIVE[joint.name])
+        T_joint = _translation_matrix(joint.origin_xyz)
 
         if joint.joint_type in ("revolute", "continuous"):
             angle = urdf_angles.get(joint.name, 0.0)
