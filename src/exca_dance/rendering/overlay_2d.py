@@ -32,6 +32,20 @@ _TARGET_LINK_COLORS: list[tuple[float, float, float]] = [
     (0.9, 0.55, 1.0),  # bucket: bright lavender
 ]
 
+_TARGET_OUTLINE_COLORS: list[tuple[float, float, float]] = [
+    (0.55, 0.35, 1.0),   # base: bright violet
+    (0.65, 0.40, 1.0),   # boom: vivid bright violet
+    (0.80, 0.55, 1.0),   # arm: bright lavender
+    (1.0, 0.70, 1.0),    # bucket: pink-lavender
+]
+
+_CURRENT_OUTLINE_COLORS: list[tuple[float, float, float]] = [
+    (0.75, 0.75, 0.85),  # base: bright silver
+    (1.0, 0.70, 0.20),   # boom: bright orange
+    (1.0, 1.0, 0.30),    # arm: bright yellow
+    (0.30, 1.0, 1.0),    # bucket: bright cyan
+]
+
 
 class Overlay2DRenderer:
     """Renders high-visibility 2D schematics of current vs target pose.
@@ -46,15 +60,17 @@ class Overlay2DRenderer:
 
     # Geometry tuning (world units)
     LINK_WIDTH: float = 0.30
-    TARGET_LINK_WIDTH: float = 0.18
+    TARGET_LINK_WIDTH: float = 0.44
     JOINT_RADIUS: float = 0.22
-    TARGET_JOINT_RADIUS: float = 0.14
+    TARGET_JOINT_RADIUS: float = 0.26
     MATCH_RING_RADIUS: float = 0.32
     CIRCLE_SEGMENTS: int = 20
     ARROW_SIZE: float = 0.30
     ARROW_OFFSET: float = 0.50
     ARC_RADIUS: float = 0.65
     ARC_SEGMENTS: int = 24
+    OUTLINE_EXTRA: float = 0.10
+    JOINT_RING_WIDTH: float = 0.07
 
     def __init__(
         self,
@@ -493,6 +509,97 @@ class Overlay2DRenderer:
 
         return verts
 
+    @staticmethod
+    def _ring_top(
+        center: tuple[float, float],
+        radius: float,
+        width: float,
+        color: tuple[float, float, float],
+        segments: int = 20,
+    ) -> list[float]:
+        """Ring (hollow circle outline) in XY plane (z=0)."""
+        r_in = radius - width / 2.0
+        r_out = radius + width / 2.0
+        r, g, b = color
+        cx, cy = center
+        verts: list[float] = []
+        for i in range(segments):
+            a0 = (i / segments) * 2.0 * math.pi
+            a1 = ((i + 1) / segments) * 2.0 * math.pi
+            c0, s0 = math.cos(a0), math.sin(a0)
+            c1, s1 = math.cos(a1), math.sin(a1)
+            verts += [
+                cx + r_in * c0, cy + r_in * s0, 0.0, r, g, b,
+                cx + r_out * c0, cy + r_out * s0, 0.0, r, g, b,
+                cx + r_out * c1, cy + r_out * s1, 0.0, r, g, b,
+                cx + r_in * c0, cy + r_in * s0, 0.0, r, g, b,
+                cx + r_out * c1, cy + r_out * s1, 0.0, r, g, b,
+                cx + r_in * c1, cy + r_in * s1, 0.0, r, g, b,
+            ]
+        return verts
+
+    @staticmethod
+    def _ring_side(
+        center: tuple[float, float],
+        radius: float,
+        width: float,
+        color: tuple[float, float, float],
+        segments: int = 20,
+    ) -> list[float]:
+        """Ring (hollow circle outline) in XZ plane (y=0)."""
+        r_in = radius - width / 2.0
+        r_out = radius + width / 2.0
+        r, g, b = color
+        cx, cz = center
+        verts: list[float] = []
+        for i in range(segments):
+            a0 = (i / segments) * 2.0 * math.pi
+            a1 = ((i + 1) / segments) * 2.0 * math.pi
+            c0, s0 = math.cos(a0), math.sin(a0)
+            c1, s1 = math.cos(a1), math.sin(a1)
+            verts += [
+                cx + r_in * c0, 0.0, cz + r_in * s0, r, g, b,
+                cx + r_out * c0, 0.0, cz + r_out * s0, r, g, b,
+                cx + r_out * c1, 0.0, cz + r_out * s1, r, g, b,
+                cx + r_in * c0, 0.0, cz + r_in * s0, r, g, b,
+                cx + r_out * c1, 0.0, cz + r_out * s1, r, g, b,
+                cx + r_in * c1, 0.0, cz + r_in * s1, r, g, b,
+            ]
+        return verts
+
+    def _build_joint_markers(
+        self,
+        viewport_name: str,
+        positions: list[tuple[float, float]],
+        colors: list[tuple[float, float, float]],
+        radius: float,
+    ) -> list[float]:
+        """Build filled circles at each joint position."""
+        verts: list[float] = []
+        is_top = viewport_name == "top_2d"
+        circle_fn = self._circle_top if is_top else self._circle_side
+        for i, pos in enumerate(positions):
+            color = colors[min(i, len(colors) - 1)]
+            verts += circle_fn(pos, radius, color, self.CIRCLE_SEGMENTS)
+        return verts
+
+    def _build_joint_rings(
+        self,
+        viewport_name: str,
+        positions: list[tuple[float, float]],
+        colors: list[tuple[float, float, float]],
+        radius: float,
+        width: float,
+    ) -> list[float]:
+        """Build ring outlines at each joint position."""
+        verts: list[float] = []
+        is_top = viewport_name == "top_2d"
+        ring_fn = self._ring_top if is_top else self._ring_side
+        for i, pos in enumerate(positions):
+            color = colors[min(i, len(colors) - 1)]
+            verts += ring_fn(pos, radius, width, color, self.CIRCLE_SEGMENTS)
+        return verts
+
     def _build_match_rings(
         self,
         viewport_name: str,
@@ -802,20 +909,20 @@ class Overlay2DRenderer:
             if bg_verts:
                 self._draw_triangles(ctx, prog, mvp, bg_verts, alpha=0.6)
 
-        # ── Layer 1: Target pose outer glow (behind everything) ──
+        # ── Layer 1: Target outline border (wider, bright) ──────────
         if target_pts is not None:
-            glow_verts = self._build_pose(
+            outline_verts = self._build_pose(
                 viewport_name,
                 target_pts,
-                _TARGET_LINK_COLORS,
-                (0.6, 0.4, 1.0),
-                self.TARGET_LINK_WIDTH + 0.12,
-                self.TARGET_JOINT_RADIUS + 0.08,
+                _TARGET_OUTLINE_COLORS,
+                (0.7, 0.5, 1.0),
+                self.TARGET_LINK_WIDTH + self.OUTLINE_EXTRA,
+                self.TARGET_JOINT_RADIUS,
             )
-            if glow_verts:
-                self._draw_triangles(ctx, prog, mvp, glow_verts, alpha=0.25)
+            if outline_verts:
+                self._draw_triangles(ctx, prog, mvp, outline_verts, alpha=0.70)
 
-        # ── Layer 2: Target pose core ────────────────────────────
+        # ── Layer 2: Target fill (wide, semi-transparent ghost) ─────
         if target_pts is not None:
             target_verts = self._build_pose(
                 viewport_name,
@@ -826,10 +933,33 @@ class Overlay2DRenderer:
                 self.TARGET_JOINT_RADIUS,
             )
             if target_verts:
-                self._draw_triangles(ctx, prog, mvp, target_verts, alpha=0.70)
+                self._draw_triangles(ctx, prog, mvp, target_verts, alpha=0.40)
 
+        # ── Layer 3: Target joint rings ─────────────────────────────
+        if target_pts is not None:
+            ring_verts = self._build_joint_rings(
+                viewport_name,
+                target_pts,
+                _TARGET_OUTLINE_COLORS,
+                self.TARGET_JOINT_RADIUS,
+                self.JOINT_RING_WIDTH,
+            )
+            if ring_verts:
+                self._draw_triangles(ctx, prog, mvp, ring_verts, alpha=0.75)
 
-        # ── Layer 4: Current pose (on top, fully opaque) ─────────
+        # ── Layer 4: Current outline border ─────────────────────────
+        current_border = self._build_pose(
+            viewport_name,
+            current_pts,
+            _CURRENT_OUTLINE_COLORS,
+            (1.0, 1.0, 1.0),
+            self.LINK_WIDTH + self.OUTLINE_EXTRA,
+            self.JOINT_RADIUS,
+        )
+        if current_border:
+            self._draw_triangles(ctx, prog, mvp, current_border, alpha=0.85)
+
+        # ── Layer 5: Current fill (fully opaque) ────────────────────
         current_verts = self._build_pose(
             viewport_name,
             current_pts,
@@ -841,13 +971,23 @@ class Overlay2DRenderer:
         if current_verts:
             self._draw_triangles(ctx, prog, mvp, current_verts, alpha=1.0)
 
-        # ── Layer 5: Direction arrows ────────────────────────────
+        # ── Layer 6: Current joint dots ─────────────────────────────
+        joint_verts = self._build_joint_markers(
+            viewport_name,
+            current_pts,
+            _CURRENT_OUTLINE_COLORS,
+            self.JOINT_RADIUS,
+        )
+        if joint_verts:
+            self._draw_triangles(ctx, prog, mvp, joint_verts, alpha=1.0)
+
+        # ── Layer 7: Direction arrows ───────────────────────────────
         if target_pts is not None:
             arrow_verts = self._build_direction_arrows(viewport_name, current_pts, target_pts)
             if arrow_verts:
                 self._draw_triangles(ctx, prog, mvp, arrow_verts, alpha=0.90)
 
-        # ── Layer 6: Angle arcs (side view only) ─────────────────
+        # ── Layer 8: Angle arcs (side view only) ────────────────────
         if viewport_name == "side_2d":
             arc_verts = self._build_angle_arcs(
                 current_pts,
@@ -858,7 +998,7 @@ class Overlay2DRenderer:
             if arc_verts:
                 self._draw_triangles(ctx, prog, mvp, arc_verts, alpha=0.85)
 
-        # ── Layer 7: Text labels ─────────────────────────────────
+        # ── Layer 9: Text labels ─────────────────────────────────
         if text_renderer is not None and match_pct is not None and current_pts:
             ctx.viewport = (
                 0,
