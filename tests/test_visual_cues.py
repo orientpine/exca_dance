@@ -7,8 +7,15 @@ from exca_dance.rendering.excavator_model import ExcavatorModel
 from exca_dance.rendering.visual_cues import VisualCueRenderer
 
 
+import numpy as np
+
+
 def _make_visual_cue_renderer() -> tuple[VisualCueRenderer, MagicMock, MagicMock]:
     renderer = MagicMock()
+    # Mock buffer needs a valid .size for pre-allocated VBO size checks
+    mock_buffer = MagicMock()
+    mock_buffer.size = 999999
+    renderer.ctx.buffer.return_value = mock_buffer
     renderer.width = 1920
     renderer.height = 1080
 
@@ -16,6 +23,7 @@ def _make_visual_cue_renderer() -> tuple[VisualCueRenderer, MagicMock, MagicMock
     ghost_model = MagicMock()
     ghost_model._vbo = None
     ghost_model._vertex_count = 0
+    ghost_model.get_transformed_vertices.return_value = np.empty((0, 9), dtype=np.float32)
 
     model_class = cast(type[ExcavatorModel], MagicMock(return_value=ghost_model))
     cues = VisualCueRenderer(renderer, model_class, fk)
@@ -24,22 +32,18 @@ def _make_visual_cue_renderer() -> tuple[VisualCueRenderer, MagicMock, MagicMock
 
 def test_render_timeline_no_crash_empty_events() -> None:
     cues, renderer, _ = _make_visual_cue_renderer()
-    draw_mock = MagicMock()
-    setattr(cues, "_draw_highway_rect", draw_mock)
 
+    # Should not crash with no events — timeline uses batched VBOs now
     cues.render_timeline(renderer, None, 120000.0)
 
-    # Background(1) + lane dividers(3) + hit-line(1) + hit-glow(1) = 6 calls
-    assert draw_mock.call_count == 6
 
-
-def test_rebuild_ghost_glow_no_crash_empty_vbo() -> None:
+def test_rebuild_outline_cache_no_crash_empty_vbo() -> None:
     cues, _, _ = _make_visual_cue_renderer()
-    rebuild = cast(Callable[[], None], getattr(cues, "_rebuild_ghost_glow"))
+    rebuild = cast(Callable[[], None], getattr(cues, "_rebuild_outline_cache"))
 
     rebuild()
 
-    assert getattr(cues, "_ghost_glow_base") is None
+    assert getattr(cues, "_outline_vertex_count") == 0
 
 
 def test_ghost_angles_independent_of_player_input() -> None:

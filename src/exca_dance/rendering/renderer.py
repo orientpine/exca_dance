@@ -49,10 +49,12 @@ class GameRenderer:
             out vec3 v_color;
             out vec3 v_normal;
             uniform mat4 mvp;
+            uniform mat4 model;
             void main() {
-                gl_Position = mvp * vec4(in_position, 1.0);
+                vec4 world_pos = model * vec4(in_position, 1.0);
+                gl_Position = mvp * world_pos;
                 v_color = in_color;
-                v_normal = in_normal;
+                v_normal = mat3(model) * in_normal;
             }
             """,
             fragment_shader="""
@@ -63,12 +65,19 @@ class GameRenderer:
             uniform float alpha;
             void main() {
                 vec3 light_dir = normalize(vec3(0.3, -0.5, 0.8));
-                float diffuse = max(dot(normalize(v_normal), light_dir), 0.0);
+                float nl = length(v_normal);
+                float diffuse = nl > 0.001
+                    ? max(dot(v_normal / nl, light_dir), 0.0) : 0.0;
                 float ambient = 0.35;
                 float lighting = ambient + (1.0 - ambient) * diffuse;
                 f_color = vec4(v_color * lighting, alpha);
             }
             """,
+        )
+        # Set model uniform to identity by default
+        _id4 = np.eye(4, dtype="f4")
+        self._prog_solid["model"].write(
+            np.ascontiguousarray(_id4.T).tobytes()
         )
         # Textured quad shader (for GL text)
         self._prog_tex = self._ctx.program(
@@ -117,9 +126,11 @@ class GameRenderer:
             #version 330
             in vec4 v_color;
             out vec4 f_color;
-            void main() { f_color = v_color; }
+            uniform float alpha_mult;
+            void main() { f_color = vec4(v_color.rgb, v_color.a * alpha_mult); }
             """,
         )
+        self._set_uniform(self._prog_additive, "alpha_mult", 1.0)
         self._prog_bloom_extract = self._ctx.program(
             vertex_shader="""
             #version 330

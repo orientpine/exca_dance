@@ -94,6 +94,18 @@ class GameViewportLayout:
         self._height = height
         self._build_matrices()
 
+        # ── Cached static VBOs (lazy-init) ──
+        self._grid_cache: dict[str, tuple[object, object, int]] = {}
+        self._bg_grid_cache: tuple[object, object, int] | None = None
+        self._bg_ring_cache: tuple[object, object, int, int] | None = None
+        self._deco_cache: tuple[object, object, int] | None = None
+        self._identity_bytes: bytes = np.ascontiguousarray(
+            np.eye(4, dtype="f4")
+        ).tobytes()
+        self._mvp_3d_bytes: bytes = np.ascontiguousarray(
+            self._mvp_3d.astype("f4").T
+        ).tobytes()
+
     def _build_matrices(self) -> None:
         """Pre-compute MVP matrices for each viewport (aspect-matched)."""
         # ── 3D perspective ───────────────────────────────────────────
@@ -161,151 +173,138 @@ class GameViewportLayout:
         ctx.viewport = (0, 0, self._width, self._height)
 
     def render_2d_grid(self, view_name: str) -> None:
-        """Draw reference grid in a 2D viewport (top view only for new layout)."""
+        """Draw reference grid in a 2D viewport (cached VBO)."""
         import moderngl
-
-        from exca_dance.rendering.theme import NeonTheme
 
         ctx = self._renderer.ctx
         self._vm.set_viewport(ctx, view_name)
 
-        r, g, b = (
-            NeonTheme.TEXT_DIM.r * 0.25,
-            NeonTheme.TEXT_DIM.g * 0.25,
-            NeonTheme.TEXT_DIM.b * 0.30,
-        )
-        gr, gg, gb = (
-            NeonTheme.NEON_GREEN.r * 0.35,
-            NeonTheme.NEON_GREEN.g * 0.35,
-            NeonTheme.NEON_GREEN.b * 0.35,
-        )
+        # Lazy-init: build VBO once per view_name, reuse thereafter
+        if view_name not in self._grid_cache:
+            from exca_dance.rendering.theme import NeonTheme
 
-        verts: list[float] = []
+            r, g, b = (
+                NeonTheme.TEXT_DIM.r * 0.25,
+                NeonTheme.TEXT_DIM.g * 0.25,
+                NeonTheme.TEXT_DIM.b * 0.30,
+            )
+            gr, gg, gb = (
+                NeonTheme.NEON_GREEN.r * 0.35,
+                NeonTheme.NEON_GREEN.g * 0.35,
+                NeonTheme.NEON_GREEN.b * 0.35,
+            )
 
-        if view_name == "top_2d":
-            mvp = self._mvp_top
-            # Wider range for aspect-matched top viewport
-            for y in range(-6, 7):
-                c = (gr, gg, gb) if y == 0 else (r, g, b)
-                verts += [-6, y, 0, c[0], c[1], c[2], 12, y, 0, c[0], c[1], c[2]]
-            for x in range(-6, 13):
-                c = (gr, gg, gb) if x == 0 else (r, g, b)
-                verts += [x, -6, 0, c[0], c[1], c[2], x, 6, 0, c[0], c[1], c[2]]
-        else:
-            mvp = self._mvp_side
-            for z in range(-1, 8):
-                c = (gr, gg, gb) if z == 0 else (r, g, b)
-                verts += [-3, 0, z, c[0], c[1], c[2], 9, 0, z, c[0], c[1], c[2]]
-            for x in range(-3, 10):
-                c = (gr, gg, gb) if x == 0 else (r, g, b)
-                verts += [x, 0, -1, c[0], c[1], c[2], x, 0, 8, c[0], c[1], c[2]]
+            verts: list[float] = []
+            if view_name == "top_2d":
+                for y in range(-6, 7):
+                    c = (gr, gg, gb) if y == 0 else (r, g, b)
+                    verts += [-6, y, 0, c[0], c[1], c[2], 12, y, 0, c[0], c[1], c[2]]
+                for x in range(-6, 13):
+                    c = (gr, gg, gb) if x == 0 else (r, g, b)
+                    verts += [x, -6, 0, c[0], c[1], c[2], x, 6, 0, c[0], c[1], c[2]]
+            else:
+                for z in range(-1, 8):
+                    c = (gr, gg, gb) if z == 0 else (r, g, b)
+                    verts += [-3, 0, z, c[0], c[1], c[2], 9, 0, z, c[0], c[1], c[2]]
+                for x in range(-3, 10):
+                    c = (gr, gg, gb) if x == 0 else (r, g, b)
+                    verts += [x, 0, -1, c[0], c[1], c[2], x, 0, 8, c[0], c[1], c[2]]
 
-        if not verts:
-            return
+            if not verts:
+                return
+            data = np.array(verts, dtype="f4")
+            vbo = ctx.buffer(data)
+            prog = self._renderer.prog_solid
+            vao = ctx.vertex_array(prog, [(vbo, "3f 3f", "in_position", "in_color")])
+            self._grid_cache[view_name] = (vbo, vao, len(verts) // 6)
 
-        data = np.array(verts, dtype="f4")
-        vbo = ctx.buffer(data)
+        _vbo, vao, vertex_count = self._grid_cache[view_name]
+        mvp = self._mvp_top if view_name == "top_2d" else self._mvp_side
         prog = self._renderer.prog_solid
-        vao = ctx.vertex_array(prog, [(vbo, "3f 3f", "in_position", "in_color")])
-
         prog["mvp"].write(np.ascontiguousarray(mvp.astype("f4").T).tobytes())
         prog["alpha"].value = 0.5
 
         try:
             ctx.disable_direct(moderngl.DEPTH_TEST)
-            vao.render(moderngl.LINES)
+            vao.render(moderngl.LINES, vertices=vertex_count)
         finally:
             ctx.enable_direct(moderngl.DEPTH_TEST)
-            vao.release()
-            vbo.release()
 
     def render_gameplay_background(self, beat_phase: float = 0.0) -> None:
-        """Render ground grid and neon rings in the 3D viewport."""
+        """Render ground grid and neon rings in the 3D viewport (cached VBOs)."""
         import moderngl
-
-        from exca_dance.rendering.theme import NeonTheme
 
         ctx = self._renderer.ctx
         self._vm.set_viewport(ctx, "main_3d")
+        prog = self._renderer.prog_solid
+        prog["mvp"].write(self._mvp_3d_bytes)
 
         beat = max(0.0, min(1.0, beat_phase))
 
-        grid_r, grid_g, grid_b = (0.0, 0.4, 0.6)
-        grid_alpha = 0.12 + 0.10 * beat
-
-        verts: list[float] = []
-
-        for y in range(-4, 5):
-            verts += [-4, y, 0.0, grid_r, grid_g, grid_b, 8, y, 0.0, grid_r, grid_g, grid_b]
-        for x in range(-4, 9):
-            verts += [x, -4, 0.0, grid_r, grid_g, grid_b, x, 4, 0.0, grid_r, grid_g, grid_b]
-
-        ring_specs = (
-            (3.0, (2.0, 0.0, 0.0), NeonTheme.NEON_PINK, 0.08 + 0.05 * beat),
-            (5.0, (2.0, 0.0, 0.0), NeonTheme.NEON_BLUE, 0.05 + 0.03 * beat),
-        )
-
-        segments = 32
-        circle_verts: list[float] = []
-        ring_alphas: list[float] = []
-        for radius, center, color, alpha in ring_specs:
-            cx, cy, cz = center
-            ring_alphas.append(alpha)
-            for i in range(segments):
-                a0 = (i / segments) * 2.0 * np.pi
-                a1 = ((i + 1) / segments) * 2.0 * np.pi
-                x0 = cx + radius * np.cos(a0)
-                y0 = cy + radius * np.sin(a0)
-                x1 = cx + radius * np.cos(a1)
-                y1 = cy + radius * np.sin(a1)
-                circle_verts += [
-                    x0,
-                    y0,
-                    cz,
-                    color.r * 0.6,
-                    color.g * 0.6,
-                    color.b * 0.6,
-                    x1,
-                    y1,
-                    cz,
-                    color.r * 0.6,
-                    color.g * 0.6,
-                    color.b * 0.6,
+        # ── Grid (static geometry, only alpha varies with beat) ──
+        if self._bg_grid_cache is None:
+            grid_r, grid_g, grid_b = (0.0, 0.4, 0.6)
+            verts: list[float] = []
+            for y in range(-4, 5):
+                verts += [
+                    -4, y, 0.0, grid_r, grid_g, grid_b,
+                    8, y, 0.0, grid_r, grid_g, grid_b,
                 ]
+            for x in range(-4, 9):
+                verts += [
+                    x, -4, 0.0, grid_r, grid_g, grid_b,
+                    x, 4, 0.0, grid_r, grid_g, grid_b,
+                ]
+            data = np.array(verts, dtype="f4")
+            vbo = ctx.buffer(data)
+            vao = ctx.vertex_array(prog, [(vbo, "3f 3f", "in_position", "in_color")])
+            self._bg_grid_cache = (vbo, vao, len(verts) // 6)
 
-        prog = self._renderer.prog_solid
-        prog["mvp"].write(np.ascontiguousarray(self._mvp_3d.astype("f4").T).tobytes())
+        _gvbo, grid_vao, grid_vc = self._bg_grid_cache
+        prog["alpha"].value = 0.12 + 0.10 * beat
+        grid_vao.render(moderngl.LINES, vertices=grid_vc)
 
-        if verts:
-            grid_data = np.array(verts, dtype="f4")
-            grid_vbo = ctx.buffer(grid_data)
-            grid_vao = ctx.vertex_array(prog, [(grid_vbo, "3f 3f", "in_position", "in_color")])
-            try:
-                prog["alpha"].value = grid_alpha
-                grid_vao.render(moderngl.LINES)
-            finally:
-                grid_vao.release()
-                grid_vbo.release()
+        # ── Rings (static geometry, only alphas vary with beat) ──
+        segments = 32
+        if self._bg_ring_cache is None:
+            from exca_dance.rendering.theme import NeonTheme
 
-        if circle_verts:
-            ring_data = np.array(circle_verts, dtype="f4")
-            ring_vbo = ctx.buffer(ring_data)
-            ring_vao = ctx.vertex_array(prog, [(ring_vbo, "3f 3f", "in_position", "in_color")])
-            try:
-                ring_line_count = segments * 2
-                start = 0
-                for alpha in ring_alphas:
-                    prog["alpha"].value = alpha
-                    ring_vao.render(moderngl.LINES, vertices=ring_line_count, first=start)
-                    start += ring_line_count
-            finally:
-                ring_vao.release()
-                ring_vbo.release()
+            ring_specs_static = (
+                (3.0, (2.0, 0.0, 0.0), NeonTheme.NEON_PINK),
+                (5.0, (2.0, 0.0, 0.0), NeonTheme.NEON_BLUE),
+            )
+            circle_verts: list[float] = []
+            for radius, center, color in ring_specs_static:
+                cx, cy, cz = center
+                for i in range(segments):
+                    a0 = (i / segments) * 2.0 * np.pi
+                    a1 = ((i + 1) / segments) * 2.0 * np.pi
+                    x0 = cx + radius * np.cos(a0)
+                    y0 = cy + radius * np.sin(a0)
+                    x1 = cx + radius * np.cos(a1)
+                    y1 = cy + radius * np.sin(a1)
+                    circle_verts += [
+                        x0, y0, cz, color.r * 0.6, color.g * 0.6, color.b * 0.6,
+                        x1, y1, cz, color.r * 0.6, color.g * 0.6, color.b * 0.6,
+                    ]
+            rdata = np.array(circle_verts, dtype="f4")
+            rvbo = ctx.buffer(rdata)
+            rvao = ctx.vertex_array(prog, [(rvbo, "3f 3f", "in_position", "in_color")])
+            ring_line_count = segments * 2
+            self._bg_ring_cache = (rvbo, rvao, ring_line_count, 2)  # 2 rings
+
+        _rvbo, ring_vao, ring_lc, _ring_count = self._bg_ring_cache
+        ring_alphas = [0.08 + 0.05 * beat, 0.05 + 0.03 * beat]
+        start = 0
+        for alpha in ring_alphas:
+            prog["alpha"].value = alpha
+            ring_vao.render(moderngl.LINES, vertices=ring_lc, first=start)
+            start += ring_lc
 
         ctx.viewport = (0, 0, self._width, self._height)
 
     def render_viewport_decorations(self, text_renderer: Any | None) -> None:
-        """Render panel borders and labels for the new layout."""
+        """Render panel borders and labels (cached VBO)."""
         import moderngl
 
         from exca_dance.rendering.theme import NeonTheme
@@ -315,95 +314,58 @@ class GameViewportLayout:
         H = self._height
         ctx.viewport = (0, 0, W, H)
 
-        cr, cg, cb = NeonTheme.BORDER.r, NeonTheme.BORDER.g, NeonTheme.BORDER.b
-        lw = 2.0 / W  # ~1px in NDC
-        lh = 2.0 / H
+        # Lazy-init: border geometry is completely static
+        if self._deco_cache is None:
+            cr, cg, cb = NeonTheme.BORDER.r, NeonTheme.BORDER.g, NeonTheme.BORDER.b
+            lw = 2.0 / W
+            lh = 2.0 / H
 
-        main_3d = self._vm.get_viewport_rect("main_3d")
-        top_2d = self._vm.get_viewport_rect("top_2d")
-        tl = self._vm.timeline_rect
+            main_3d = self._vm.get_viewport_rect("main_3d")
+            top_2d = self._vm.get_viewport_rect("top_2d")
+            tl = self._vm.timeline_rect
 
-        # Helper: GL pixel → NDC
-        def nx(px: float) -> float:
-            return (px / W) * 2.0 - 1.0
+            def nx(px: float) -> float:
+                return (px / W) * 2.0 - 1.0
 
-        def ny(py: float) -> float:
-            return (py / H) * 2.0 - 1.0
+            def ny(py: float) -> float:
+                return (py / H) * 2.0 - 1.0
 
-        verts: list[float] = []
+            verts: list[float] = []
 
-        def _quad(x0: float, y0: float, x1: float, y1: float) -> None:
-            verts.extend(
-                [
-                    x0,
-                    y0,
-                    0,
-                    cr,
-                    cg,
-                    cb,
-                    x1,
-                    y0,
-                    0,
-                    cr,
-                    cg,
-                    cb,
-                    x1,
-                    y1,
-                    0,
-                    cr,
-                    cg,
-                    cb,
-                    x0,
-                    y0,
-                    0,
-                    cr,
-                    cg,
-                    cb,
-                    x1,
-                    y1,
-                    0,
-                    cr,
-                    cg,
-                    cb,
-                    x0,
-                    y1,
-                    0,
-                    cr,
-                    cg,
-                    cb,
-                ]
-            )
+            def _quad(x0: float, y0: float, x1: float, y1: float) -> None:
+                verts.extend([
+                    x0, y0, 0, cr, cg, cb,  x1, y0, 0, cr, cg, cb,
+                    x1, y1, 0, cr, cg, cb,  x0, y0, 0, cr, cg, cb,
+                    x1, y1, 0, cr, cg, cb,  x0, y1, 0, cr, cg, cb,
+                ])
 
-        # 1) Vertical border — right edge of main_3d → full main area height
-        vx = nx(main_3d[0] + main_3d[2])
-        vy_bot = ny(tl[1] + tl[3])
-        _quad(vx, vy_bot, vx + lw, 1.0)
+            vx = nx(main_3d[0] + main_3d[2])
+            vy_bot = ny(tl[1] + tl[3])
+            _quad(vx, vy_bot, vx + lw, 1.0)
 
-        # 2) Horizontal border — top of timeline → full width
-        hy = ny(tl[1] + tl[3])
-        _quad(-1.0, hy, 1.0, hy + lh)
+            hy = ny(tl[1] + tl[3])
+            _quad(-1.0, hy, 1.0, hy + lh)
 
-        # 3) Horizontal border — between side and top views (right panel only)
-        hy2 = ny(top_2d[1] + top_2d[3])
-        _quad(vx, hy2, 1.0, hy2 + lh)
+            hy2 = ny(top_2d[1] + top_2d[3])
+            _quad(vx, hy2, 1.0, hy2 + lh)
 
-        if verts:
-            data = np.array(verts, dtype="f4")
-            vbo = ctx.buffer(data)
+            if verts:
+                data = np.array(verts, dtype="f4")
+                vbo = ctx.buffer(data)
+                prog = self._renderer.prog_solid
+                vao = ctx.vertex_array(prog, [(vbo, "3f 3f", "in_position", "in_color")])
+                self._deco_cache = (vbo, vao, len(verts) // 6)
+
+        if self._deco_cache is not None:
+            _dvbo, deco_vao, deco_vc = self._deco_cache
             prog = self._renderer.prog_solid
-            vao = ctx.vertex_array(prog, [(vbo, "3f 3f", "in_position", "in_color")])
-
-            identity = np.eye(4, dtype="f4")
-            prog["mvp"].write(np.ascontiguousarray(identity).tobytes())
+            prog["mvp"].write(self._identity_bytes)
             prog["alpha"].value = NeonTheme.BORDER.a
-
             try:
                 ctx.disable_direct(moderngl.DEPTH_TEST)
-                vao.render(moderngl.TRIANGLES)
+                deco_vao.render(moderngl.TRIANGLES, vertices=deco_vc)
             finally:
                 ctx.enable_direct(moderngl.DEPTH_TEST)
-                vao.release()
-                vbo.release()
 
         # ── Panel labels ─────────────────────────────────────────────
         if text_renderer is not None:
@@ -423,6 +385,7 @@ class GameViewportLayout:
             )
 
             # "TOP VIEW" — top-left of top viewport
+            top_2d = self._vm.get_viewport_rect("top_2d")
             top_screen_y = H - (top_2d[1] + top_2d[3])
             text_renderer.render(
                 "TOP VIEW",

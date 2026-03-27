@@ -14,7 +14,10 @@ def test_overlay_target_pose_uses_defaults_not_player_angles() -> None:
     from exca_dance.rendering.overlay_2d import Overlay2DRenderer
 
     renderer = MagicMock()
+    mock_buffer = MagicMock()
+    mock_buffer.size = 999999
     renderer.ctx = MagicMock()
+    renderer.ctx.buffer.return_value = mock_buffer
     renderer.prog_solid = MagicMock()
 
     fk = MagicMock()
@@ -70,7 +73,10 @@ def test_overlay_target_pose_side_view_uses_defaults() -> None:
     from exca_dance.rendering.overlay_2d import Overlay2DRenderer
 
     renderer = MagicMock()
+    mock_buffer = MagicMock()
+    mock_buffer.size = 999999
     renderer.ctx = MagicMock()
+    renderer.ctx.buffer.return_value = mock_buffer
     renderer.prog_solid = MagicMock()
 
     fk = MagicMock()

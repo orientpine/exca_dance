@@ -63,6 +63,14 @@ class Overlay2DRenderer:
     ) -> None:
         self._renderer: GameRenderer = renderer
         self._fk: ExcavatorFK = fk
+        # Pre-allocated draw buffer for _draw_triangles (avoids per-call VBO alloc)
+        ctx = renderer.ctx
+        self._draw_vbo: object = ctx.buffer(reserve=8192 * 9 * 4)  # ~8K vertices
+        self._draw_vao: object = ctx.vertex_array(
+            renderer.prog_solid,
+            [(self._draw_vbo, "3f 3f 3f", "in_position", "in_color", "in_normal")],
+        )
+        self._z_normal: np.ndarray = np.array([0.0, 0.0, 1.0], dtype="f4")
 
     # ── Thick-line geometry (quads) ──────────────────────────────────
 
@@ -715,36 +723,41 @@ class Overlay2DRenderer:
 
     # ── GL draw helper ───────────────────────────────────────────────
 
-    @staticmethod
     def _draw_triangles(
+        self,
         ctx: Any,
         prog: Any,
         mvp: np.ndarray,
         verts: list[float],
         alpha: float,
     ) -> None:
-        """Send vertex data to GPU and render as TRIANGLES.
-
-        Input *verts* are 6 floats/vertex (pos3 + color3).  This method
-        expands them to 9 floats/vertex (pos3 + color3 + normal3) so
-        ``prog_solid``'s lighting calculation receives a valid normal."""
+        """Send vertex data to GPU and render as TRIANGLES (reusable VBO)."""
         import moderngl
 
         raw = np.array(verts, dtype="f4").reshape(-1, 6)
-        normals = np.broadcast_to(np.array([0.0, 0.0, 1.0], dtype="f4"), (raw.shape[0], 3))
+        n = raw.shape[0]
+        normals = np.broadcast_to(self._z_normal, (n, 3))
         data = np.column_stack((raw[:, :3], raw[:, 3:6], normals))
-        data = np.ascontiguousarray(data)
-        vbo = ctx.buffer(data.tobytes())
-        vao = ctx.vertex_array(prog, [(vbo, "3f 3f 3f", "in_position", "in_color", "in_normal")])
+        data_bytes = np.ascontiguousarray(data).tobytes()
+        buf_size = len(data_bytes)
+
+        # Grow buffer if needed; otherwise reuse
+        if buf_size > self._draw_vbo.size:
+            self._draw_vao.release()
+            self._draw_vbo.release()
+            self._draw_vbo = ctx.buffer(reserve=buf_size * 2)
+            self._draw_vao = ctx.vertex_array(
+                prog, [(self._draw_vbo, "3f 3f 3f", "in_position", "in_color", "in_normal")]
+            )
+        self._draw_vbo.write(data_bytes)
+
+        prog["mvp"].write(np.ascontiguousarray(mvp.astype("f4").T).tobytes())
+        prog["alpha"].value = alpha
+        ctx.disable_direct(moderngl.DEPTH_TEST)
         try:
-            prog["mvp"].write(np.ascontiguousarray(mvp.astype("f4").T).tobytes())
-            prog["alpha"].value = alpha
-            ctx.disable_direct(moderngl.DEPTH_TEST)
-            vao.render(moderngl.TRIANGLES)
+            self._draw_vao.render(moderngl.TRIANGLES, vertices=n)
         finally:
             ctx.enable_direct(moderngl.DEPTH_TEST)
-            vao.release()
-            vbo.release()
 
     # ── Public API ───────────────────────────────────────────────────
 
