@@ -6,10 +6,10 @@ from .models import JointName, Judgment
 
 # Joint angle limits (degrees): (min, max)
 JOINT_LIMITS: dict[JointName, tuple[float, float]] = {
-    JointName.SWING: (-180.0, 180.0),
-    JointName.BOOM: (-30.0, 60.0),
-    JointName.ARM: (-50.0, 90.0),
-    JointName.BUCKET: (0.0, 200.0),
+    JointName.SWING: (-66.0, 64.0),
+    JointName.BOOM: (-34.0, 26.0),
+    JointName.ARM: (-6.0, 112.0),
+    JointName.BUCKET: (-132.0, 62.0),
 }
 
 # Timing judgment windows (ms — half-window, symmetric)

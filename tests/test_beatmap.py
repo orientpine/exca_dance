@@ -66,7 +66,7 @@ def test_events_are_sorted_by_time_after_load(tmp_path) -> None:
     data["events"] = [
         {"time_ms": 800, "target_angles": {"arm": 5.0}, "duration_ms": 300},
         {"time_ms": 100, "target_angles": {"boom": 10.0}, "duration_ms": 200},
-        {"time_ms": 400, "target_angles": {"bucket": 100.0}, "duration_ms": 250},
+        {"time_ms": 400, "target_angles": {"bucket": 50.0}, "duration_ms": 250},
     ]
     path = tmp_path / "unsorted.json"
     path.write_text(json.dumps(data), encoding="utf-8")
