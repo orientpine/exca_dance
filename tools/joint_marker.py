@@ -257,6 +257,9 @@ def main() -> None:
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("monospace", 14)
     running = True
+    dragging = False
+    drag_panel: Panel | None = None
+    last_mouse = (0, 0)
 
     while running:
         for ev in pygame.event.get():
@@ -322,6 +325,31 @@ def main() -> None:
                             else:
                                 p.half_size = min(15.0, p.half_size * 1.1)
                             break
+                elif ev.button == 2:
+                    mx, my_pg = ev.pos
+                    my_gl = H - 1 - my_pg
+                    for p in panels:
+                        vx, vy, vw, vh = p.vp
+                        if vx <= mx < vx + vw and vy <= my_gl < vy + vh:
+                            dragging = True
+                            drag_panel = p
+                            last_mouse = ev.pos
+                            break
+            elif ev.type == pygame.MOUSEBUTTONUP:
+                if ev.button == 2:
+                    dragging = False
+                    drag_panel = None
+            elif ev.type == pygame.MOUSEMOTION:
+                if dragging and drag_panel is not None:
+                    dx_px = ev.pos[0] - last_mouse[0]
+                    dy_px = ev.pos[1] - last_mouse[1]
+                    last_mouse = ev.pos
+                    vw, vh = drag_panel.vp[2], drag_panel.vp[3]
+                    aspect = vw / vh
+                    world_per_px_h = (drag_panel.half_size * 2 * aspect) / vw
+                    world_per_px_v = (drag_panel.half_size * 2) / vh
+                    drag_panel.center[drag_panel.axis_h] -= dx_px * world_per_px_h
+                    drag_panel.center[drag_panel.axis_v] += dy_px * world_per_px_v
 
         ctx.clear(0.12, 0.12, 0.15, 1.0)
 
