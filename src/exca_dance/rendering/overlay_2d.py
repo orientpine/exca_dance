@@ -60,9 +60,9 @@ class Overlay2DRenderer:
 
     # Geometry tuning (world units)
     LINK_WIDTH: float = 0.30
-    TARGET_LINK_WIDTH: float = 0.44
+    TARGET_LINK_WIDTH: float = 0.50
     JOINT_RADIUS: float = 0.22
-    TARGET_JOINT_RADIUS: float = 0.26
+    TARGET_JOINT_RADIUS: float = 0.28
     MATCH_RING_RADIUS: float = 0.32
     CIRCLE_SEGMENTS: int = 20
     ARROW_SIZE: float = 0.30
@@ -70,7 +70,9 @@ class Overlay2DRenderer:
     ARC_RADIUS: float = 0.65
     ARC_SEGMENTS: int = 24
     OUTLINE_EXTRA: float = 0.10
-    JOINT_RING_WIDTH: float = 0.07
+    JOINT_RING_WIDTH: float = 0.08
+    GHOST_OUTLINE_T: float = 0.06
+    GHOST_GLOW_T: float = 0.14
 
     def __init__(
         self,
@@ -600,6 +602,83 @@ class Overlay2DRenderer:
             verts += ring_fn(pos, radius, width, color, self.CIRCLE_SEGMENTS)
         return verts
 
+    @staticmethod
+    def _link_outline_top(
+        p1: tuple[float, float],
+        p2: tuple[float, float],
+        width: float,
+        outline_t: float,
+        color: tuple[float, float, float],
+    ) -> list[float]:
+        """Hollow rectangle outline for a link in XY plane (z=0)."""
+        dx = p2[0] - p1[0]
+        dy = p2[1] - p1[1]
+        length = math.sqrt(dx * dx + dy * dy)
+        if length < 1e-6:
+            return []
+        hw = width / 2.0
+        nx = -dy / length * hw
+        ny = dx / length * hw
+        a = (p1[0] + nx, p1[1] + ny)
+        b = (p1[0] - nx, p1[1] - ny)
+        c = (p2[0] + nx, p2[1] + ny)
+        d = (p2[0] - nx, p2[1] - ny)
+        tl = Overlay2DRenderer._thick_line_top
+        verts: list[float] = []
+        verts += tl(a, c, outline_t, color)  # top edge
+        verts += tl(b, d, outline_t, color)  # bottom edge
+        verts += tl(a, b, outline_t, color)  # left cap
+        verts += tl(c, d, outline_t, color)  # right cap
+        return verts
+
+    @staticmethod
+    def _link_outline_side(
+        p1: tuple[float, float],
+        p2: tuple[float, float],
+        width: float,
+        outline_t: float,
+        color: tuple[float, float, float],
+    ) -> list[float]:
+        """Hollow rectangle outline for a link in XZ plane (y=0)."""
+        dx = p2[0] - p1[0]
+        dz = p2[1] - p1[1]
+        length = math.sqrt(dx * dx + dz * dz)
+        if length < 1e-6:
+            return []
+        hw = width / 2.0
+        nx = -dz / length * hw
+        nz = dx / length * hw
+        a = (p1[0] + nx, p1[1] + nz)
+        b = (p1[0] - nx, p1[1] - nz)
+        c = (p2[0] + nx, p2[1] + nz)
+        d = (p2[0] - nx, p2[1] - nz)
+        tl = Overlay2DRenderer._thick_line_side
+        verts: list[float] = []
+        verts += tl(a, c, outline_t, color)
+        verts += tl(b, d, outline_t, color)
+        verts += tl(a, b, outline_t, color)
+        verts += tl(c, d, outline_t, color)
+        return verts
+
+    def _build_pose_outline(
+        self,
+        viewport_name: str,
+        positions: list[tuple[float, float]],
+        link_colors: list[tuple[float, float, float]],
+        link_width: float,
+        outline_thickness: float,
+    ) -> list[float]:
+        """Build hollow rectangle outlines for each link (wireframe ghost)."""
+        verts: list[float] = []
+        is_top = viewport_name == "top_2d"
+        outline_fn = self._link_outline_top if is_top else self._link_outline_side
+        for i in range(len(positions) - 1):
+            color = link_colors[min(i, len(link_colors) - 1)]
+            verts += outline_fn(
+                positions[i], positions[i + 1], link_width, outline_thickness, color,
+            )
+        return verts
+
     def _build_match_rings(
         self,
         viewport_name: str,
@@ -909,33 +988,31 @@ class Overlay2DRenderer:
             if bg_verts:
                 self._draw_triangles(ctx, prog, mvp, bg_verts, alpha=0.6)
 
-        # ── Layer 1: Target outline border (wider, bright) ──────────
+        # ── Layer 1: Ghost glow (wider outline, soft) ───────────────
         if target_pts is not None:
-            outline_verts = self._build_pose(
-                viewport_name,
-                target_pts,
-                _TARGET_OUTLINE_COLORS,
-                (0.7, 0.5, 1.0),
-                self.TARGET_LINK_WIDTH + self.OUTLINE_EXTRA,
-                self.TARGET_JOINT_RADIUS,
-            )
-            if outline_verts:
-                self._draw_triangles(ctx, prog, mvp, outline_verts, alpha=0.70)
-
-        # ── Layer 2: Target fill (wide, semi-transparent ghost) ─────
-        if target_pts is not None:
-            target_verts = self._build_pose(
+            glow_verts = self._build_pose_outline(
                 viewport_name,
                 target_pts,
                 _TARGET_LINK_COLORS,
-                (0.9, 0.7, 1.0),
-                self.TARGET_LINK_WIDTH,
-                self.TARGET_JOINT_RADIUS,
+                self.TARGET_LINK_WIDTH + self.OUTLINE_EXTRA,
+                self.GHOST_GLOW_T,
             )
-            if target_verts:
-                self._draw_triangles(ctx, prog, mvp, target_verts, alpha=0.40)
+            if glow_verts:
+                self._draw_triangles(ctx, prog, mvp, glow_verts, alpha=0.25)
 
-        # ── Layer 3: Target joint rings ─────────────────────────────
+        # ── Layer 2: Ghost core outline (precise, bright) ───────────
+        if target_pts is not None:
+            ghost_verts = self._build_pose_outline(
+                viewport_name,
+                target_pts,
+                _TARGET_OUTLINE_COLORS,
+                self.TARGET_LINK_WIDTH,
+                self.GHOST_OUTLINE_T,
+            )
+            if ghost_verts:
+                self._draw_triangles(ctx, prog, mvp, ghost_verts, alpha=0.90)
+
+        # ── Layer 3: Ghost joint rings ──────────────────────────────
         if target_pts is not None:
             ring_verts = self._build_joint_rings(
                 viewport_name,
@@ -945,7 +1022,8 @@ class Overlay2DRenderer:
                 self.JOINT_RING_WIDTH,
             )
             if ring_verts:
-                self._draw_triangles(ctx, prog, mvp, ring_verts, alpha=0.75)
+                self._draw_triangles(ctx, prog, mvp, ring_verts, alpha=0.85)
+
 
         # ── Layer 4: Current outline border ─────────────────────────
         current_border = self._build_pose(
