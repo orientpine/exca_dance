@@ -43,7 +43,7 @@ class VisualCueRenderer:
     - Beat timeline: scrolling event markers at bottom
     """
 
-    GHOST_FADE_MS: float = 1500.0  # fade in over 2 beats before event
+    GHOST_FADE_MS: float = 5000.0  # fade in over ~5 s before event
 
     # Pre-allocated buffer sizes (vertices)
     _TL_SOLID_RESERVE: int = 256  # ~42 solid rects
@@ -427,7 +427,7 @@ class VisualCueRenderer:
         t = time.perf_counter()
         for event in self._upcoming_events:
             time_to_event = float(event.time_ms) - self._current_time_ms
-            if not (-500.0 < time_to_event < 3000.0):
+            if not (-500.0 < time_to_event < 6000.0):
                 continue
 
             x_offset = int((time_to_event / 3000.0) * (bar_w // 2))

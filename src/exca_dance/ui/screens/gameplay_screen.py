@@ -170,7 +170,7 @@ class GameplayScreen:
         self._hud.update(dt)
 
         # Update visual cues
-        upcoming = self._game_loop.get_upcoming_events(3000.0)
+        upcoming = self._game_loop.get_upcoming_events(6000.0)
         self._visual_cues.update(
             self._game_loop.current_time_ms,
             self._game_loop.joint_angles,

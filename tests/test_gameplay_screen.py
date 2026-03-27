@@ -62,7 +62,7 @@ def test_update_does_not_raise_when_upcoming_events_are_empty() -> None:
     screen.update(0.016)
 
     game_loop.get_upcoming_events.assert_any_call(500)
-    game_loop.get_upcoming_events.assert_any_call(3000.0)
+    game_loop.get_upcoming_events.assert_any_call(6000.0)
     assert game_loop.get_upcoming_events.call_count == 2
 
 
