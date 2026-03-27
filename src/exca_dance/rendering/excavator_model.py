@@ -93,8 +93,8 @@ class _RendererLike(Protocol):
     prog_solid: Any
 
 
-def build_model_matrix(link_transform: np.ndarray) -> np.ndarray:
-    return link_transform
+def build_model_matrix(link_transform: np.ndarray, correction: np.ndarray) -> np.ndarray:
+    return link_transform @ correction
 
 
 # ---------------------------------------------------------------------------
@@ -129,6 +129,9 @@ class ExcavatorModel:
         self._current_angles: dict[JointName, float] = {j: 0.0 for j in JointName}
 
         self._link_color_map: dict[str, str | JointName] = build_link_to_color_key()
+
+        from exca_dance.rendering.urdf_kin import compute_mesh_corrections
+        self._mesh_corrections: dict[str, np.ndarray] = compute_mesh_corrections()
 
         # Current link transforms — updated each frame
         self._link_transforms: dict[str, np.ndarray] = compute_link_transforms(self._current_angles)
@@ -225,7 +228,8 @@ class ExcavatorModel:
             link_T = self._link_transforms.get(part.link_name)
             if link_T is None:
                 continue
-            model = build_model_matrix(link_T)
+            correction = self._mesh_corrections.get(part.link_name, np.eye(4, dtype=np.float64))
+            model = build_model_matrix(link_T, correction)
             self._write_model_matrix(prog, model)
             part.vao.render(moderngl.TRIANGLES, vertices=part.vertex_count)
 
@@ -255,7 +259,8 @@ class ExcavatorModel:
             link_T = self._link_transforms.get(part.link_name)
             if link_T is None:
                 continue
-            model = build_model_matrix(link_T)
+            correction = self._mesh_corrections.get(part.link_name, np.eye(4, dtype=np.float64))
+            model = build_model_matrix(link_T, correction)
             self._write_model_matrix(prog, model)
             part.vao.render(moderngl.TRIANGLES, vertices=part.vertex_count)
         self._write_model_matrix(prog, np.eye(4, dtype=np.float64))
@@ -278,7 +283,8 @@ class ExcavatorModel:
             link_T = self._link_transforms.get(part.link_name)
             if link_T is None:
                 continue
-            model = build_model_matrix(link_T)
+            correction = self._mesh_corrections.get(part.link_name, np.eye(4, dtype=np.float64))
+            model = build_model_matrix(link_T, correction)
             rot = model[:3, :3].astype(np.float32)
             trans = model[:3, 3].astype(np.float32)
 

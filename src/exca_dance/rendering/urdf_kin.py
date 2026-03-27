@@ -336,6 +336,44 @@ def _translation_matrix(xyz: tuple[float, float, float]) -> np.ndarray:
     return m
 
 
+def _build_parent_relative_origins() -> dict[str, tuple[float, float, float]]:
+    world_pos: dict[str, tuple[float, float, float]] = {"base_link": (0.0, 0.0, 0.0)}
+    result: dict[str, tuple[float, float, float]] = {}
+    for joint in JOINTS:
+        px, py, pz = world_pos.get(joint.parent_link, (0.0, 0.0, 0.0))
+        ox, oy, oz = joint.origin_xyz
+        if joint.parent_link == "base_link" or (ox, oy, oz) == (0.0, 0.0, 0.0):
+            rel = joint.origin_xyz
+        else:
+            rel = (ox - px, oy - py, oz - pz)
+        result[joint.name] = rel
+        world_pos[joint.child_link] = (px + rel[0], py + rel[1], pz + rel[2])
+    return result
+
+
+_PARENT_RELATIVE: dict[str, tuple[float, float, float]] = _build_parent_relative_origins()
+
+
+def _compute_raw_origin_fk() -> dict[str, np.ndarray]:
+    transforms: dict[str, np.ndarray] = {"base_link": np.eye(4, dtype=np.float64)}
+    for joint in JOINTS:
+        parent_T = transforms.get(joint.parent_link)
+        if parent_T is None:
+            continue
+        transforms[joint.child_link] = parent_T @ _translation_matrix(joint.origin_xyz)
+    return transforms
+
+
+def compute_mesh_corrections() -> dict[str, np.ndarray]:
+    corrected = compute_zero_angle_transforms()
+    raw = _compute_raw_origin_fk()
+    return {
+        link: np.linalg.inv(corrected[link]) @ raw[link]
+        for link in corrected
+        if link in raw
+    }
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -373,7 +411,7 @@ def compute_link_transforms(
             # Parent not yet computed — skip (shouldn't happen with correct ordering)
             continue
 
-        T_joint = _translation_matrix(joint.origin_xyz)
+        T_joint = _translation_matrix(_PARENT_RELATIVE[joint.name])
 
         if joint.joint_type in ("revolute", "continuous"):
             angle = urdf_angles.get(joint.name, 0.0)

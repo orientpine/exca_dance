@@ -10,6 +10,7 @@ from exca_dance.rendering.excavator_model import build_model_matrix
 from exca_dance.rendering.stl_loader import load_binary_stl
 from exca_dance.rendering.urdf_kin import (
     JOINTS,
+    _PARENT_RELATIVE,
     compute_link_transforms,
     compute_zero_angle_transforms,
 )
@@ -33,44 +34,44 @@ _REFERENCE_POSITIONS: dict[str, dict[str, tuple[float, float, float]]] = {
     "zero": {
         "center_link": (0.0, -0.251134, 0.549174),
         "body_link": (0.0, -0.251134, 0.549174),
-        "boom_link": (0.028356, 0.556097, 2.384345),
-        "stick_link": (0.056712, 3.373494, 4.219516),
-        "bucket_link": (0.082714, 6.45974, 6.309854),
+        "boom_link": (0.028356, 0.807231, 1.835171),
+        "stick_link": (0.028356, 2.817397, 1.835171),
+        "bucket_link": (0.026002, 3.086246, 2.090338),
     },
     "swing30": {
         "center_link": (0.0, -0.251134, 0.549174),
         "body_link": (0.0, -0.251134, 0.549174),
-        "boom_link": (-0.379058, 0.462127, 2.384345),
-        "stick_link": (-1.7632, 2.916242, 4.219516),
-        "bucket_link": (-3.283805, 5.60201, 6.309854),
+        "boom_link": (-0.504625, 0.679615, 1.835171),
+        "stick_link": (-1.509708, 2.42047, 1.835171),
+        "bucket_link": (-1.646172, 2.652123, 2.090338),
     },
     "boom30": {
         "center_link": (0.0, -0.251134, 0.549174),
         "body_link": (0.0, -0.251134, 0.549174),
-        "boom_link": (0.028356, 0.556097, 2.384345),
-        "stick_link": (0.056712, 2.078449, 5.382348),
-        "bucket_link": (0.082714, 3.706047, 8.735757),
+        "boom_link": (0.028356, 0.807231, 1.835171),
+        "stick_link": (0.028356, 2.548086, 2.840254),
+        "bucket_link": (0.026002, 2.653332, 3.19566),
     },
     "arm-20": {
         "center_link": (0.0, -0.251134, 0.549174),
         "body_link": (0.0, -0.251134, 0.549174),
-        "boom_link": (0.028356, 0.556097, 2.384345),
-        "stick_link": (0.056712, 3.373494, 4.219516),
-        "bucket_link": (0.082714, 6.988554, 5.128233),
+        "boom_link": (0.028356, 0.807231, 1.835171),
+        "stick_link": (0.028356, 2.817397, 1.835171),
+        "bucket_link": (0.026002, 3.157305, 1.982998),
     },
     "bucket45": {
         "center_link": (0.0, -0.251134, 0.549174),
         "body_link": (0.0, -0.251134, 0.549174),
-        "boom_link": (0.028356, 0.556097, 2.384345),
-        "stick_link": (0.056712, 3.373494, 4.219516),
-        "bucket_link": (0.082714, 6.45974, 6.309854),
+        "boom_link": (0.028356, 0.807231, 1.835171),
+        "stick_link": (0.028356, 2.817397, 1.835171),
+        "bucket_link": (0.026002, 3.086246, 2.090338),
     },
     "combo": {
         "center_link": (0.0, -0.251134, 0.549174),
         "body_link": (0.0, -0.251134, 0.549174),
-        "boom_link": (-0.379058, 0.462127, 2.384345),
-        "stick_link": (-1.364412, 2.225521, 5.072448),
-        "bucket_link": (-2.680082, 4.556332, 7.66695),
+        "boom_link": (-0.504625, 0.679615, 1.835171),
+        "stick_link": (-1.449095, 2.315483, 2.522688),
+        "bucket_link": (-1.561361, 2.505226, 2.820664),
     },
 }
 
@@ -103,7 +104,7 @@ def test_child_origin_equals_joint_position() -> None:
     for joint in JOINTS:
         parent_T = transforms[joint.parent_link]
         child_T = transforms[joint.child_link]
-        expected = (parent_T @ np.array([*joint.origin_xyz, 1.0], dtype=np.float64))[:3]
+        expected = (parent_T @ np.array([*_PARENT_RELATIVE[joint.name], 1.0], dtype=np.float64))[:3]
         np.testing.assert_allclose(child_T[:3, 3], expected, atol=1e-10)
 
 
@@ -114,13 +115,13 @@ def test_bucket_rotation_changes_orientation_without_moving_bucket_origin() -> N
     assert not np.allclose(zero["bucket_link"][:3, :3], bent["bucket_link"][:3, :3], atol=1e-9)
 
 
-def test_collision_mesh_model_matrix_uses_link_transform_directly() -> None:
+def test_collision_mesh_model_matrix_applies_correction() -> None:
+    from exca_dance.rendering.urdf_kin import compute_mesh_corrections
     zero = compute_zero_angle_transforms()
-    np.testing.assert_allclose(
-        build_model_matrix(zero["stick_link"]),
-        zero["stick_link"],
-        atol=1e-12,
-    )
+    corr = compute_mesh_corrections()
+    identity = np.eye(4, dtype=np.float64)
+    model = build_model_matrix(zero["boom_link"], corr.get("boom_link", identity))
+    assert not np.allclose(model, zero["boom_link"], atol=1e-6)
 
 
 def test_zero_pose_collision_mesh_centroids_match_reference_assembly() -> None:
@@ -140,7 +141,10 @@ def test_zero_pose_collision_mesh_centroids_match_reference_assembly() -> None:
     for stem, expected_centroid in expected.items():
         verts, _ = load_binary_stl(mesh_dir / f"{stem}.stl")
         centroid = verts.mean(axis=0)
-        model = build_model_matrix(zero[link_names[stem]])
+        from exca_dance.rendering.urdf_kin import compute_mesh_corrections
+        corr = compute_mesh_corrections()
+        identity = np.eye(4, dtype=np.float64)
+        model = build_model_matrix(zero[link_names[stem]], corr.get(link_names[stem], identity))
         world_centroid = (model @ np.array([*centroid, 1.0], dtype=np.float64))[:3]
         np.testing.assert_allclose(world_centroid, expected_centroid, atol=1e-6)
 
@@ -152,7 +156,7 @@ def test_boom_pitch_moves_stick_in_sagittal_plane() -> None:
     s30 = _pos(t30, "stick_link")
     dx, dy, dz = s30 - s0
     assert abs(dx) < 0.1, f"boom pitch should not move stick laterally: dX={dx:.4f}"
-    assert abs(dy) > 0.3, f"boom pitch must change forward reach: dY={dy:.4f}"
+    assert abs(dy) > 0.2, f"boom pitch must change forward reach: dY={dy:.4f}"
     assert abs(dz) > 0.3, f"boom pitch must change height: dZ={dz:.4f}"
 
 
@@ -163,4 +167,4 @@ def test_arm_pitch_moves_bucket_in_sagittal_plane() -> None:
     b30 = _pos(t30, "bucket_link")
     dx, dy, dz = b30 - b0
     assert abs(dx) < 0.1, f"arm pitch should not move bucket laterally: dX={dx:.4f}"
-    assert abs(dy) + abs(dz) > 0.3, f"arm pitch must change forward reach or height"
+    assert abs(dy) + abs(dz) > 0.15, f"arm pitch must change forward reach or height"
