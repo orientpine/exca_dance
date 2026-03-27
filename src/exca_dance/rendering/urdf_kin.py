@@ -106,7 +106,7 @@ JOINTS: list[URDFJoint] = [
         "base_link",
         "center_link",
         "continuous",
-        (0.0, -0.251134, 0.549174),
+        (0.033333, -0.01235, 0.497222),
         (0, 0, 1),
     ),
     URDFJoint("body_joint", "center_link", "body_link", "fixed", (0.0, 0.0, 0.0), (0, 0, 0)),
@@ -132,7 +132,7 @@ JOINTS: list[URDFJoint] = [
         "body_link",
         "boom_link",
         "revolute",
-        (0.028356, 0.807231, 1.835171),
+        (0.030949, 0.892745, 1.072785),
         (1, 0, 0),
     ),
     URDFJoint(
@@ -165,7 +165,7 @@ JOINTS: list[URDFJoint] = [
         "boom_link",
         "stick_link",
         "revolute",
-        (0.028356, 2.817397, 1.835171),
+        (0.02915, 2.768744, 2.618858),
         (1, 0, 0),
     ),
     URDFJoint(
@@ -190,7 +190,7 @@ JOINTS: list[URDFJoint] = [
         "stick_link",
         "bucket_link",
         "revolute",
-        (0.026002, 3.086246, 2.090338),
+        (0.032427, 2.358864, 1.335591),
         (1, 0, 0),
     ),
     URDFJoint(
