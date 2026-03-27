@@ -57,7 +57,7 @@ class VisualCueRenderer:
     ) -> None:
         self._renderer: GameRenderer = renderer
         self._fk: ExcavatorFK = fk
-        # Ghost model uses distinct violet/purple colors
+        # Ghost model uses distinct blue colors for target pose visibility
         ghost_colors = {
             "base": NeonTheme.GHOST_SWING.as_rgb(),
             "turret": NeonTheme.GHOST_SWING.as_rgb(),

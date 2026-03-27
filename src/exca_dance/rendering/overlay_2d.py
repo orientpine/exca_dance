@@ -26,17 +26,17 @@ _CURRENT_LINK_COLORS: list[tuple[float, float, float]] = [
 ]
 
 _TARGET_LINK_COLORS: list[tuple[float, float, float]] = [
-    (0.35, 0.2, 0.75),  # base: deep violet
-    (0.45, 0.25, 0.9),  # boom: vivid violet
-    (0.65, 0.35, 1.0),  # arm: bright purple
-    (0.9, 0.55, 1.0),  # bucket: bright lavender
+    (0.0, 0.35, 0.85),   # base: deep blue
+    (0.0, 0.50, 0.95),   # boom: medium blue
+    (0.0, 0.65, 1.0),    # arm: bright blue
+    (0.0, 0.80, 1.0),    # bucket: cyan-blue
 ]
 
 _TARGET_OUTLINE_COLORS: list[tuple[float, float, float]] = [
-    (0.55, 0.35, 1.0),   # base: bright violet
-    (0.65, 0.40, 1.0),   # boom: vivid bright violet
-    (0.80, 0.55, 1.0),   # arm: bright lavender
-    (1.0, 0.70, 1.0),    # bucket: pink-lavender
+    (0.0, 0.55, 1.0),    # base: bright blue
+    (0.0, 0.65, 1.0),    # boom: vivid blue
+    (0.0, 0.78, 1.0),    # arm: bright cyan-blue
+    (0.0, 0.90, 1.0),    # bucket: near-cyan
 ]
 
 _CURRENT_OUTLINE_COLORS: list[tuple[float, float, float]] = [
@@ -988,32 +988,55 @@ class Overlay2DRenderer:
             if bg_verts:
                 self._draw_triangles(ctx, prog, mvp, bg_verts, alpha=0.6)
 
-        # ── Layer 1: Ghost glow (wider outline, soft) ───────────────
+        # ── Layer 1: Ghost glow (widest, soft blue halo) ───────────
         if target_pts is not None:
-            glow_verts = self._build_pose_outline(
+            glow_verts = self._build_pose(
                 viewport_name,
                 target_pts,
                 _TARGET_LINK_COLORS,
-                self.TARGET_LINK_WIDTH + self.OUTLINE_EXTRA,
-                self.GHOST_GLOW_T,
+                (1.0, 1.0, 1.0),
+                self.TARGET_LINK_WIDTH + self.OUTLINE_EXTRA * 3,
+                self.TARGET_JOINT_RADIUS,
             )
             if glow_verts:
-                self._draw_triangles(ctx, prog, mvp, glow_verts, alpha=0.25)
+                self._draw_triangles(ctx, prog, mvp, glow_verts, alpha=0.12)
 
-        # ── Layer 2: Ghost core outline (precise, bright) ───────────
+        # ── Layer 2: Ghost border (bright blue edge) ───────────────
         if target_pts is not None:
-            ghost_verts = self._build_pose_outline(
+            border_verts = self._build_pose(
                 viewport_name,
                 target_pts,
                 _TARGET_OUTLINE_COLORS,
-                self.TARGET_LINK_WIDTH,
-                self.GHOST_OUTLINE_T,
+                (1.0, 1.0, 1.0),
+                self.TARGET_LINK_WIDTH + self.OUTLINE_EXTRA,
+                self.TARGET_JOINT_RADIUS,
             )
-            if ghost_verts:
-                self._draw_triangles(ctx, prog, mvp, ghost_verts, alpha=0.90)
+            if border_verts:
+                self._draw_triangles(ctx, prog, mvp, border_verts, alpha=0.55)
 
-        # ── Layer 3: Ghost joint rings ──────────────────────────────
+        # ── Layer 3: Ghost solid fill (translucent blue core) ──────
         if target_pts is not None:
+            fill_verts = self._build_pose(
+                viewport_name,
+                target_pts,
+                _TARGET_LINK_COLORS,
+                (1.0, 1.0, 1.0),
+                self.TARGET_LINK_WIDTH,
+                self.TARGET_JOINT_RADIUS,
+            )
+            if fill_verts:
+                self._draw_triangles(ctx, prog, mvp, fill_verts, alpha=0.35)
+
+        # ── Layer 4: Ghost joint markers (filled + rings) ──────────
+        if target_pts is not None:
+            ghost_joint_verts = self._build_joint_markers(
+                viewport_name,
+                target_pts,
+                _TARGET_OUTLINE_COLORS,
+                self.TARGET_JOINT_RADIUS,
+            )
+            if ghost_joint_verts:
+                self._draw_triangles(ctx, prog, mvp, ghost_joint_verts, alpha=0.55)
             ring_verts = self._build_joint_rings(
                 viewport_name,
                 target_pts,
