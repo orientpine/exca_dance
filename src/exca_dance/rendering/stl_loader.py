@@ -1,4 +1,4 @@
-"""Binary STL file parser — zero external dependencies."""
+"""Binary STL file parser — zero external dependencies, vectorized."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import numpy as np
 
 
 def load_binary_stl(path: str | Path) -> tuple[np.ndarray, np.ndarray]:
-    """Parse a binary STL file.
+    """Parse a binary STL file using vectorized numpy operations.
 
     Returns
     -------
@@ -32,21 +32,38 @@ def load_binary_stl(path: str | Path) -> tuple[np.ndarray, np.ndarray]:
     if len(data) < expected:
         raise ValueError(f"STL file truncated: expected {expected} bytes, got {len(data)} — {path}")
 
-    # Pre-allocate output arrays
-    vertices = np.empty((tri_count * 3, 3), dtype=np.float32)
-    normals = np.empty((tri_count * 3, 3), dtype=np.float32)
+    if tri_count == 0:
+        return (
+            np.empty((0, 3), dtype=np.float32),
+            np.empty((0, 3), dtype=np.float32),
+        )
 
-    offset = 84
-    for i in range(tri_count):
-        # 12 floats: normal(3) + v1(3) + v2(3) + v3(3)
-        floats = struct.unpack_from("<12f", data, offset)
-        nx, ny, nz = floats[0], floats[1], floats[2]
-        normals[i * 3] = (nx, ny, nz)
-        normals[i * 3 + 1] = (nx, ny, nz)
-        normals[i * 3 + 2] = (nx, ny, nz)
-        vertices[i * 3] = floats[3:6]
-        vertices[i * 3 + 1] = floats[6:9]
-        vertices[i * 3 + 2] = floats[9:12]
-        offset += 50  # 12 floats (48 bytes) + 2 bytes attribute
+    # Structured dtype: 12 floats (normal + 3 vertices) + 1 uint16 attribute = 50 bytes
+    tri_dtype = np.dtype(
+        [
+            ("normal", "<3f"),
+            ("v1", "<3f"),
+            ("v2", "<3f"),
+            ("v3", "<3f"),
+            ("attr", "<u2"),
+        ]
+    )
+    tris = np.frombuffer(data, dtype=tri_dtype, offset=84, count=tri_count)
+
+    # Stack vertices: (N, 3) each → interleave to (N*3, 3)
+    v1 = tris["v1"]  # (N, 3)
+    v2 = tris["v2"]  # (N, 3)
+    v3 = tris["v3"]  # (N, 3)
+    vertices = np.empty((tri_count * 3, 3), dtype=np.float32)
+    vertices[0::3] = v1
+    vertices[1::3] = v2
+    vertices[2::3] = v3
+
+    # Expand face normals to per-vertex (same normal for all 3 vertices of a tri)
+    face_normals = tris["normal"]  # (N, 3)
+    normals = np.empty((tri_count * 3, 3), dtype=np.float32)
+    normals[0::3] = face_normals
+    normals[1::3] = face_normals
+    normals[2::3] = face_normals
 
     return vertices, normals

@@ -298,15 +298,10 @@ class MainMenuScreen:
     ) -> None:
         """Additive glow pass on excavator geometry."""
         model = self._menu_model
-        if model._vao is None:
-            return
         ctx.blend_func = (moderngl.SRC_ALPHA, moderngl.ONE)
         # prog_solid MVP already set by render_3d; just update alpha
-        self._renderer.prog_solid["alpha"].value = 0.18
-        model._vao.render(
-            moderngl.TRIANGLES,
-            vertices=model._vertex_count,
-        )
+        model.render_glow(alpha=0.18)
+        ctx.blend_func = moderngl.DEFAULT_BLENDING
         ctx.blend_func = moderngl.DEFAULT_BLENDING
 
     def _render_overlay(

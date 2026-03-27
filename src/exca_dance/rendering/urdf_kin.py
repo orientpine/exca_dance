@@ -399,3 +399,24 @@ def build_link_to_color_key() -> dict[str, str | JointName]:
         for link in links:
             result[link] = key
     return result
+
+
+def compute_zero_angle_transforms() -> dict[str, np.ndarray]:
+    """Compute link transforms at all-zero joint angles.
+
+    Returns a dict mapping link_name → 4×4 float64 world transform matrix
+    with all game joints set to 0°.  Used to convert assembly-frame meshes
+    into per-link local coordinates via ``inv(T_zero)``.
+    """
+    zero_angles: dict[JointName, float] = {j: 0.0 for j in JointName}
+    return compute_link_transforms(zero_angles)
+
+
+def compute_inv_zero_transforms() -> dict[str, np.ndarray]:
+    """Precompute ``inv(link_T_zero)`` for every link.
+
+    These matrices convert assembly-frame mesh vertices to link-local
+    coordinates.  Caching them avoids per-frame matrix inversions.
+    """
+    zero_T = compute_zero_angle_transforms()
+    return {name: np.linalg.inv(T) for name, T in zero_T.items()}
