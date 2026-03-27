@@ -6,6 +6,12 @@ DDR-style rhythm game where the player controls a 3D excavator's 4 joints (swing
 
 ---
 
+## LANGUAGE
+
+모든 응답은 **한국어**로 작성한다. 코드, 커밋 메시지, 변수명은 영어 유지.
+
+---
+
 ## REQUIRED SKILLS
 
 > 이 프로젝트 작업 전 반드시 읽어야 할 스킬 문서. 각 AGENTS.md는 해당 모듈에 필요한 스킬만 인용한다.

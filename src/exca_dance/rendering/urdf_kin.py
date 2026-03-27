@@ -133,7 +133,7 @@ JOINTS: list[URDFJoint] = [
         "boom_link",
         "revolute",
         (0.028356, 0.807231, 1.835171),
-        (0, 1, 0),
+        (1, 0, 0),
     ),
     URDFJoint(
         "boom_stick_joint",
@@ -166,7 +166,7 @@ JOINTS: list[URDFJoint] = [
         "stick_link",
         "revolute",
         (0.028356, 2.817397, 1.835171),
-        (0, 1, 0),
+        (1, 0, 0),
     ),
     URDFJoint(
         "stick_cylinder_joint",
@@ -191,7 +191,7 @@ JOINTS: list[URDFJoint] = [
         "bucket_link",
         "revolute",
         (0.026002, 3.086246, 2.090338),
-        (0, 1, 0),
+        (1, 0, 0),
     ),
     URDFJoint(
         "bucket_cylinder_joint",

@@ -73,6 +73,24 @@
 
 ---
 
+#### ERR-007: URDF 소스의 boom/stick/bucket 축 (0,1,0)을 그대로 사용하면 시상면이 아닌 측면 회전 발생
+
+- **발견일**: 2026-03-27
+- **모듈**: `src/exca_dance/rendering/urdf_kin.py`
+- **증상**: boom 30° 회전 시 stick이 앞뒤(Y)가 아닌 좌우(X)로 이동. 굴착기 팔이 옆으로 흔들림.
+- **원인**: 소스 URDF(`ix35e.urdf`)의 boom/stick/bucket 축이 `(0,1,0)` — Y축 회전 → XZ 평면(측면). 이 게임의 Z-up 좌표계에서 boom pitch는 YZ 평면(시상면)이어야 하므로 X축 회전 `(1,0,0)`이 올바름. 소스 URDF의 레퍼런스 렌더는 zero-pose 이미지라 축 방향이 결과에 영향을 주지 않아 오류가 드러나지 않았음.
+- **수정**: boom_joint, stick_joint, bucket_joint의 axis를 `(1, 0, 0)`으로 설정.
+  ```python
+  # ❌ 소스 URDF 값 — 측면 회전
+  URDFJoint("boom_joint", ..., axis=(0, 1, 0))
+
+  # ✅ 수정 — 시상면 회전
+  URDFJoint("boom_joint", ..., axis=(1, 0, 0))
+  ```
+- **관련 파일**: `rendering/urdf_kin.py`, `tests/test_urdf_kin.py`
+- **재발 방지**: 소스 URDF 값을 그대로 복사하지 말고, 물리 동작 테스트(`test_boom_pitch_moves_stick_in_sagittal_plane`)로 반드시 검증. zero-pose 렌더만으로는 축 방향 오류를 잡을 수 없음.
+---
+
 ### audio/
 
 #### ERR-003: pygame.mixer.music.get_pos() 타이밍 드리프트

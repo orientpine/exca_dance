@@ -48,15 +48,15 @@ _REFERENCE_POSITIONS: dict[str, dict[str, tuple[float, float, float]]] = {
         "center_link": (0.0, -0.251134, 0.549174),
         "body_link": (0.0, -0.251134, 0.549174),
         "boom_link": (0.028356, 0.556097, 2.384345),
-        "stick_link": (0.970499, 3.373494, 3.959472),
-        "bucket_link": (2.038186, 6.45974, 5.756757),
+        "stick_link": (0.056712, 2.078449, 5.382348),
+        "bucket_link": (0.082714, 3.706047, 8.735757),
     },
     "arm-20": {
         "center_link": (0.0, -0.251134, 0.549174),
         "body_link": (0.0, -0.251134, 0.549174),
         "boom_link": (0.028356, 0.556097, 2.384345),
         "stick_link": (0.056712, 3.373494, 4.219516),
-        "bucket_link": (-0.633792, 6.45974, 6.192684),
+        "bucket_link": (0.082714, 6.988554, 5.128233),
     },
     "bucket45": {
         "center_link": (0.0, -0.251134, 0.549174),
@@ -69,8 +69,8 @@ _REFERENCE_POSITIONS: dict[str, dict[str, tuple[float, float, float]]] = {
         "center_link": (0.0, -0.251134, 0.549174),
         "body_link": (0.0, -0.251134, 0.549174),
         "boom_link": (-0.379058, 0.462127, 2.384345),
-        "stick_link": (-1.221107, 3.22922, 4.099143),
-        "bucket_link": (-2.427701, 6.096282, 6.153209),
+        "stick_link": (-1.364412, 2.225521, 5.072448),
+        "bucket_link": (-2.680082, 4.556332, 7.66695),
     },
 }
 
@@ -143,3 +143,24 @@ def test_zero_pose_collision_mesh_centroids_match_reference_assembly() -> None:
         model = build_model_matrix(zero[link_names[stem]])
         world_centroid = (model @ np.array([*centroid, 1.0], dtype=np.float64))[:3]
         np.testing.assert_allclose(world_centroid, expected_centroid, atol=1e-6)
+
+
+def test_boom_pitch_moves_stick_in_sagittal_plane() -> None:
+    t0 = compute_link_transforms(_angles())
+    t30 = compute_link_transforms(_angles(boom=30.0))
+    s0 = _pos(t0, "stick_link")
+    s30 = _pos(t30, "stick_link")
+    dx, dy, dz = s30 - s0
+    assert abs(dx) < 0.1, f"boom pitch should not move stick laterally: dX={dx:.4f}"
+    assert abs(dy) > 0.3, f"boom pitch must change forward reach: dY={dy:.4f}"
+    assert abs(dz) > 0.3, f"boom pitch must change height: dZ={dz:.4f}"
+
+
+def test_arm_pitch_moves_bucket_in_sagittal_plane() -> None:
+    t0 = compute_link_transforms(_angles())
+    t30 = compute_link_transforms(_angles(arm=-20.0))
+    b0 = _pos(t0, "bucket_link")
+    b30 = _pos(t30, "bucket_link")
+    dx, dy, dz = b30 - b0
+    assert abs(dx) < 0.1, f"arm pitch should not move bucket laterally: dX={dx:.4f}"
+    assert abs(dy) + abs(dz) > 0.3, f"arm pitch must change forward reach or height"
