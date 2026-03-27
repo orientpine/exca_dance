@@ -26,17 +26,17 @@ _CURRENT_LINK_COLORS: list[tuple[float, float, float]] = [
 ]
 
 _TARGET_LINK_COLORS: list[tuple[float, float, float]] = [
-    (0.0, 0.35, 0.85),   # base: deep blue
-    (0.0, 0.50, 0.95),   # boom: medium blue
-    (0.0, 0.65, 1.0),    # arm: bright blue
-    (0.0, 0.80, 1.0),    # bucket: cyan-blue
+    (0.0, 0.45, 0.55),   # base: teal (intro style)
+    (1.0, 0.0, 0.40),    # boom: neon pink
+    (0.67, 0.0, 1.0),    # arm: neon purple
+    (0.0, 1.0, 0.53),    # bucket: neon green
 ]
 
 _TARGET_OUTLINE_COLORS: list[tuple[float, float, float]] = [
-    (0.0, 0.55, 1.0),    # base: bright blue
-    (0.0, 0.65, 1.0),    # boom: vivid blue
-    (0.0, 0.78, 1.0),    # arm: bright cyan-blue
-    (0.0, 0.90, 1.0),    # bucket: near-cyan
+    (0.0, 0.55, 0.65),   # base: bright teal
+    (1.0, 0.25, 0.55),   # boom: bright pink
+    (0.78, 0.25, 1.0),   # arm: bright purple
+    (0.25, 1.0, 0.65),   # bucket: bright green
 ]
 
 _CURRENT_OUTLINE_COLORS: list[tuple[float, float, float]] = [
@@ -988,67 +988,7 @@ class Overlay2DRenderer:
             if bg_verts:
                 self._draw_triangles(ctx, prog, mvp, bg_verts, alpha=0.6)
 
-        # ── Layer 1: Ghost glow (widest, soft blue halo) ───────────
-        if target_pts is not None:
-            glow_verts = self._build_pose(
-                viewport_name,
-                target_pts,
-                _TARGET_LINK_COLORS,
-                (1.0, 1.0, 1.0),
-                self.TARGET_LINK_WIDTH + self.OUTLINE_EXTRA * 3,
-                self.TARGET_JOINT_RADIUS,
-            )
-            if glow_verts:
-                self._draw_triangles(ctx, prog, mvp, glow_verts, alpha=0.12)
-
-        # ── Layer 2: Ghost border (bright blue edge) ───────────────
-        if target_pts is not None:
-            border_verts = self._build_pose(
-                viewport_name,
-                target_pts,
-                _TARGET_OUTLINE_COLORS,
-                (1.0, 1.0, 1.0),
-                self.TARGET_LINK_WIDTH + self.OUTLINE_EXTRA,
-                self.TARGET_JOINT_RADIUS,
-            )
-            if border_verts:
-                self._draw_triangles(ctx, prog, mvp, border_verts, alpha=0.55)
-
-        # ── Layer 3: Ghost solid fill (translucent blue core) ──────
-        if target_pts is not None:
-            fill_verts = self._build_pose(
-                viewport_name,
-                target_pts,
-                _TARGET_LINK_COLORS,
-                (1.0, 1.0, 1.0),
-                self.TARGET_LINK_WIDTH,
-                self.TARGET_JOINT_RADIUS,
-            )
-            if fill_verts:
-                self._draw_triangles(ctx, prog, mvp, fill_verts, alpha=0.35)
-
-        # ── Layer 4: Ghost joint markers (filled + rings) ──────────
-        if target_pts is not None:
-            ghost_joint_verts = self._build_joint_markers(
-                viewport_name,
-                target_pts,
-                _TARGET_OUTLINE_COLORS,
-                self.TARGET_JOINT_RADIUS,
-            )
-            if ghost_joint_verts:
-                self._draw_triangles(ctx, prog, mvp, ghost_joint_verts, alpha=0.55)
-            ring_verts = self._build_joint_rings(
-                viewport_name,
-                target_pts,
-                _TARGET_OUTLINE_COLORS,
-                self.TARGET_JOINT_RADIUS,
-                self.JOINT_RING_WIDTH,
-            )
-            if ring_verts:
-                self._draw_triangles(ctx, prog, mvp, ring_verts, alpha=0.85)
-
-
-        # ── Layer 4: Current outline border ─────────────────────────
+        # ── Layer 1: Current outline border ─────────────────────
         current_border = self._build_pose(
             viewport_name,
             current_pts,
@@ -1060,7 +1000,7 @@ class Overlay2DRenderer:
         if current_border:
             self._draw_triangles(ctx, prog, mvp, current_border, alpha=0.85)
 
-        # ── Layer 5: Current fill (fully opaque) ────────────────────
+        # ── Layer 2: Current fill (fully opaque) ────────────────
         current_verts = self._build_pose(
             viewport_name,
             current_pts,
@@ -1072,7 +1012,7 @@ class Overlay2DRenderer:
         if current_verts:
             self._draw_triangles(ctx, prog, mvp, current_verts, alpha=1.0)
 
-        # ── Layer 6: Current joint dots ─────────────────────────────
+        # ── Layer 3: Current joint dots ─────────────────────────
         joint_verts = self._build_joint_markers(
             viewport_name,
             current_pts,
@@ -1081,6 +1021,46 @@ class Overlay2DRenderer:
         )
         if joint_verts:
             self._draw_triangles(ctx, prog, mvp, joint_verts, alpha=1.0)
+
+        # ── Ghost target (additive blend — glows ON TOP of current) ─
+        if target_pts is not None:
+            import moderngl
+            ctx.blend_func = (moderngl.SRC_ALPHA, moderngl.ONE)
+            try:
+                # Layer 4: Ghost glow halo (wide, soft)
+                glow_verts = self._build_pose(
+                    viewport_name,
+                    target_pts,
+                    _TARGET_LINK_COLORS,
+                    (1.0, 1.0, 1.0),
+                    self.TARGET_LINK_WIDTH + self.OUTLINE_EXTRA * 2,
+                    self.TARGET_JOINT_RADIUS,
+                )
+                if glow_verts:
+                    self._draw_triangles(ctx, prog, mvp, glow_verts, alpha=0.10)
+
+                # Layer 5: Ghost outline (precise, bright neon)
+                outline_verts = self._build_pose_outline(
+                    viewport_name,
+                    target_pts,
+                    _TARGET_OUTLINE_COLORS,
+                    self.TARGET_LINK_WIDTH,
+                    0.10,
+                )
+                if outline_verts:
+                    self._draw_triangles(ctx, prog, mvp, outline_verts, alpha=0.70)
+
+                # Layer 6: Ghost joint markers (bright glow dots)
+                ghost_joints = self._build_joint_markers(
+                    viewport_name,
+                    target_pts,
+                    _TARGET_OUTLINE_COLORS,
+                    self.TARGET_JOINT_RADIUS,
+                )
+                if ghost_joints:
+                    self._draw_triangles(ctx, prog, mvp, ghost_joints, alpha=0.60)
+            finally:
+                ctx.blend_func = (moderngl.SRC_ALPHA, moderngl.ONE_MINUS_SRC_ALPHA)
 
         # ── Layer 7: Direction arrows ───────────────────────────────
         if target_pts is not None:

@@ -202,7 +202,6 @@ class GameplayScreen:
 
         vm.set_viewport(ctx, "main_3d")
         self._visual_cues.render_ghost(self._layout.mvp_3d)
-        self._visual_cues.render_outline(self._layout.mvp_3d)
 
         # Prepare data for overlay + side-view 3D rendering
         cur = self._game_loop.joint_angles

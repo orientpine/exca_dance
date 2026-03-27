@@ -197,7 +197,7 @@ class VisualCueRenderer:
         self._ghost_model.render_3d(mvp, alpha=alpha)
 
         # Additive glow pass — reuses existing static VBOs via render_glow()
-        glow_alpha = alpha * 0.5
+        glow_alpha = alpha * 0.23
         if glow_alpha > 0.01:
             ctx = self._renderer.ctx
             ctx.enable(moderngl.DEPTH_TEST)

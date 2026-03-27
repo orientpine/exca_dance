@@ -67,12 +67,12 @@ class NeonTheme:
     JOINT_ARM: Color = Color(1.0, 0.8, 0.0)
     JOINT_BUCKET: Color = Color(0.0, 0.8, 1.0)
 
-    # Ghost (target pose) colors — blue palette for visibility against dark BG
-    GHOST_ALPHA: float = 0.65
-    GHOST_SWING: Color = Color(0.0, 0.4, 0.9)
-    GHOST_BOOM: Color = Color(0.0, 0.6, 1.0)
-    GHOST_ARM: Color = Color(0.0, 0.75, 1.0)
-    GHOST_BUCKET: Color = Color(0.0, 0.9, 1.0)
+    # Ghost (target pose) colors — neon palette matching intro screen aesthetic
+    GHOST_ALPHA: float = 0.78
+    GHOST_SWING: Color = Color(0.0, 0.45, 0.55)
+    GHOST_BOOM: Color = Color(1.0, 0.0, 0.40)
+    GHOST_ARM: Color = Color(0.67, 0.0, 1.0)
+    GHOST_BUCKET: Color = Color(0.0, 1.0, 0.53)
     GHOST_OUTLINE: Color = Color(0.0, 0.83, 1.0, 1.0)
     GHOST_OUTLINE_PULSE_MIN: float = 0.4
     GHOST_OUTLINE_PULSE_SPEED: float = 4.0
