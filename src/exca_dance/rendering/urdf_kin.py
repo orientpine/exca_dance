@@ -17,6 +17,10 @@ from exca_dance.core.models import JointName
 
 # ---------------------------------------------------------------------------
 # Joint / link data straight from the URDF
+#
+# NOTE: origin_xyz values below are WORLD-FRAME coordinates as extracted
+# from the CAD-exported URDF.  ``_build_parent_relative_origins()`` converts
+# them to parent-relative offsets at module load time.
 # ---------------------------------------------------------------------------
 
 
@@ -132,7 +136,7 @@ JOINTS: list[URDFJoint] = [
         "boom_link",
         "revolute",
         (0.028356, 0.807231, 1.835171),
-        (0, 1, 0),
+        (1, 0, 0),
     ),
     URDFJoint(
         "boom_stick_joint",
@@ -165,7 +169,7 @@ JOINTS: list[URDFJoint] = [
         "stick_link",
         "revolute",
         (0.028356, 2.817397, 1.835171),
-        (0, 1, 0),
+        (1, 0, 0),
     ),
     URDFJoint(
         "stick_cylinder_joint",
@@ -190,7 +194,7 @@ JOINTS: list[URDFJoint] = [
         "bucket_link",
         "revolute",
         (0.026002, 3.086246, 2.090338),
-        (0, 1, 0),
+        (1, 0, 0),
     ),
     URDFJoint(
         "bucket_cylinder_joint",
@@ -307,6 +311,46 @@ LINK_COLOR_GROUPS: dict[str, list[str]] = {
 
 
 # ---------------------------------------------------------------------------
+# World-frame → parent-relative origin conversion
+# ---------------------------------------------------------------------------
+
+
+def _build_parent_relative_origins() -> dict[str, tuple[float, float, float]]:
+    """Convert world-frame ``origin_xyz`` to parent-relative offsets.
+
+    The CAD-exported URDF stores every joint origin in the global assembly
+    frame.  For correct FK the origins must be relative to the parent link.
+    Base-link children and zero-offset joints are already correct.
+    """
+    world_pos: dict[str, tuple[float, float, float]] = {
+        "base_link": (0.0, 0.0, 0.0),
+    }
+    result: dict[str, tuple[float, float, float]] = {}
+
+    for joint in JOINTS:
+        px, py, pz = world_pos.get(joint.parent_link, (0.0, 0.0, 0.0))
+        ox, oy, oz = joint.origin_xyz
+
+        # base_link is at origin → world coords = parent-relative.
+        # Zero offsets are trivially correct.
+        if joint.parent_link == "base_link" or (ox, oy, oz) == (0.0, 0.0, 0.0):
+            rel = joint.origin_xyz
+        else:
+            rel = (ox - px, oy - py, oz - pz)
+
+        result[joint.name] = rel
+        world_pos[joint.child_link] = (px + rel[0], py + rel[1], pz + rel[2])
+
+    return result
+
+
+# Pre-computed at import time — used by compute_link_transforms.
+_PARENT_RELATIVE: dict[str, tuple[float, float, float]] = (
+    _build_parent_relative_origins()
+)
+
+
+# ---------------------------------------------------------------------------
 # Transform helpers
 # ---------------------------------------------------------------------------
 
@@ -376,8 +420,8 @@ def compute_link_transforms(
             # Parent not yet computed — skip (shouldn't happen with correct ordering)
             continue
 
-        # Joint transform = translate to joint origin, then rotate
-        T_joint = _translation_matrix(joint.origin_xyz)
+        # Joint transform = translate to joint origin (parent-relative), then rotate
+        T_joint = _translation_matrix(_PARENT_RELATIVE[joint.name])
 
         if joint.joint_type in ("revolute", "continuous"):
             angle = urdf_angles.get(joint.name, 0.0)
