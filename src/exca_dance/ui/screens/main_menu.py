@@ -27,7 +27,7 @@ MENU_ITEMS = [
     ("QUIT", "quit"),
 ]
 
-_NUM_PARTICLES = 250
+_NUM_PARTICLES = 120
 
 
 def _perspective(
@@ -419,11 +419,11 @@ class MainMenuScreen:
         prog["mvp"].write(
             np.ascontiguousarray(identity).tobytes(),
         )
-        prog["alpha"].value = 0.55
+        prog["alpha"].value = 0.70
 
         bg = NeonTheme.BG
         r, g, b = bg.r, bg.g, bg.b
-        x0 = 0.05  # NDC: just right of center
+        x0 = -0.05  # NDC: cover slightly left of center
         verts = np.array(
             [
                 x0,
@@ -493,7 +493,7 @@ class MainMenuScreen:
             s = p["size"]
             cr, cg, cb = palette[int(p["color"])]
             twinkle = 0.3 + 0.7 * abs(math.sin(t * 2.5 + p["phase"]))
-            a = twinkle * 0.5
+            a = twinkle * 0.22
             # Quad: 2 triangles
             verts += [
                 x - s,
@@ -668,7 +668,7 @@ class MainMenuScreen:
                 self._mvp.astype("f4").T,
             ).tobytes()
         )
-        pulse = 0.3 + 0.4 * abs(math.sin(self._time * 0.8))
+        pulse = 0.10 + 0.15 * abs(math.sin(self._time * 0.8))
         prog["alpha_mult"].value = pulse
         ctx.blend_func = (moderngl.SRC_ALPHA, moderngl.ONE)
         try:
@@ -694,7 +694,7 @@ class MainMenuScreen:
                 identity.astype("f4").T,
             ).tobytes()
         )
-        pulse = 0.5 + 0.5 * math.sin(self._time * 1.2)
+        pulse = 0.2 + 0.25 * math.sin(self._time * 1.2)
         prog["alpha_mult"].value = pulse
         ctx.blend_func = (moderngl.SRC_ALPHA, moderngl.ONE)
         try:
