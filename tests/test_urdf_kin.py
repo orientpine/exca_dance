@@ -17,7 +17,6 @@ Key invariants
 
 from __future__ import annotations
 
-import math
 
 import numpy as np
 import pytest
@@ -427,7 +426,6 @@ def test_fixed_boom_subparts_follow_boom() -> None:
     """boom_stick, boom_cylinder, boom_piston must move with boom_link."""
     t0 = compute_link_transforms(_angles())
     t30 = compute_link_transforms(_angles(boom=30.0))
-    boom_delta = _pos(t30, "boom_link") - _pos(t0, "boom_link")
     for link in ("boom_stick_link", "boom_cylinder_link", "boom_piston_link"):
         if link not in t0 or link not in t30:
             continue
