@@ -272,20 +272,23 @@ class GameplayHUD:
             color = joint_colors[jname]
             angle = joint_angles.get(jname, 0.0)
             target = self._target_angles.get(jname)
+            has_target = target is not None
             match_pct = 1.0
 
             if self._visual_cues is not None:
                 match_pct = self._visual_cues.get_angle_match_pct(jname)
 
-            # Match quality → color
-            if match_pct >= 0.9:
+            # Match quality → color (gray when no target)
+            if not has_target:
+                val_color = NeonTheme.TEXT_DIM
+            elif match_pct >= 0.9:
                 val_color = NeonTheme.NEON_GREEN
             elif match_pct >= 0.6:
                 val_color = NeonTheme.PERFECT
             else:
                 val_color = NeonTheme.NEON_PINK
 
-            # Cell background — subtle highlight
+            # Cell background
             self._draw_rect_2d(
                 cx,
                 cy,
@@ -295,54 +298,61 @@ class GameplayHUD:
                 alpha=0.35,
             )
 
-            # Joint name label (left-aligned)
+            # Row 1: Joint name
             self._text.render(
                 jname.value.upper(),
-                cx + int(10 * s),
-                cy + int(5 * s),
+                cx + int(6 * s),
+                cy + int(2 * s),
                 color=color.as_tuple(),
-                scale=max(0.75 * s, 0.50),
+                scale=max(0.70 * s, 0.45),
             )
 
-            # Error value (right-aligned, large font)
-            if target is not None:
+            # Row 2: [===bar===] value°  (same line, no overlap)
+            bar_y_pos = cy + cell_h - int(10 * s)
+            bar_h_bar = max(int(5 * s), 3)
+            val_w = int(52 * s)  # space reserved for value text
+            bar_x = cx + int(6 * s)
+            bar_w_total = cell_w - int(12 * s) - val_w
+
+            # Error text (right of bar)
+            if has_target:
                 diff = angle - target
                 error_text = f"{diff:+.1f}°"
             else:
-                error_text = f"{angle:+.1f}°"
+                error_text = "—"
 
-            self._text.render(
-                error_text,
-                cx + cell_w - int(8 * s),
-                cy + int(3 * s),
-                color=val_color.as_tuple(),
-                scale=max(0.95 * s, 0.55),
-                align="right",
-            )
-
-            # Match bar — full cell width
-            bar_y_pos = cy + cell_h - int(10 * s)
-            bar_w_total = cell_w - int(16 * s)
-            bar_h_bar = max(int(4 * s), 2)
-
+            # Bar background
+            bar_alpha = 0.5 if has_target else 0.2
             self._draw_rect_2d(
-                cx + int(10 * s),
+                bar_x,
                 bar_y_pos,
                 bar_w_total,
                 bar_h_bar,
                 NeonTheme.BG,
-                alpha=0.5,
+                alpha=bar_alpha,
             )
-            fill_w = int(bar_w_total * match_pct)
-            if fill_w > 0:
-                self._draw_rect_2d(
-                    cx + int(10 * s),
-                    bar_y_pos,
-                    fill_w,
-                    bar_h_bar,
-                    val_color,
-                    alpha=0.85,
-                )
+            # Bar fill
+            if has_target:
+                fill_w = int(bar_w_total * match_pct)
+                if fill_w > 0:
+                    self._draw_rect_2d(
+                        bar_x,
+                        bar_y_pos,
+                        fill_w,
+                        bar_h_bar,
+                        val_color,
+                        alpha=0.85,
+                    )
+
+            # Value text (right-aligned, after bar)
+            self._text.render(
+                error_text,
+                cx + cell_w - int(6 * s),
+                bar_y_pos - int(4 * s),
+                color=val_color.as_tuple(),
+                scale=max(0.75 * s, 0.45),
+                align="right",
+            )
 
         # ── FPS counter (top-left, debug) ──────────────────────────
         if self._show_fps:
