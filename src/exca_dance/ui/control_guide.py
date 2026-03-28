@@ -156,9 +156,9 @@ class ControlGuide:
         active: set[tuple[str, str]],
     ) -> None:
         """Draw one joystick diagram (center dot + 4 arrows + labels)."""
-        arrow_size = int(20 * s)
-        arrow_dist = int(24 * s)
-        dot_r = int(5 * s)
+        arrow_size = int(28 * s)
+        arrow_dist = int(32 * s)
+        dot_r = int(7 * s)
 
         # Center dot (small filled square ≈ circle)
         self._draw_rect_2d(
@@ -209,8 +209,8 @@ class ControlGuide:
 
             # Key label position (near arrow)
             kx, ky = ax, ay
-            label_scale = max(0.70 * s, 0.42)
-            action_scale = max(0.55 * s, 0.35)
+            label_scale = max(0.85 * s, 0.50)
+            action_scale = max(0.70 * s, 0.42)
 
             if direction == "up":
                 ky = ay - arrow_size - int(4 * s)

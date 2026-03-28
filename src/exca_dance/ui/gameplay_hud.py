@@ -227,7 +227,7 @@ class GameplayHUD:
             JointName.BUCKET: NeonTheme.JOINT_BUCKET,
         }
 
-        panel_h = int(100 * s)
+        panel_h = int(140 * s)
         panel_w = main_w - int(32 * s)
         panel_x = int(16 * s)
         panel_y = main_3d_bottom - panel_h - int(6 * s)
@@ -252,7 +252,7 @@ class GameplayHUD:
 
         # ── Left side: error bars (4 rows, ~40% width) ─────────
         err_w = int(panel_w * 0.40)
-        err_pad = int(6 * s)
+        err_pad = int(8 * s)
         row_h = (panel_h - 2 * err_pad - 3 * int(2 * s)) // 4
 
         for i, jname in enumerate(JointName):
@@ -276,20 +276,20 @@ class GameplayHUD:
                 val_color = NeonTheme.NEON_PINK
 
             # Joint name
-            name_w = int(55 * s)
+            name_w = int(70 * s)
             self._text.render(
                 jname.value.upper(),
                 panel_x + err_pad,
                 ry + int(2 * s),
                 color=color.as_tuple(),
-                scale=max(0.65 * s, 0.40),
+                scale=max(0.85 * s, 0.50),
             )
 
             # Bar
             bar_x = panel_x + err_pad + name_w
-            val_text_w = int(48 * s)
+            val_text_w = int(60 * s)
             bar_w = err_w - err_pad - name_w - val_text_w - int(4 * s)
-            bar_h = max(int(5 * s), 3)
+            bar_h = max(int(7 * s), 4)
             bar_cy = ry + row_h // 2 - bar_h // 2
 
             bar_alpha = 0.5 if has_target else 0.2
@@ -324,7 +324,7 @@ class GameplayHUD:
                 panel_x + err_w - err_pad,
                 ry + int(2 * s),
                 color=val_color.as_tuple(),
-                scale=max(0.65 * s, 0.40),
+                scale=max(0.85 * s, 0.50),
                 align="right",
             )
 
