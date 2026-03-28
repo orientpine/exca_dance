@@ -71,7 +71,7 @@ class ControlGuide:
     # Minimum angle difference (degrees) to trigger an active arrow.
     THRESHOLD_DEG: float = 3.0
     # Panel height at 1080p reference — used by HUD for stacking.
-    PANEL_HEIGHT_REF: int = 100
+    PANEL_HEIGHT_REF: int = 90
 
     def __init__(self, renderer: GameRenderer, text_renderer: GLTextRenderer) -> None:
         self._renderer = renderer
@@ -124,36 +124,36 @@ class ControlGuide:
             alpha=0.30,
         )
 
-        # ── Compute active arrows ─────────────────────────────────
+        # ── Compute active arrows ─────────────────────────
         active = self._compute_active(current_angles, target_angles)
 
-        # ── Left stick diagram ─────────────────────────────────────
-        left_cx = guide_x + int(guide_w * 0.25)
-        stick_cy = guide_y + int(guide_h * 0.55)
+        # ── Horizontal layout: title | left_stick | right_stick | title ──
+        stick_cy = guide_y + int(guide_h * 0.52)
+        stick_spacing = int(guide_w * 0.18)
+        center_x = guide_x + guide_w // 2
+        left_cx = center_x - stick_spacing
+        right_cx = center_x + stick_spacing
+
         self._draw_stick_diagram(left_cx, stick_cy, s, "left", active)
-
-        # Title: 좌 (WASD)
-        self._text.render(
-            "좌 (WASD)",
-            left_cx,
-            guide_y + int(8 * s),
-            color=NeonTheme.NEON_BLUE.as_tuple(),
-            scale=max(0.85 * s, 0.50),
-            align="center",
-        )
-
-        # ── Right stick diagram ────────────────────────────────────
-        right_cx = guide_x + int(guide_w * 0.75)
         self._draw_stick_diagram(right_cx, stick_cy, s, "right", active)
 
-        # Title: 우 (UHJK)
+        # Title labels in left/right margins, vertically centered
+        title_scale = max(0.70 * s, 0.42)
+        title_y = stick_cy - int(6 * s)
         self._text.render(
-            "우 (UHJK)",
-            right_cx,
-            guide_y + int(8 * s),
+            "좌(WASD)",
+            guide_x + int(10 * s),
+            title_y,
             color=NeonTheme.NEON_BLUE.as_tuple(),
-            scale=max(0.85 * s, 0.50),
-            align="center",
+            scale=title_scale,
+        )
+        self._text.render(
+            "우(UHJK)",
+            guide_x + guide_w - int(10 * s),
+            title_y,
+            color=NeonTheme.NEON_BLUE.as_tuple(),
+            scale=title_scale,
+            align="right",
         )
 
     # ── Internal: active arrow computation ────────────────────────
@@ -192,8 +192,8 @@ class ControlGuide:
         active: set[tuple[str, str]],
     ) -> None:
         """Draw one joystick diagram (center dot + 4 arrows + labels)."""
-        arrow_size = int(14 * s)
-        arrow_dist = int(30 * s)
+        arrow_size = int(20 * s)
+        arrow_dist = int(24 * s)
         dot_r = int(5 * s)
 
         # Center dot (small filled square ≈ circle)
@@ -224,14 +224,14 @@ class ControlGuide:
 
             if is_active:
                 # Pulse effect for active arrows
-                pulse = 0.7 + 0.3 * (0.5 + 0.5 * math.sin(self._pulse_time * 6.0))
+                pulse = 0.85 + 0.15 * (0.5 + 0.5 * math.sin(self._pulse_time * 6.0))
                 color: Color = _JOINT_COLORS[joint]
                 arrow_alpha = pulse
                 label_alpha = 1.0
             else:
                 color = NeonTheme.TEXT_DIM
-                arrow_alpha = 0.25
-                label_alpha = 0.35
+                arrow_alpha = 0.40
+                label_alpha = 0.50
 
             # Draw triangle arrow
             self._draw_arrow_triangle(

@@ -232,7 +232,7 @@ class GameplayHUD:
         guide_h = int(self._control_guide.PANEL_HEIGHT_REF * s)
         guide_bottom = main_3d_bottom - int(6 * s)
 
-        panel_h = int(115 * s)
+        panel_h = int(75 * s)
         panel_w = main_w - int(32 * s)
         panel_x = int(16 * s)
         panel_y = guide_bottom - guide_h - int(4 * s) - panel_h
@@ -257,9 +257,9 @@ class GameplayHUD:
         )
 
         # 2×2 grid layout: [SWING, BOOM] / [ARM, BUCKET]
-        inner_pad = int(12 * s)
-        col_gap = int(14 * s)
-        row_gap = int(8 * s)
+        inner_pad = int(8 * s)
+        col_gap = int(10 * s)
+        row_gap = int(4 * s)
         cell_w = (panel_w - 2 * inner_pad - col_gap) // 2
         cell_h = (panel_h - 2 * inner_pad - row_gap) // 2
 
@@ -301,7 +301,7 @@ class GameplayHUD:
                 cx + int(10 * s),
                 cy + int(5 * s),
                 color=color.as_tuple(),
-                scale=max(1.1 * s, 0.65),
+                scale=max(0.75 * s, 0.50),
             )
 
             # Error value (right-aligned, large font)
@@ -313,18 +313,17 @@ class GameplayHUD:
 
             self._text.render(
                 error_text,
-                cx + cell_w - int(10 * s),
+                cx + cell_w - int(8 * s),
                 cy + int(3 * s),
                 color=val_color.as_tuple(),
-                scale=max(1.35 * s, 0.75),
-                large=True,
+                scale=max(0.95 * s, 0.55),
                 align="right",
             )
 
             # Match bar — full cell width
-            bar_y_pos = cy + cell_h - int(14 * s)
-            bar_w_total = cell_w - int(20 * s)
-            bar_h_bar = max(int(6 * s), 3)
+            bar_y_pos = cy + cell_h - int(10 * s)
+            bar_w_total = cell_w - int(16 * s)
+            bar_h_bar = max(int(4 * s), 2)
 
             self._draw_rect_2d(
                 cx + int(10 * s),
