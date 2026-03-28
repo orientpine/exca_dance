@@ -68,8 +68,8 @@ class SongSelectScreen:
             W // 2,
             int(40 * s),
             color=NeonTheme.NEON_BLUE.as_tuple(),
-            scale=max(1.1 * s, 0.6),
-            large=True,
+            scale=max(0.55 * s, 0.30),
+            title=True,
             align="center",
         )
 
@@ -79,7 +79,8 @@ class SongSelectScreen:
                 W // 2,
                 H // 2,
                 color=NeonTheme.MISS.as_tuple(),
-                scale=max(1.3 * s, 0.8),
+                scale=max(0.7 * s, 0.42),
+                large=True,
                 align="center",
             )
             return
@@ -90,10 +91,10 @@ class SongSelectScreen:
             y = start_y + i * item_spacing
             if i == self._selected:
                 color = NeonTheme.NEON_PINK.as_tuple()
-                scale = max(1.6 * s, 0.95)
+                scale = max(0.8 * s, 0.48)
             else:
                 color = (NeonTheme.TEXT_WHITE if audio_ok else NeonTheme.TEXT_DIM).as_tuple()
-                scale = max(1.3 * s, 0.8)
+                scale = max(0.65 * s, 0.4)
 
             text_renderer.render(
                 f"{bm.title} [{getattr(bm, 'difficulty', 'NORMAL')}]",
@@ -101,6 +102,7 @@ class SongSelectScreen:
                 y,
                 color=color,
                 scale=scale,
+                large=True,
                 align="center",
             )
             text_renderer.render(
@@ -108,7 +110,8 @@ class SongSelectScreen:
                 W // 2,
                 y + int(30 * s),
                 color=NeonTheme.TEXT_DIM.as_tuple(),
-                scale=max(0.9 * s, 0.6),
+                scale=max(0.55 * s, 0.35),
+                large=True,
                 align="center",
             )
             if not audio_ok:
@@ -117,7 +120,8 @@ class SongSelectScreen:
                     W // 2,
                     y + int(50 * s),
                     color=NeonTheme.MISS.as_tuple(),
-                    scale=max(0.85 * s, 0.55),
+                    scale=max(0.50 * s, 0.33),
+                    large=True,
                     align="center",
                 )
 
@@ -126,6 +130,7 @@ class SongSelectScreen:
             W // 2,
             H - int(40 * s),
             color=NeonTheme.TEXT_DIM.as_tuple(),
-            scale=max(0.9 * s, 0.6),
+            scale=max(0.55 * s, 0.35),
+            large=True,
             align="center",
         )

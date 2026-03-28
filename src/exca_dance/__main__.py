@@ -243,6 +243,8 @@ def main(argv: list[str] | None = None) -> int:
                 keybinding,
                 audio,
                 camera_settings=camera_settings,
+                fk=fk,
+                excavator_model_class=ExcavatorModel,
             ),
         )
         tutorial_screen_class = import_module(

@@ -85,7 +85,8 @@ class TutorialScreen:
             W // 2,
             int(40 * s),
             color=NeonTheme.NEON_BLUE.as_tuple(),
-            scale=max(1.6 * s, 0.9),
+            scale=max(0.55 * s, 0.30),
+            title=True,
             align="center",
         )
         text_renderer.render(
@@ -93,7 +94,7 @@ class TutorialScreen:
             W // 2,
             int(120 * s),
             color=NeonTheme.NEON_PINK.as_tuple(),
-            scale=max(1.1 * s, 0.6),
+            scale=max(0.7 * s, 0.42),
             large=True,
             align="center",
         )
@@ -106,7 +107,8 @@ class TutorialScreen:
                 W // 2,
                 body_start_y + index * body_spacing,
                 color=NeonTheme.TEXT_WHITE.as_tuple(),
-                scale=max(1.3 * s, 0.75),
+                scale=max(0.6 * s, 0.38),
+                large=True,
                 align="center",
             )
 
@@ -115,7 +117,8 @@ class TutorialScreen:
             W // 2,
             H - int(80 * s),
             color=NeonTheme.TEXT_DIM.as_tuple(),
-            scale=max(1.1 * s, 0.65),
+            scale=max(0.55 * s, 0.35),
+            large=True,
             align="center",
         )
 
@@ -125,6 +128,7 @@ class TutorialScreen:
             W // 2,
             H - int(40 * s),
             color=NeonTheme.TEXT_DIM.as_tuple(),
-            scale=max(0.95 * s, 0.6),
+            scale=max(0.55 * s, 0.35),
+            large=True,
             align="center",
         )

@@ -75,8 +75,8 @@ class LeaderboardScreen:
             W // 2,
             int(80 * s),
             color=NeonTheme.NEON_BLUE.as_tuple(),
-            scale=max(1.1 * s, 0.6),
-            large=True,
+            scale=max(0.55 * s, 0.30),
+            title=True,
             align="center",
         )
         if self._scoring:
@@ -85,15 +85,15 @@ class LeaderboardScreen:
                 W // 2,
                 int(140 * s),
                 color=NeonTheme.NEON_GREEN.as_tuple(),
-                scale=max(1.6 * s, 0.9),
+                scale=max(0.7 * s, 0.42),
                 align="center",
             )
 
         # 3 character slots
         slot_y = int(H * 0.44)
         slot_spacing = int(max(100 * s, 60))
-        char_scale = max(4.0 * s, 2.0)
-        arrow_scale = max(1.6 * s, 0.9)
+        char_scale = max(2.0 * s, 1.1)
+        arrow_scale = max(0.8 * s, 0.48)
         for i in range(3):
             x = W // 2 + (i - 1) * slot_spacing
             char = CHARS[self._slots[i]]
@@ -114,6 +114,7 @@ class LeaderboardScreen:
                     slot_y - int(60 * s),
                     color=NeonTheme.NEON_PINK.as_tuple(),
                     scale=arrow_scale,
+                    large=True,
                     align="center",
                 )
                 text_renderer.render(
@@ -122,6 +123,7 @@ class LeaderboardScreen:
                     slot_y + int(80 * s),
                     color=NeonTheme.NEON_PINK.as_tuple(),
                     scale=arrow_scale,
+                    large=True,
                     align="center",
                 )
 
@@ -130,7 +132,8 @@ class LeaderboardScreen:
             W // 2,
             H - int(60 * s),
             color=NeonTheme.TEXT_DIM.as_tuple(),
-            scale=max(0.95 * s, 0.6),
+            scale=max(0.55 * s, 0.35),
+            large=True,
             align="center",
         )
 
@@ -140,8 +143,8 @@ class LeaderboardScreen:
             W // 2,
             int(40 * s),
             color=NeonTheme.NEON_BLUE.as_tuple(),
-            scale=max(1.25 * s, 0.65),
-            large=True,
+            scale=max(0.55 * s, 0.30),
+            title=True,
             align="center",
         )
 
@@ -152,7 +155,8 @@ class LeaderboardScreen:
                 W // 2,
                 H // 2,
                 color=NeonTheme.TEXT_DIM.as_tuple(),
-                scale=max(1.6 * s, 0.9),
+                scale=max(0.7 * s, 0.42),
+                large=True,
                 align="center",
             )
         else:
@@ -167,7 +171,8 @@ class LeaderboardScreen:
                     W // 2,
                     y,
                     color=color.as_tuple(),
-                    scale=max(1.2 * s, 0.7),
+                    scale=max(0.6 * s, 0.38),
+                    large=True,
                     align="center",
                 )
 
@@ -176,6 +181,7 @@ class LeaderboardScreen:
             W // 2,
             H - int(40 * s),
             color=NeonTheme.TEXT_DIM.as_tuple(),
-            scale=max(0.95 * s, 0.6),
+            scale=max(0.55 * s, 0.35),
+            large=True,
             align="center",
         )

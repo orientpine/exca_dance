@@ -1,10 +1,12 @@
 """Score results screen."""
 
 from __future__ import annotations
+
 import pygame
+
+from exca_dance.core.game_state import ScreenName
 from exca_dance.core.models import Judgment
 from exca_dance.rendering.theme import NeonTheme
-from exca_dance.core.game_state import ScreenName
 
 
 class ResultsScreen:
@@ -40,7 +42,11 @@ class ResultsScreen:
                 if action == "save":
                     return (
                         ScreenName.LEADERBOARD,
-                        {"mode": "enter", "scoring": self._scoring, "song_title": self._song_title},
+                        {
+                            "mode": "enter",
+                            "scoring": self._scoring,
+                            "song_title": self._song_title,
+                        },
                     )
                 elif action == "retry":
                     if self._beatmap is not None:
@@ -59,31 +65,36 @@ class ResultsScreen:
         W, H = renderer.width, renderer.height
         s = H / 1080.0
 
+        # ── Title ────────────────────────────────────────────────
         text_renderer.render(
             "RESULTS",
             W // 2,
-            int(40 * s),
+            int(30 * s),
             color=NeonTheme.NEON_BLUE.as_tuple(),
-            scale=max(0.94 * s, 0.49),
-            align="center",
+            scale=max(0.55 * s, 0.30),
             title=True,
+            align="center",
         )
+
+        # ── Song title ───────────────────────────────────────────
         text_renderer.render(
             self._song_title,
             W // 2,
             int(100 * s),
             color=NeonTheme.TEXT_DIM.as_tuple(),
-            scale=max(1.3 * s, 0.75),
+            scale=max(0.7 * s, 0.42),
+            large=True,
             align="center",
         )
 
+        # ── Score data ───────────────────────────────────────────
         score = self._scoring.get_total_score()
         max_score = self._scoring.get_max_possible_score(
             sum(self._scoring.get_judgment_counts().values())
         )
         grade = self._scoring.get_grade(score, max_score)
 
-        # Grade
+        # ── Grade (large, left-center) ───────────────────────────
         grade_colors = {
             "S": NeonTheme.PERFECT,
             "A": NeonTheme.NEON_GREEN,
@@ -95,29 +106,30 @@ class ResultsScreen:
         grade_color = grade_colors.get(grade, NeonTheme.TEXT_WHITE)
         text_renderer.render(
             grade,
-            W // 4,
-            int(H * 0.42),
+            int(W * 0.28),
+            int(H * 0.30),
             color=grade_color.as_tuple(),
-            scale=max(2.25 * s, 1.125),
-            align="center",
+            scale=max(1.5 * s, 0.8),
             title=True,
+            align="center",
         )
 
-        # Score
+        # ── Score (large, right-center) ──────────────────────────
         text_renderer.render(
             f"{score:,}",
-            W * 3 // 4,
-            int(H * 0.40),
+            int(W * 0.68),
+            int(H * 0.32),
             color=NeonTheme.NEON_BLUE.as_tuple(),
-            scale=max(1.125 * s, 0.6),
-            align="center",
+            scale=max(0.65 * s, 0.38),
             title=True,
+            align="center",
         )
 
-        # Judgment breakdown
+        # ── Judgment breakdown ───────────────────────────────────
         counts = self._scoring.get_judgment_counts()
-        jy = int(H * 0.56)
-        j_spacing = int(max(35 * s, 22))
+        jy = int(H * 0.52)
+        j_spacing = int(max(42 * s, 28))
+
         for j, label, color in [
             (Judgment.PERFECT, "PERFECT", NeonTheme.PERFECT),
             (Judgment.GREAT, "GREAT", NeonTheme.GREAT),
@@ -129,32 +141,35 @@ class ResultsScreen:
                 W // 2,
                 jy,
                 color=color.as_tuple(),
-                scale=max(1.2 * s, 0.7),
+                scale=max(0.65 * s, 0.4),
+                large=True,
                 align="center",
             )
             jy += j_spacing
 
-        # Max combo
+        # ── Max combo ────────────────────────────────────────────
         text_renderer.render(
             f"MAX COMBO: {self._scoring.get_max_combo()}",
             W // 2,
-            jy + int(10 * s),
+            jy + int(12 * s),
             color=NeonTheme.NEON_GREEN.as_tuple(),
-            scale=max(1.2 * s, 0.7),
+            scale=max(0.65 * s, 0.4),
+            large=True,
             align="center",
         )
 
-        # Options
-        opt_y = H - int(120 * s)
-        opt_spacing = int(max(40 * s, 26))
+        # ── Options ──────────────────────────────────────────────
+        opt_y = H - int(160 * s)
+        opt_spacing = int(max(48 * s, 32))
         for i, (label, _) in enumerate(self._options):
             color = NeonTheme.NEON_PINK if i == self._selected else NeonTheme.TEXT_WHITE
-            scale = max(1.5 * s, 0.85) if i == self._selected else max(1.2 * s, 0.7)
+            sc = max(0.8 * s, 0.48) if i == self._selected else max(0.65 * s, 0.4)
             text_renderer.render(
                 label,
                 W // 2,
                 opt_y + i * opt_spacing,
                 color=color.as_tuple(),
-                scale=scale,
+                scale=sc,
+                large=True,
                 align="center",
             )
