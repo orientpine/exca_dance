@@ -102,15 +102,36 @@ def test_combo_multiplier_applies_on_current_hit() -> None:
     assert engine.judge({}, 20.0).score == 600
 
 
-def test_grade_s_at_95_percent_or_higher() -> None:
+def test_grade_boundaries() -> None:
     engine = ScoringEngine()
+    # S: 95%+
     assert engine.get_grade(95, 100) == "S"
     assert engine.get_grade(190, 200) == "S"
+    assert engine.get_grade(100, 100) == "S"
+    # A: 85%+
+    assert engine.get_grade(85, 100) == "A"
+    assert engine.get_grade(94, 100) == "A"
+    # B: 70%+
+    assert engine.get_grade(70, 100) == "B"
+    assert engine.get_grade(84, 100) == "B"
+    # C: below 70%
+    assert engine.get_grade(69, 100) == "C"
+    assert engine.get_grade(0, 100) == "C"
+    # edge: max_possible == 0
+    assert engine.get_grade(0, 0) == "C"
 
 
 def test_max_possible_score_for_100_events() -> None:
     engine = ScoringEngine()
-    assert engine.get_max_possible_score(100) == 120000
+    # combo 1-9: 300*1*9=2700, 10-24: 300*2*15=9000,
+    # 25-49: 300*3*25=22500, 50-100: 300*4*51=61200 → 95400
+    assert engine.get_max_possible_score(100) == 95400
+
+
+def test_max_possible_score_for_20_events() -> None:
+    engine = ScoringEngine()
+    # combo 1-9: 300*1*9=2700, 10-20: 300*2*11=6600 → 9300
+    assert engine.get_max_possible_score(20) == 9300
 
 
 def test_angle_accuracy_downgrades_perfect_to_great() -> None:

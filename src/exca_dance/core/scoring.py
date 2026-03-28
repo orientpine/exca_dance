@@ -123,24 +123,29 @@ class ScoringEngine:
         return self._max_combo
 
     def get_max_possible_score(self, num_events: int) -> int:
-        perfect_score = SCORE_VALUES[cast(Judgment, Judgment.PERFECT)]
-        return perfect_score * 4 * num_events
+        perfect_score: int = SCORE_VALUES[cast(Judgment, Judgment.PERFECT)]
+        total = 0
+        combo = 0
+        for _ in range(num_events):
+            combo += 1
+            mult = 1
+            for threshold, m in sorted(COMBO_THRESHOLDS.items()):
+                if combo >= threshold:
+                    mult = m
+            total += perfect_score * mult
+        return total
 
     def get_grade(self, total: int, max_possible: int) -> str:
         if max_possible == 0:
-            return "F"
+            return "C"
         pct = total / max_possible * 100
         if pct >= 95:
             return "S"
-        if pct >= 90:
+        if pct >= 85:
             return "A"
-        if pct >= 80:
-            return "B"
         if pct >= 70:
-            return "C"
-        if pct >= 60:
-            return "D"
-        return "F"
+            return "B"
+        return "C"
 
     def get_judgment_counts(self) -> dict[Judgment, int]:
         return dict(self._judgments)
