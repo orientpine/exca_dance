@@ -121,7 +121,7 @@ class GameViewportLayout:
         # ── Side orthographic (XZ plane, looking along +Y) ──────────
         # Aspect-matched to avoid distortion in the wider side panel.
         aspect_side = self._vm.get_aspect_ratio("side_2d")
-        side_half_h = 5.0
+        side_half_h = 3.5
         side_half_w = side_half_h * aspect_side
         self._proj_side: np.ndarray = _ortho(
             1.0 - side_half_w,
@@ -139,7 +139,7 @@ class GameViewportLayout:
 
         # ── Top-down orthographic (XY plane, camera looks down -Z) ──
         aspect_top = self._vm.get_aspect_ratio("top_2d")
-        top_half_h = 5.5
+        top_half_h = 3.8
         top_half_w = top_half_h * aspect_top
         proj_top = _ortho(
             1.0 - top_half_w,

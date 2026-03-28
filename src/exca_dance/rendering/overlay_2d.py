@@ -26,24 +26,24 @@ _CURRENT_LINK_COLORS: list[tuple[float, float, float]] = [
 ]
 
 _TARGET_LINK_COLORS: list[tuple[float, float, float]] = [
-    (0.0, 0.45, 0.55),   # base: teal (intro style)
-    (1.0, 0.0, 0.40),    # boom: neon pink
-    (0.67, 0.0, 1.0),    # arm: neon purple
-    (0.0, 1.0, 0.53),    # bucket: neon green
+    (0.0, 0.45, 0.55),  # base: teal (intro style)
+    (1.0, 0.0, 0.40),  # boom: neon pink
+    (0.67, 0.0, 1.0),  # arm: neon purple
+    (0.0, 1.0, 0.53),  # bucket: neon green
 ]
 
 _TARGET_OUTLINE_COLORS: list[tuple[float, float, float]] = [
-    (0.0, 0.55, 0.65),   # base: bright teal
-    (1.0, 0.25, 0.55),   # boom: bright pink
-    (0.78, 0.25, 1.0),   # arm: bright purple
-    (0.25, 1.0, 0.65),   # bucket: bright green
+    (0.0, 0.55, 0.65),  # base: bright teal
+    (1.0, 0.25, 0.55),  # boom: bright pink
+    (0.78, 0.25, 1.0),  # arm: bright purple
+    (0.25, 1.0, 0.65),  # bucket: bright green
 ]
 
 _CURRENT_OUTLINE_COLORS: list[tuple[float, float, float]] = [
     (0.75, 0.75, 0.85),  # base: bright silver
-    (1.0, 0.70, 0.20),   # boom: bright orange
-    (1.0, 1.0, 0.30),    # arm: bright yellow
-    (0.30, 1.0, 1.0),    # bucket: bright cyan
+    (1.0, 0.70, 0.20),  # boom: bright orange
+    (1.0, 1.0, 0.30),  # arm: bright yellow
+    (0.30, 1.0, 1.0),  # bucket: bright cyan
 ]
 
 
@@ -59,20 +59,20 @@ class Overlay2DRenderer:
     """
 
     # Geometry tuning (world units)
-    LINK_WIDTH: float = 0.30
-    TARGET_LINK_WIDTH: float = 0.50
-    JOINT_RADIUS: float = 0.22
-    TARGET_JOINT_RADIUS: float = 0.28
-    MATCH_RING_RADIUS: float = 0.32
-    CIRCLE_SEGMENTS: int = 20
-    ARROW_SIZE: float = 0.30
-    ARROW_OFFSET: float = 0.50
-    ARC_RADIUS: float = 0.65
-    ARC_SEGMENTS: int = 24
-    OUTLINE_EXTRA: float = 0.10
-    JOINT_RING_WIDTH: float = 0.08
-    GHOST_OUTLINE_T: float = 0.06
-    GHOST_GLOW_T: float = 0.14
+    LINK_WIDTH: float = 0.45
+    TARGET_LINK_WIDTH: float = 0.70
+    JOINT_RADIUS: float = 0.32
+    TARGET_JOINT_RADIUS: float = 0.40
+    MATCH_RING_RADIUS: float = 0.45
+    CIRCLE_SEGMENTS: int = 24
+    ARROW_SIZE: float = 0.42
+    ARROW_OFFSET: float = 0.65
+    ARC_RADIUS: float = 0.90
+    ARC_SEGMENTS: int = 28
+    OUTLINE_EXTRA: float = 0.14
+    JOINT_RING_WIDTH: float = 0.12
+    GHOST_OUTLINE_T: float = 0.08
+    GHOST_GLOW_T: float = 0.18
 
     def __init__(
         self,
@@ -531,12 +531,42 @@ class Overlay2DRenderer:
             c0, s0 = math.cos(a0), math.sin(a0)
             c1, s1 = math.cos(a1), math.sin(a1)
             verts += [
-                cx + r_in * c0, cy + r_in * s0, 0.0, r, g, b,
-                cx + r_out * c0, cy + r_out * s0, 0.0, r, g, b,
-                cx + r_out * c1, cy + r_out * s1, 0.0, r, g, b,
-                cx + r_in * c0, cy + r_in * s0, 0.0, r, g, b,
-                cx + r_out * c1, cy + r_out * s1, 0.0, r, g, b,
-                cx + r_in * c1, cy + r_in * s1, 0.0, r, g, b,
+                cx + r_in * c0,
+                cy + r_in * s0,
+                0.0,
+                r,
+                g,
+                b,
+                cx + r_out * c0,
+                cy + r_out * s0,
+                0.0,
+                r,
+                g,
+                b,
+                cx + r_out * c1,
+                cy + r_out * s1,
+                0.0,
+                r,
+                g,
+                b,
+                cx + r_in * c0,
+                cy + r_in * s0,
+                0.0,
+                r,
+                g,
+                b,
+                cx + r_out * c1,
+                cy + r_out * s1,
+                0.0,
+                r,
+                g,
+                b,
+                cx + r_in * c1,
+                cy + r_in * s1,
+                0.0,
+                r,
+                g,
+                b,
             ]
         return verts
 
@@ -560,12 +590,42 @@ class Overlay2DRenderer:
             c0, s0 = math.cos(a0), math.sin(a0)
             c1, s1 = math.cos(a1), math.sin(a1)
             verts += [
-                cx + r_in * c0, 0.0, cz + r_in * s0, r, g, b,
-                cx + r_out * c0, 0.0, cz + r_out * s0, r, g, b,
-                cx + r_out * c1, 0.0, cz + r_out * s1, r, g, b,
-                cx + r_in * c0, 0.0, cz + r_in * s0, r, g, b,
-                cx + r_out * c1, 0.0, cz + r_out * s1, r, g, b,
-                cx + r_in * c1, 0.0, cz + r_in * s1, r, g, b,
+                cx + r_in * c0,
+                0.0,
+                cz + r_in * s0,
+                r,
+                g,
+                b,
+                cx + r_out * c0,
+                0.0,
+                cz + r_out * s0,
+                r,
+                g,
+                b,
+                cx + r_out * c1,
+                0.0,
+                cz + r_out * s1,
+                r,
+                g,
+                b,
+                cx + r_in * c0,
+                0.0,
+                cz + r_in * s0,
+                r,
+                g,
+                b,
+                cx + r_out * c1,
+                0.0,
+                cz + r_out * s1,
+                r,
+                g,
+                b,
+                cx + r_in * c1,
+                0.0,
+                cz + r_in * s1,
+                r,
+                g,
+                b,
             ]
         return verts
 
@@ -675,7 +735,11 @@ class Overlay2DRenderer:
         for i in range(len(positions) - 1):
             color = link_colors[min(i, len(link_colors) - 1)]
             verts += outline_fn(
-                positions[i], positions[i + 1], link_width, outline_thickness, color,
+                positions[i],
+                positions[i + 1],
+                link_width,
+                outline_thickness,
+                color,
             )
         return verts
 
@@ -821,7 +885,7 @@ class Overlay2DRenderer:
                 start,
                 end,
                 arc_color,
-                width=0.05,
+                width=0.07,
                 segments=self.ARC_SEGMENTS,
             )
 
@@ -832,7 +896,7 @@ class Overlay2DRenderer:
                 center[0] + ref_len * math.cos(start),
                 center[1] + ref_len * math.sin(start),
             )
-            verts += self._thick_line_side(center, ref_end, 0.03, ref_color)
+            verts += self._thick_line_side(center, ref_end, 0.05, ref_color)
 
         return verts
 
@@ -849,10 +913,10 @@ class Overlay2DRenderer:
         grid_color = NeonTheme.DIAGRAM_GRID.as_rgb()
 
         # Ground line at z=0 (prominent)
-        verts += self._thick_line_side((-4.0, 0.0), (10.0, 0.0), 0.06, ground_color)
+        verts += self._thick_line_side((-4.0, 0.0), (10.0, 0.0), 0.08, ground_color)
 
         # Subtle vertical reference at x=0
-        verts += self._thick_line_side((0.0, -0.3), (0.0, 7.0), 0.025, grid_color)
+        verts += self._thick_line_side((0.0, -0.3), (0.0, 7.0), 0.04, grid_color)
 
         # Tick marks along ground every 1 unit
         for x in range(-3, 10):
@@ -860,13 +924,13 @@ class Overlay2DRenderer:
             verts += self._thick_line_side(
                 (float(x), -tick_h),
                 (float(x), tick_h),
-                0.02,
+                0.03,
                 grid_color,
             )
 
         # Horizontal reference lines every 2 units (subtle)
         for z in range(2, 8, 2):
-            verts += self._thick_line_side((-3.0, float(z)), (9.0, float(z)), 0.015, grid_color)
+            verts += self._thick_line_side((-3.0, float(z)), (9.0, float(z)), 0.025, grid_color)
 
         return verts
 
@@ -1025,6 +1089,7 @@ class Overlay2DRenderer:
         # ── Ghost target (additive blend — glows ON TOP of current) ─
         if target_pts is not None:
             import moderngl
+
             ctx.blend_func = (moderngl.SRC_ALPHA, moderngl.ONE)
             try:
                 # Layer 4: Ghost glow halo (wide, soft)
@@ -1045,7 +1110,7 @@ class Overlay2DRenderer:
                     target_pts,
                     _TARGET_OUTLINE_COLORS,
                     self.TARGET_LINK_WIDTH,
-                    0.10,
+                    0.14,
                 )
                 if outline_verts:
                     self._draw_triangles(ctx, prog, mvp, outline_verts, alpha=0.70)
@@ -1139,7 +1204,7 @@ class Overlay2DRenderer:
                 sx + 12,
                 sy - 12,
                 color=color,
-                scale=0.65,
+                scale=0.85,
             )
 
     def _render_angle_labels(
@@ -1178,5 +1243,5 @@ class Overlay2DRenderer:
                 sx - 30,
                 sy + 16,
                 color=color,
-                scale=0.55,
+                scale=0.75,
             )
