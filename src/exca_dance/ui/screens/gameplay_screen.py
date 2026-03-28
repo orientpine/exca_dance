@@ -235,10 +235,11 @@ class GameplayScreen:
             hit_sound = self._hit_sounds.get(result.judgment)
             if hit_sound is not None:
                 hit_sound.play()
-            if self._beatmap:
-                _upcoming = self._game_loop.get_upcoming_events(500)
-                self._hud.set_target_angles(_upcoming[0].target_angles if _upcoming else {})
 
+        # Always sync HUD target with visual_cues (same 6000ms lookahead)
+        if self._beatmap:
+            _upcoming = self._game_loop.get_upcoming_events(6000.0)
+            self._hud.set_target_angles(_upcoming[0].target_angles if _upcoming else {})
         self._hud.update(dt)
 
         # Update visual cues

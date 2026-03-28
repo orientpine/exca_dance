@@ -61,7 +61,7 @@ def test_update_does_not_raise_when_upcoming_events_are_empty() -> None:
 
     screen.update(0.016)
 
-    game_loop.get_upcoming_events.assert_any_call(500)
+    game_loop.get_upcoming_events.assert_any_call(6000.0)
     game_loop.get_upcoming_events.assert_any_call(6000.0)
     assert game_loop.get_upcoming_events.call_count == 2
 
@@ -155,8 +155,8 @@ def test_visual_cues_receives_separate_data_across_frames() -> None:
         visual_cues.reset_mock()
         game_loop.joint_angles = angles
         game_loop.get_upcoming_events.side_effect = [
-            [],  # 500ms call
-            [target_event],  # 3000ms call
+            [],  # 6000ms HUD call
+            [target_event],  # 6000ms visual_cues call
         ]
 
         screen.update(0.016)
