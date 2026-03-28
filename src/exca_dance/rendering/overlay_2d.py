@@ -1043,9 +1043,6 @@ class Overlay2DRenderer:
             else:
                 target_pts = self._fk.get_joint_positions_2d_side(full_target)
 
-        # Capture viewport rect for text projection later
-        vp = ctx.viewport
-
         # ── Side view: kinematic diagram background ──────────────
         if viewport_name == "side_2d":
             bg_verts = self._build_side_background()
@@ -1144,23 +1141,6 @@ class Overlay2DRenderer:
             if arc_verts:
                 self._draw_triangles(ctx, prog, mvp, arc_verts, alpha=0.85)
 
-        # ── Layer 9: Text labels ─────────────────────────────────
-        if text_renderer is not None and match_pct is not None and current_pts:
-            ctx.viewport = (
-                0,
-                0,
-                self._renderer.width,
-                self._renderer.height,
-            )
-            self._render_labels(viewport_name, mvp, vp, current_pts, match_pct, text_renderer)
-            if viewport_name == "side_2d":
-                self._render_angle_labels(
-                    mvp,
-                    vp,
-                    current_pts,
-                    current_angles,
-                    text_renderer,
-                )
 
     def _render_labels(
         self,
