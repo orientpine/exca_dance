@@ -62,14 +62,14 @@ class NeonTheme:
     BORDER: Color = Color(0.0, 0.83, 1.0, 0.6)
 
     # Joint colors (match excavator_model.py)
-    JOINT_SWING: Color = Color(0.7, 0.3, 1.0)
+    JOINT_SWING: Color = Color(0.6, 1.0, 0.0)
     JOINT_BOOM: Color = Color(1.0, 0.4, 0.0)
     JOINT_ARM: Color = Color(1.0, 0.8, 0.0)
     JOINT_BUCKET: Color = Color(0.0, 0.8, 1.0)
 
     # Ghost (target pose) colors — neon palette matching intro screen aesthetic
     GHOST_ALPHA: float = 0.78
-    GHOST_SWING: Color = Color(0.45, 0.15, 0.70)
+    GHOST_SWING: Color = Color(0.35, 0.60, 0.0)
     GHOST_BOOM: Color = Color(1.0, 0.0, 0.40)
     GHOST_ARM: Color = Color(0.67, 0.0, 1.0)
     GHOST_BUCKET: Color = Color(0.0, 1.0, 0.53)

@@ -30,7 +30,7 @@ from exca_dance.rendering.urdf_kin import (
 # Default joint colors (R, G, B) — educational neon color coding
 JOINT_COLORS: dict[str | JointName, tuple[float, float, float]] = {
     "base": (0.23, 0.23, 0.23),  # dark gray
-    "turret": (0.45, 0.20, 0.60),  # muted purple (swing)
+    "turret": (0.38, 0.60, 0.05),  # muted lime (swing)
     JointName.BOOM: (1.0, 0.4, 0.0),  # orange
     JointName.ARM: (1.0, 0.8, 0.0),  # yellow
     JointName.BUCKET: (0.0, 0.8, 1.0),  # cyan
