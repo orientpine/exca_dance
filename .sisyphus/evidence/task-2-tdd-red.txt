@@ -1,0 +1,8 @@
+pytest: FAIL (3 failed, 1 passed)
+ruff: pass
+lsp_diagnostics: pass
+
+Observed failures:
+- JointName key conversion not implemented in ROS2Bridge.get_current_angles()
+- partial state merge not implemented
+- real ROS2 topic strings not present in ros2_node.py
