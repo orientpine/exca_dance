@@ -89,72 +89,36 @@ class ControlGuide:
         current_angles: dict[JointName, float],
         target_angles: dict[JointName, float] | None,
     ) -> None:
-        """Draw the control guide overlay."""
-        if self._text is None:
-            return
-
+        """Standalone fallback render (unused when HUD calls render_sticks)."""
         W = self._renderer.width
         H = self._renderer.height
         s = H / 1080.0
-
-        # ── Panel geometry (full width, stacked at bottom) ─────────
         main_w = int(W * 0.55)
-        guide_w = main_w - int(32 * s)
-        guide_h = int(self.PANEL_HEIGHT_REF * s)
-        guide_x = int(16 * s)
-        main_3d_bottom = int(H * 0.72)
-        guide_y = main_3d_bottom - guide_h - int(6 * s)
-
-        # Background panel
-        self._draw_rect_2d(
-            guide_x,
-            guide_y,
-            guide_w,
-            guide_h,
-            NeonTheme.BG_PANEL,
-            alpha=0.55,
-        )
-        # Top accent line
-        self._draw_rect_2d(
-            guide_x,
-            guide_y,
-            guide_w,
-            max(int(2 * s), 1),
-            NeonTheme.NEON_BLUE,
-            alpha=0.30,
+        cx = int(16 * s) + main_w // 2
+        cy = int(H * 0.72) - int(50 * s)
+        self.render_sticks(
+            current_angles,
+            target_angles,
+            left_cx=cx - int(80 * s),
+            right_cx=cx + int(80 * s),
+            cy=cy,
+            s=s,
         )
 
-        # ── Compute active arrows ─────────────────────────
+    def render_sticks(
+        self,
+        current_angles: dict[JointName, float],
+        target_angles: dict[JointName, float] | None,
+        *,
+        left_cx: int,
+        right_cx: int,
+        cy: int,
+        s: float,
+    ) -> None:
+        """Draw two stick diagrams at specified positions (no panel/title)."""
         active = self._compute_active(current_angles, target_angles)
-
-        # ── Horizontal layout: title | left_stick | right_stick | title ──
-        stick_cy = guide_y + int(guide_h * 0.52)
-        stick_spacing = int(guide_w * 0.18)
-        center_x = guide_x + guide_w // 2
-        left_cx = center_x - stick_spacing
-        right_cx = center_x + stick_spacing
-
-        self._draw_stick_diagram(left_cx, stick_cy, s, "left", active)
-        self._draw_stick_diagram(right_cx, stick_cy, s, "right", active)
-
-        # Title labels in left/right margins, vertically centered
-        title_scale = max(0.70 * s, 0.42)
-        title_y = stick_cy - int(6 * s)
-        self._text.render(
-            "좌(WASD)",
-            guide_x + int(10 * s),
-            title_y,
-            color=NeonTheme.NEON_BLUE.as_tuple(),
-            scale=title_scale,
-        )
-        self._text.render(
-            "우(UHJK)",
-            guide_x + guide_w - int(10 * s),
-            title_y,
-            color=NeonTheme.NEON_BLUE.as_tuple(),
-            scale=title_scale,
-            align="right",
-        )
+        self._draw_stick_diagram(left_cx, cy, s, "left", active)
+        self._draw_stick_diagram(right_cx, cy, s, "right", active)
 
     # ── Internal: active arrow computation ────────────────────────
 

@@ -67,8 +67,7 @@ class GameplayHUD:
         if self._text is None:
             return
 
-        # ── Control guide (joystick arrows) ─────────────────────
-        self._control_guide.render(joint_angles, self._target_angles)
+        # Control guide is now rendered inline with error panel (see below).
 
         W = self._renderer.width
         H = self._renderer.height
@@ -219,7 +218,7 @@ class GameplayHUD:
             align="right",
         )
 
-        # ── Error panel (stacked above control guide, 2×2 grid) ─────
+        # ── Combined panel: error bars (left) + stick guide (right) ───
         main_3d_bottom = int(H * 0.72)
         joint_colors = {
             JointName.SWING: NeonTheme.JOINT_SWING,
@@ -228,16 +227,12 @@ class GameplayHUD:
             JointName.BUCKET: NeonTheme.JOINT_BUCKET,
         }
 
-        # Control guide sits at bottom; error panel stacks above it.
-        guide_h = int(self._control_guide.PANEL_HEIGHT_REF * s)
-        guide_bottom = main_3d_bottom - int(6 * s)
-
-        panel_h = int(75 * s)
+        panel_h = int(100 * s)
         panel_w = main_w - int(32 * s)
         panel_x = int(16 * s)
-        panel_y = guide_bottom - guide_h - int(4 * s) - panel_h
+        panel_y = main_3d_bottom - panel_h - int(6 * s)
 
-        # Panel background — semi-transparent, blends with 3D scene
+        # Panel background
         self._draw_rect_2d(
             panel_x,
             panel_y,
@@ -246,39 +241,31 @@ class GameplayHUD:
             NeonTheme.BG_PANEL,
             alpha=0.55,
         )
-        # Top accent line — thin neon blue border
         self._draw_rect_2d(
             panel_x,
             panel_y,
             panel_w,
             max(int(2 * s), 1),
             NeonTheme.NEON_BLUE,
-            alpha=0.35,
+            alpha=0.30,
         )
 
-        # 2×2 grid layout: [SWING, BOOM] / [ARM, BUCKET]
-        inner_pad = int(8 * s)
-        col_gap = int(10 * s)
-        row_gap = int(4 * s)
-        cell_w = (panel_w - 2 * inner_pad - col_gap) // 2
-        cell_h = (panel_h - 2 * inner_pad - row_gap) // 2
+        # ── Left side: error bars (4 rows, ~40% width) ─────────
+        err_w = int(panel_w * 0.40)
+        err_pad = int(6 * s)
+        row_h = (panel_h - 2 * err_pad - 3 * int(2 * s)) // 4
 
         for i, jname in enumerate(JointName):
-            row_idx = i // 2
-            col_idx = i % 2
-            cx = panel_x + inner_pad + col_idx * (cell_w + col_gap)
-            cy = panel_y + inner_pad + row_idx * (cell_h + row_gap)
+            ry = panel_y + err_pad + i * (row_h + int(2 * s))
 
             color = joint_colors[jname]
             angle = joint_angles.get(jname, 0.0)
             target = self._target_angles.get(jname)
             has_target = target is not None
             match_pct = 1.0
-
             if self._visual_cues is not None:
                 match_pct = self._visual_cues.get_angle_match_pct(jname)
 
-            # Match quality → color (gray when no target)
             if not has_target:
                 val_color = NeonTheme.TEXT_DIM
             elif match_pct >= 0.9:
@@ -288,71 +275,74 @@ class GameplayHUD:
             else:
                 val_color = NeonTheme.NEON_PINK
 
-            # Cell background
-            self._draw_rect_2d(
-                cx,
-                cy,
-                cell_w,
-                cell_h,
-                NeonTheme.BG,
-                alpha=0.35,
-            )
-
-            # Row 1: Joint name
+            # Joint name
+            name_w = int(55 * s)
             self._text.render(
                 jname.value.upper(),
-                cx + int(6 * s),
-                cy + int(2 * s),
+                panel_x + err_pad,
+                ry + int(2 * s),
                 color=color.as_tuple(),
-                scale=max(0.70 * s, 0.45),
+                scale=max(0.65 * s, 0.40),
             )
 
-            # Row 2: [===bar===] value°  (same line, no overlap)
-            bar_y_pos = cy + cell_h - int(10 * s)
-            bar_h_bar = max(int(5 * s), 3)
-            val_w = int(52 * s)  # space reserved for value text
-            bar_x = cx + int(6 * s)
-            bar_w_total = cell_w - int(12 * s) - val_w
+            # Bar
+            bar_x = panel_x + err_pad + name_w
+            val_text_w = int(48 * s)
+            bar_w = err_w - err_pad - name_w - val_text_w - int(4 * s)
+            bar_h = max(int(5 * s), 3)
+            bar_cy = ry + row_h // 2 - bar_h // 2
 
-            # Error text (right of bar)
+            bar_alpha = 0.5 if has_target else 0.2
+            self._draw_rect_2d(
+                bar_x,
+                bar_cy,
+                bar_w,
+                bar_h,
+                NeonTheme.BG,
+                alpha=bar_alpha,
+            )
+            if has_target:
+                fill_w = int(bar_w * match_pct)
+                if fill_w > 0:
+                    self._draw_rect_2d(
+                        bar_x,
+                        bar_cy,
+                        fill_w,
+                        bar_h,
+                        val_color,
+                        alpha=0.85,
+                    )
+
+            # Value text
             if has_target:
                 diff = angle - target
                 error_text = f"{diff:+.1f}°"
             else:
                 error_text = "—"
-
-            # Bar background
-            bar_alpha = 0.5 if has_target else 0.2
-            self._draw_rect_2d(
-                bar_x,
-                bar_y_pos,
-                bar_w_total,
-                bar_h_bar,
-                NeonTheme.BG,
-                alpha=bar_alpha,
-            )
-            # Bar fill
-            if has_target:
-                fill_w = int(bar_w_total * match_pct)
-                if fill_w > 0:
-                    self._draw_rect_2d(
-                        bar_x,
-                        bar_y_pos,
-                        fill_w,
-                        bar_h_bar,
-                        val_color,
-                        alpha=0.85,
-                    )
-
-            # Value text (right-aligned, after bar)
             self._text.render(
                 error_text,
-                cx + cell_w - int(6 * s),
-                bar_y_pos - int(4 * s),
+                panel_x + err_w - err_pad,
+                ry + int(2 * s),
                 color=val_color.as_tuple(),
-                scale=max(0.75 * s, 0.45),
+                scale=max(0.65 * s, 0.40),
                 align="right",
             )
+
+        # ── Right side: stick guide (~60% width) ──────────────
+        guide_x = panel_x + err_w + int(4 * s)
+        guide_w = panel_w - err_w - int(4 * s)
+        stick_cy = panel_y + panel_h // 2
+        stick_gap = int(guide_w * 0.25)
+        guide_cx = guide_x + guide_w // 2
+
+        self._control_guide.render_sticks(
+            joint_angles,
+            self._target_angles,
+            left_cx=guide_cx - stick_gap,
+            right_cx=guide_cx + stick_gap,
+            cy=stick_cy,
+            s=s,
+        )
 
         # ── FPS counter (top-left, debug) ──────────────────────────
         if self._show_fps:
