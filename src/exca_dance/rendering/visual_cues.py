@@ -164,7 +164,9 @@ class VisualCueRenderer:
         # Find the nearest upcoming event for ghost
         if upcoming_events:
             nearest = min(upcoming_events, key=lambda e: e.time_ms)
-            self._active_target = dict(nearest.target_angles)
+            full_target: dict[JointName, float] = dict(DEFAULT_JOINT_ANGLES)
+            full_target.update(nearest.target_angles)
+            self._active_target = full_target
             self._next_event_time_ms = float(nearest.time_ms)
             # Update ghost model to target pose
             ghost_angles: dict[JointName, float] = dict(DEFAULT_JOINT_ANGLES)

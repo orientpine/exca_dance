@@ -8,6 +8,7 @@ from exca_dance.core.models import BeatMap, Judgment, JointName
 from exca_dance.rendering.theme import NeonTheme
 from exca_dance.core.game_state import ScreenName
 from exca_dance.core.game_loop import GameState as LoopState
+from exca_dance.core.constants import DEFAULT_JOINT_ANGLES
 
 
 class GameplayScreen:
@@ -254,6 +255,10 @@ class GameplayScreen:
                             merged = dict(last.target_angles)
                 except (TypeError, AttributeError):
                     pass
+            if merged:
+                full = dict(DEFAULT_JOINT_ANGLES)
+                full.update(merged)
+                merged = full
             self._hud.set_target_angles(merged)
         self._hud.update(dt)
 
