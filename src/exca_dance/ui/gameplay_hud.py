@@ -260,10 +260,12 @@ class GameplayHUD:
                 scale=max(1.2 * s, 0.75),
             )
 
-            # Angle values
-            line = f"{angle:+.1f}°"
+            # Angle difference (current − target); raw angle if no target
             if target is not None:
-                line += f" → {target:+.1f}°"
+                diff = angle - target
+                line = f"{diff:+.1f}°"
+            else:
+                line = f"{angle:+.1f}°"
             self._text.render(
                 line,
                 panel_x + int(95 * s),
