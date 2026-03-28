@@ -20,28 +20,28 @@ if TYPE_CHECKING:
 # ── Per-link colors ──────────────────────────────────────────────────
 # Index 0 = base→swing, 1 = boom, 2 = arm, 3 = bucket
 _CURRENT_LINK_COLORS: list[tuple[float, float, float]] = [
-    (0.55, 0.55, 0.65),  # base→swing: bright steel gray
+    (0.70, 0.30, 1.0),  # base→swing: neon purple
     (1.0, 0.5, 0.05),  # boom: vivid orange
     (1.0, 0.9, 0.1),  # arm: bright yellow
     (0.1, 0.9, 1.0),  # bucket: bright cyan
 ]
 
 _TARGET_LINK_COLORS: list[tuple[float, float, float]] = [
-    (0.0, 0.45, 0.55),  # base: teal (intro style)
+    (0.45, 0.15, 0.70),  # base: ghost purple
     (1.0, 0.0, 0.40),  # boom: neon pink
     (0.67, 0.0, 1.0),  # arm: neon purple
     (0.0, 1.0, 0.53),  # bucket: neon green
 ]
 
 _TARGET_OUTLINE_COLORS: list[tuple[float, float, float]] = [
-    (0.0, 0.55, 0.65),  # base: bright teal
+    (0.55, 0.20, 0.85),  # base: bright purple outline
     (1.0, 0.25, 0.55),  # boom: bright pink
     (0.78, 0.25, 1.0),  # arm: bright purple
     (0.25, 1.0, 0.65),  # bucket: bright green
 ]
 
 _CURRENT_OUTLINE_COLORS: list[tuple[float, float, float]] = [
-    (0.75, 0.75, 0.85),  # base: bright silver
+    (0.80, 0.45, 1.0),  # base: bright purple outline
     (1.0, 0.70, 0.20),  # boom: bright orange
     (1.0, 1.0, 0.30),  # arm: bright yellow
     (0.30, 1.0, 1.0),  # bucket: bright cyan
