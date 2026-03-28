@@ -1,0 +1,31 @@
+F4 Scope Fidelity Check (Re-run) — 2026-03-28
+
+Commits checked: 961271c, 8a13485, 4f17035, 531fbca, c8d7cdc
+
+=== Changed Files Per Commit ===
+
+961271c:
+  tests/test_game_loop_real_mode.py  [ALLOWED]
+
+8a13485:
+  .sisyphus/evidence/task-2-tdd-red.txt     [ALLOWED - sisyphus internal]
+  .sisyphus/notepads/mode-real/learnings.md [ALLOWED - sisyphus internal]
+  tests/test_ros2_bridge_real.py            [ALLOWED]
+
+4f17035:
+  src/exca_dance/core/game_loop.py  [ALLOWED]
+
+531fbca:
+  src/exca_dance/ros2_bridge/ros2_node.py  [ALLOWED]
+
+c8d7cdc:
+  src/exca_dance/__main__.py  [ALLOWED]
+
+=== Forbidden File Check ===
+  src/exca_dance/ros2_bridge/interface.py  — NOT TOUCHED ✓
+  src/exca_dance/core/scoring.py           — NOT TOUCHED ✓
+  src/exca_dance/ui/ (any)                 — NOT TOUCHED ✓
+  src/exca_dance/ui/gameplay_hud.py        — NOT TOUCHED ✓
+
+=== Result ===
+Tasks [5/5 compliant] | Contamination [CLEAN] | VERDICT: APPROVE

@@ -1,0 +1,24 @@
+Tasks [5/5 compliant] | Contamination [2 issues] | VERDICT: REJECT
+
+Checked commits:
+- 961271c
+- 8a13485
+- 4f17035
+- 531fbca
+- c8d7cdc
+
+Allowed files found in commit set:
+- src/exca_dance/core/game_loop.py (modified)
+- src/exca_dance/ros2_bridge/ros2_node.py (modified)
+- src/exca_dance/__main__.py (modified)
+- tests/test_game_loop_real_mode.py (new)
+- tests/test_ros2_bridge_real.py (new)
+
+Forbidden files check:
+- src/exca_dance/ros2_bridge/interface.py: not changed in commit set
+- src/exca_dance/core/scoring.py: not changed in commit set
+- src/exca_dance/ui/: no changed paths in commit set
+
+Out-of-scope contamination detected:
+- .sisyphus/evidence/task-2-tdd-red.txt
+- .sisyphus/notepads/mode-real/learnings.md

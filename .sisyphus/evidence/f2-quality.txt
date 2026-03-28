@@ -1,0 +1,58 @@
+F2: Code Quality Review — mode-real 플랜 변경 파일 5개
+=====================================================================
+Date: 2026-03-28
+
+## 1. Ruff Check
+Target: game_loop.py, ros2_node.py, __main__.py, test_game_loop_real_mode.py, test_ros2_bridge_real.py
+Result: All checks passed!
+
+## 2. Tests
+134 passed in 0.38s, 0 failed
+
+## 3. Code Smells
+- `type: ignore`: 0
+- `# noqa`: 0
+- `print(`: 1 — __main__.py:301 `print(f"Fatal error: {exc}", file=sys.stderr)`
+  → 정상: crash handler의 stderr 출력. 디버그 print가 아님.
+
+## 4. Code Review
+
+### game_loop.py
+- [OK] `mode` kwarg: keyword-only (`*,`), default "virtual"
+- [OK] `_update_joints_from_bridge()`: bridge.get_current_angles() → JOINT_LIMITS clamp
+- [OK] `_update_joints()` early-return: mode=="real" → bridge 읽기 후 return, 키보드 무시
+- [OK] `send_command` guard: `if self._mode != "real"` — real 모드에서 명령 전송 차단
+- [OK] `from __future__ import annotations` 있음
+
+### ros2_node.py
+- [OK] `from queue import Empty` top-level import (line 11)
+- [OK] Real topics: `/excavator/sensors/swing_angle`, `/excavator/state/complete_status`
+- [OK] 각도 변환: boom=raw, arm=arm_lat-boom_lat, bucket=bucket_lat-arm_lat (상대각)
+- [OK] sensor_valid 체크 후 조건부 angles dict 구성
+- [OK] `get_current_angles()`: string key → JointName 변환, 부분 업데이트 머지
+- [NOTE] _latest_angles의 JointName vs str key 방어 코드 — 과잉 방어지만 무해
+
+### __main__.py
+- [OK] `mode=args.mode` GameLoop 전달 (line 183)
+- [OK] `create_bridge(args.mode)` (line 169)
+- [OK] `args.mode.upper()` MainMenuScreen 표시 라벨 (line 213)
+
+### test_game_loop_real_mode.py (6 tests)
+- [OK] real_mode_reads_bridge_angles: bridge 각도 → joint_angles 반영 확인
+- [OK] real_mode_ignores_keyboard: held_keys 무시 확인
+- [OK] real_mode_skips_send_command: send_command 미호출 확인
+- [OK] real_mode_clamps_to_joint_limits: 범위 초과 → clamp 확인
+- [OK] real_mode_handles_empty_angles: 빈 dict → DEFAULT 유지 확인
+- [OK] virtual_mode_unchanged: 기존 virtual 동작 미변경 확인
+- [MINOR] `_make_game_loop()` (line 13) 미사용 헬퍼 — dead code지만 차단 사유 아님
+
+### test_ros2_bridge_real.py (4 tests)
+- [OK] bridge_returns_jointname_keys: string→JointName 변환 확인
+- [OK] bridge_merges_partial_data: 부분 큐 데이터 병합 확인
+- [OK] bridge_handles_sensor_invalid: 기존 JointName 키 보호 확인
+- [OK] real_topics_in_source: 소스코드에 실제 토픽 문자열 존재 확인
+- [OK] ROS2Bridge import는 테스트 파일이므로 허용 (main process 아님)
+
+=====================================================================
+Lint [PASS] | Tests [134 pass/0 fail] | Code Smells [0] | VERDICT: APPROVE
+=====================================================================

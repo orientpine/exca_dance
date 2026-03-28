@@ -1,0 +1,37 @@
+F3: Real Manual QA — Tasks 1-6 QA 시나리오 재실행 결과
+========================================================
+Date: 2026-03-28
+
+## Task 1: test_game_loop_real_mode.py (TDD RED→GREEN)
+Result: 6/6 PASSED
+- test_real_mode_reads_bridge_angles PASSED
+- test_real_mode_ignores_keyboard PASSED
+- test_real_mode_skips_send_command PASSED
+- test_real_mode_clamps_to_joint_limits PASSED
+- test_real_mode_handles_empty_angles PASSED
+- test_virtual_mode_unchanged PASSED
+
+## Task 2: test_ros2_bridge_real.py (TDD RED→GREEN)
+Result: 4/4 PASSED
+- test_bridge_returns_jointname_keys PASSED
+- test_bridge_merges_partial_data PASSED
+- test_bridge_handles_sensor_invalid PASSED
+- test_real_topics_in_source PASSED
+
+## Task 3: test_game_loop.py (회귀 테스트)
+Result: 12/12 PASSED
+- All 12 existing GameLoop tests pass without regression
+
+## Task 4: ros2_node.py 토픽 확인
+- /excavator/sensors/swing_angle: 1 occurrence ✓
+- /excavator/state/complete_status: 1 occurrence ✓
+
+## Task 5: mode 전달 확인
+- mode=args.mode found at __main__.py:183 ✓
+
+## Task 6: 전체 테스트 + lint
+- Tests: 134/134 PASSED (0.37s)
+- Lint: All checks passed!
+
+========================================================
+Scenarios [6/6 pass] | Tests [134 pass] | VERDICT: APPROVE

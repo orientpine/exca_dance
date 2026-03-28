@@ -1,140 +1,56 @@
 {
-  "active_plan": "/home/cha/Documents/exca_dance/.sisyphus/plans/gameplay-screen-overhaul.md",
-  "started_at": "2026-03-25T14:16:51.995Z",
+  "active_plan": "/home/cha/Documents/exca_dance/.sisyphus/plans/mode-real.md",
+  "started_at": "2026-03-28T13:05:51.248Z",
   "session_ids": [
-    "ses_2dac3ec01ffeTAmvHQ7VkpQ3Zz",
-    "ses_2daa3004bffedWSIh0utBW32Qs",
-    "ses_2da9ddaa2ffeBW8sBA6VSRO086",
-    "ses_2da9daf73ffex8VZREZL9uZH0v",
-    "ses_2da9e17d7ffe65Pj97wedOJ4xR",
-    "ses_2da974511ffeQFCfalzfOBX159",
-    "ses_2da979415ffeKJ3xW5dvZfttkl",
-    "ses_2da971411ffevuBqzBrixoWFMR",
-    "ses_2da9320eeffeDhEcNewkxmDLvb",
-    "ses_2da936ca2ffem7q2UuznicucMU",
-    "ses_2da92d1b8ffe39AAMeXvUIxGuQ",
-    "ses_2da93c4a7ffeTzY5cEN3t2FBli",
-    "ses_2da8f2f65ffevXHD4fNe6kn3Ip",
-    "ses_2da8ed3afffe8V55Fi2QkLnqJI",
-    "ses_2da8baf80ffe2NG2BvKU1ic2o7",
-    "ses_2da8b3ed5ffeI8LF957f3lryDH",
-    "ses_2da8adeeeffeomHlGvABLgjvcZ",
-    "ses_2da862a36ffei1qW3AWYUgg8m7",
-    "ses_2da869519ffelqO4pZJlQeLFVk",
-    "ses_2da866fa9ffehY2jiQ5kYENDaN",
-    "ses_2da83b9abffeFLHP9jnbkgCLML",
-    "ses_2da7e1009ffe4Dwp62N2Km6Ovu",
-    "ses_2da7e2202ffezekIIZWtQORw1Q",
-    "ses_2da7ddc50ffenco8mRys94VQ8g",
-    "ses_2da7de478ffehFOyktJg7oqtjT",
-    "ses_2da7e0267ffeqGzB6iCtF9349Z",
-    "ses_2da634f4affe2fZ9FvVIwvCbcT",
-    "ses_2da3f3fbaffeaxBdMbvmxDXtRH",
-    "ses_2da3f01c8ffegSGxbFfyfOrnSK",
-    "ses_2da3f80ceffeaTy0F7j3SNOmzj",
-    "ses_2da3b8d5bffel5WqJnhoRErtYv",
-    "ses_2da3bc97fffervpHQu2QOmXLSc",
-    "ses_2da3b1905ffekRygN7cDLskscR",
-    "ses_2da3326f9ffer3BMpaYtu3IP1l",
-    "ses_2da32a7afffevMTwip1wWpD2yx",
-    "ses_2da2a673dffe2z656IH4BG2Gl0",
-    "ses_2da26c7c3ffeBzOvqAsFjzJiWU",
-    "ses_2da26a1e0ffegOr3KpDmOYlbry",
-    "ses_2da266474ffeQx15f0TPkDjbkm",
-    "ses_2d82d0114ffeQZNtq3uRy0DhRL",
-    "ses_2d1be237effeW7RAwew2G6prLv"
+    "ses_2cb72f776ffej9C4uDn9i0bnOt",
+    "ses_2cb71211cffeYHfGKRhgmO2DCF",
+    "ses_2cb6c3ad4ffe5aTyCanySJTkQX",
+    "ses_2cb679c6cffeyZ4avEhfEWowBy",
+    "ses_2cb617e03ffekKEMnIxDMRsWuM",
+    "ses_2cb5ad584ffeJQ9Z0EBeY1T0JO",
+    "ses_2cb59681bffeqMO4ERftv5WWQa",
+    "ses_2cb5745b1ffeVb4BO5LAJPRA5I",
+    "ses_2cb55c6aeffel2sA3c7HcQlSKL",
+    "ses_2cb53bfdaffexulZcyPWYkn5IA"
   ],
-  "plan_name": "gameplay-screen-overhaul",
+  "plan_name": "mode-real",
   "agent": "atlas",
   "task_sessions": {
     "todo:1": {
       "task_key": "todo:1",
       "task_label": "1",
-      "task_title": "Fix VBO stride bug in ghost glow rebuild",
-      "session_id": "ses_2da3f80ceffeaTy0F7j3SNOmzj",
+      "task_title": "GameLoop real mode 테스트 작성 (TDD RED)",
+      "session_id": "ses_2cb71211cffeYHfGKRhgmO2DCF",
       "agent": "Sisyphus-Junior",
       "category": "quick",
-      "updated_at": "2026-03-25T16:10:43.448Z"
+      "updated_at": "2026-03-28T13:11:53.350Z"
     },
     "todo:2": {
       "task_key": "todo:2",
       "task_label": "2",
-      "task_title": "Fix AudioSystem End-of-Song Detection + Game Termination",
-      "session_id": "ses_2da9e17d7ffe65Pj97wedOJ4xR",
-      "agent": "Sisyphus-Junior",
-      "category": "deep",
-      "updated_at": "2026-03-25T14:30:14.634Z"
-    },
-    "todo:5": {
-      "task_key": "todo:5",
-      "task_label": "5",
-      "task_title": "Fix Scoring Formula — 각도 배율 곡선 + 콤보 순서 조정",
-      "session_id": "ses_2da979415ffeKJ3xW5dvZfttkl",
+      "task_title": "ROS2 노드 토픽 구독 및 키 변환 테스트 작성 (TDD RED)",
+      "session_id": "ses_2cb6c3ad4ffe5aTyCanySJTkQX",
       "agent": "Sisyphus-Junior",
       "category": "quick",
-      "updated_at": "2026-03-25T14:33:45.153Z"
+      "updated_at": "2026-03-28T13:16:45.454Z"
     },
-    "todo:8": {
-      "task_key": "todo:8",
-      "task_label": "8",
-      "task_title": "Fix Excavator Box Rotation Along Link Directions",
-      "session_id": "ses_2da93c4a7ffeTzY5cEN3t2FBli",
-      "agent": "Sisyphus-Junior",
-      "category": "deep",
-      "updated_at": "2026-03-25T14:39:02.962Z"
-    },
-    "todo:10": {
-      "task_key": "todo:10",
-      "task_label": "10",
-      "task_title": "HUD layout repositioning and cleanup",
-      "session_id": "ses_2da2a673dffe2z656IH4BG2Gl0",
+    "todo:3": {
+      "task_key": "todo:3",
+      "task_label": "3",
+      "task_title": "GameLoop real mode 구현 (TDD GREEN)",
+      "session_id": "ses_2cb679c6cffeyZ4avEhfEWowBy",
       "agent": "Sisyphus-Junior",
       "category": "quick",
-      "updated_at": "2026-03-25T16:33:53.153Z"
-    },
-    "todo:13": {
-      "task_key": "todo:13",
-      "task_label": "13",
-      "task_title": "Grid/Reference Lines in 2D Orthographic Views",
-      "session_id": "ses_2da8baf80ffe2NG2BvKU1ic2o7",
-      "agent": "Sisyphus-Junior",
-      "category": "quick",
-      "updated_at": "2026-03-25T14:46:03.568Z"
-    },
-    "final-wave:f1": {
-      "task_key": "final-wave:f1",
-      "task_label": "F1",
-      "task_title": "**Plan Compliance Audit** — `oracle`",
-      "session_id": "ses_2da26c7c3ffeBzOvqAsFjzJiWU",
-      "agent": "oracle",
-      "updated_at": "2026-03-25T16:36:26.405Z"
-    },
-    "final-wave:f4": {
-      "task_key": "final-wave:f4",
-      "task_label": "F4",
-      "task_title": "**Scope Fidelity Check** — `deep`",
-      "session_id": "ses_2da83b9abffeFLHP9jnbkgCLML",
-      "agent": "Sisyphus-Junior",
-      "category": "deep",
-      "updated_at": "2026-03-25T14:57:07.274Z"
+      "updated_at": "2026-03-28T13:19:27.798Z"
     },
     "todo:4": {
       "task_key": "todo:4",
       "task_label": "4",
-      "task_title": "Wire hit sound effects on judgment",
-      "session_id": "ses_2da3bc97fffervpHQu2QOmXLSc",
+      "task_title": "ros2_node.py 리라이트 - 실제 굴착기 토픽 구독 (TDD GREEN)",
+      "session_id": "ses_2cb53bfdaffexulZcyPWYkn5IA",
       "agent": "Sisyphus-Junior",
-      "category": "quick",
-      "updated_at": "2026-03-25T16:18:21.467Z"
-    },
-    "todo:7": {
-      "task_key": "todo:7",
-      "task_label": "7",
-      "task_title": "Build ghost neon outline with pulse animation",
-      "session_id": "ses_2da3326f9ffer3BMpaYtu3IP1l",
-      "agent": "Sisyphus-Junior",
-      "category": "deep",
-      "updated_at": "2026-03-25T16:27:13.179Z"
+      "category": "unspecified-low",
+      "updated_at": "2026-03-28T13:40:16.361Z"
     }
   }
 }

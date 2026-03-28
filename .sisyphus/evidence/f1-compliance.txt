@@ -1,0 +1,26 @@
+Must Have [4/4] | Must NOT Have [3/3] | VERDICT: APPROVE
+
+Must Have [4/4]
+- get_current_angles in src/exca_dance/core/game_loop.py: 1 match
+- /excavator/sensors/swing_angle in src/exca_dance/ros2_bridge/ros2_node.py: 1 match
+- /excavator/state/complete_status in src/exca_dance/ros2_bridge/ros2_node.py: 1 match
+- mode=args.mode in src/exca_dance/__main__.py: 1 match
+
+Must NOT Have [3/3]
+- Forbidden abstraction classes (InputSource, AngleConverter, HealthMonitor): no matches
+- Forbidden file changes in commits 961271c, 8a13485, 4f17035, 531fbca, c8d7cdc: none detected
+- type: ignore / # noqa in audited files: no matches
+
+Pytest
+- PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest tests/ -v
+- Result: 134 passed in 0.38s
+
+Commit stat evidence
+- tests/test_game_loop_real_mode.py
+- .sisyphus/evidence/task-2-tdd-red.txt
+- .sisyphus/notepads/mode-real/learnings.md
+- tests/test_ros2_bridge_real.py
+- src/exca_dance/core/game_loop.py
+- src/exca_dance/ros2_bridge/ros2_node.py
+- src/exca_dance/__main__.py
+

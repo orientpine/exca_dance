@@ -44,3 +44,5 @@
 - `tests/test_ros2_bridge_real.py` 추가 후 `pytest` 결과는 3 failed / 1 passed였다.
 - `mp.Queue` 기반 상태 주입은 즉시 반영되지 않을 수 있어, RED 검증은 반환 dict 자체를 기준으로 보는 편이 안정적이다.
 - 실제 토픽 문자열 부재는 소스 문자열 검사로 확실하게 RED를 만들 수 있었다.
+
+- 2026-03-28 F1 compliance audit: mode-real MUST HAVE 4/4, MUST NOT HAVE 3/3, pytest 134 passed, listed commits only touched allowed runtime files plus tests/.sisyphus artifacts.
