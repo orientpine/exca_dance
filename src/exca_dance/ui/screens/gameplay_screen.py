@@ -236,14 +236,24 @@ class GameplayScreen:
             if hit_sound is not None:
                 hit_sound.play()
 
-        # Sync HUD target — merge ALL upcoming events (nearest wins per joint)
+        # Sync HUD target — merge ALL upcoming events (nearest wins per joint).
+        # Fallback: keep last processed event’s target for its duration window.
         if self._beatmap:
             _upcoming = self._game_loop.get_upcoming_events(6000.0)
             merged: dict[JointName, float] = {}
-            for ev in _upcoming:  # already sorted by time_ms — nearest first
+            for ev in _upcoming:
                 for jn, ang in ev.target_angles.items():
                     if jn not in merged:
                         merged[jn] = ang
+            if not merged:
+                try:
+                    last = self._game_loop.last_processed_event
+                    if last is not None:
+                        elapsed = self._game_loop.current_time_ms - last.time_ms
+                        if elapsed <= last.duration_ms:
+                            merged = dict(last.target_angles)
+                except (TypeError, AttributeError):
+                    pass
             self._hud.set_target_angles(merged)
         self._hud.update(dt)
 

@@ -109,6 +109,11 @@ class GameLoop:
     def current_time_ms(self) -> float:
         return self._audio.get_position_ms()
 
+    @property
+    def last_processed_event(self) -> BeatEvent | None:
+        """Return the most recently scored beat event, or None."""
+        return self._processed_events[-1] if self._processed_events else None
+
     # ------------------------------------------------------------------ #
     # Per-frame update (called by screen/state manager)
     # ------------------------------------------------------------------ #
