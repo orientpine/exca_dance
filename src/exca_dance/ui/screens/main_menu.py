@@ -104,7 +104,7 @@ class MainMenuScreen:
         self._3d_vp_frac = 0.52  # right 52% for 3D viewport
         aspect_3d = (W * self._3d_vp_frac) / H
         eye = np.array([5.2, -6.5, 3.0], dtype="f4")
-        target = np.array([0.4, 0.0, 1.5], dtype="f4")
+        target = np.array([0.9, 0.0, 1.5], dtype="f4")
         up = np.array([0.0, 0.0, 1.0], dtype="f4")
         proj = _perspective(33.0, aspect_3d, 0.1, 100.0)
         view = _look_at(eye, target, up)
@@ -359,7 +359,7 @@ class MainMenuScreen:
         s = H / 1080.0
         text_renderer.render(
             f"MODE: {self._mode_label}",
-            int(W * 0.21),
+            int(W * 0.24),
             H - int(30 * s),
             color=NeonTheme.TEXT_DIM.with_alpha(0.5).as_tuple(),
             scale=max(0.9 * s, 0.6),
@@ -367,7 +367,7 @@ class MainMenuScreen:
         )
         text_renderer.render(
             "\u2191\u2193 SELECT   ENTER CONFIRM   Q QUIT",
-            int(W * 0.21),
+            int(W * 0.24),
             H - int(60 * s),
             color=NeonTheme.TEXT_DIM.with_alpha(0.3).as_tuple(),
             scale=max(0.8 * s, 0.55),
@@ -788,7 +788,7 @@ class MainMenuScreen:
         """Render pulsing neon title with glow layer — resolution-aware."""
         t = self._time
         s = H / 1080.0
-        cx = int(W * 0.21)
+        cx = int(W * 0.24)
         title_y = int(H * 0.18)
 
         # Glow layer (title=True → 128px base for high-res rendering)
@@ -839,7 +839,7 @@ class MainMenuScreen:
         """Render animated menu items with highlight bar — resolution-aware."""
         t = self._time
         s = H / 1080.0
-        cx = int(W * 0.21)
+        cx = int(W * 0.24)
         start_y = int(H * 0.42)
         spacing = int(max(50 * s, 32))
         ctx = self._renderer.ctx
