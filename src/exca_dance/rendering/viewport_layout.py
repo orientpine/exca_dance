@@ -78,8 +78,8 @@ class GameViewportLayout:
       └─────────────────────────────────────-┘
     """
 
-    # Fixed camera for 3D view — 45° elevation, 30° azimuth
-    _EYE_3D = np.array([6.0, -8.0, 5.0], dtype="f4")
+    # Fixed camera for 3D view — closer to excavator for larger appearance
+    _EYE_3D = np.array([4.5, -5.5, 3.5], dtype="f4")
     _TARGET_3D = np.array([2.0, 0.0, 1.5], dtype="f4")
     _UP_3D = np.array([0.0, 0.0, 1.0], dtype="f4")
 
@@ -114,7 +114,7 @@ class GameViewportLayout:
             ex, ey, ez = self._camera.compute_eye((2.0, 0.0, 1.5))
             eye_3d = np.array([ex, ey, ez], dtype="f4")
         else:
-            eye_3d = np.array([6.0, -8.0, 5.0], dtype="f4")
+            eye_3d = np.array([4.5, -5.5, 3.5], dtype="f4")
         view_3d = _look_at(eye_3d, self._TARGET_3D, self._UP_3D)
         self._mvp_3d: np.ndarray = (proj_3d @ view_3d).astype("f4")
 

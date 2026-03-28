@@ -213,94 +213,108 @@ class GameplayHUD:
             align="right",
         )
 
-        # ── Joint status panel (left side) ────────────────────────
-        panel_x = int(15 * s)
-        panel_y = int(100 * s)
-        line_h = max(int(55 * s), 36)
-        bar_total_w = max(int(140 * s), 90)
+        # ── Error panel (bottom of 3D view, 2×2 grid) ─────────────
+        main_3d_bottom = int(H * 0.72)
         joint_colors = {
             JointName.SWING: NeonTheme.JOINT_SWING,
             JointName.BOOM: NeonTheme.JOINT_BOOM,
             JointName.ARM: NeonTheme.JOINT_ARM,
             JointName.BUCKET: NeonTheme.JOINT_BUCKET,
         }
-        p_w = max(int(320 * s), 200)
-        p_h = len(JointName) * line_h + int(20 * s)
+
+        panel_h = int(148 * s)
+        panel_w = main_w - int(32 * s)
+        panel_x = int(16 * s)
+        panel_y = main_3d_bottom - panel_h - int(6 * s)
+
+        # Panel background — semi-transparent, blends with 3D scene
         self._draw_rect_2d(
-            panel_x - int(8 * s),
-            panel_y - int(10 * s),
-            p_w,
-            p_h,
-            NeonTheme.BG_PANEL,
-            alpha=0.45,
+            panel_x, panel_y, panel_w, panel_h,
+            NeonTheme.BG_PANEL, alpha=0.55,
+        )
+        # Top accent line — thin neon blue border
+        self._draw_rect_2d(
+            panel_x, panel_y, panel_w, max(int(2 * s), 1),
+            NeonTheme.NEON_BLUE, alpha=0.35,
         )
 
+        # 2×2 grid layout: [SWING, BOOM] / [ARM, BUCKET]
+        inner_pad = int(12 * s)
+        col_gap = int(14 * s)
+        row_gap = int(8 * s)
+        cell_w = (panel_w - 2 * inner_pad - col_gap) // 2
+        cell_h = (panel_h - 2 * inner_pad - row_gap) // 2
+
         for i, jname in enumerate(JointName):
-            y = panel_y + i * line_h
+            row_idx = i // 2
+            col_idx = i % 2
+            cx = panel_x + inner_pad + col_idx * (cell_w + col_gap)
+            cy = panel_y + inner_pad + row_idx * (cell_h + row_gap)
+
             color = joint_colors[jname]
             angle = joint_angles.get(jname, 0.0)
             target = self._target_angles.get(jname)
             match_pct = 1.0
-            angle_color = color.as_tuple()
 
             if self._visual_cues is not None:
-                match_pct = self._visual_cues.get_angle_match_pct(
-                    jname,
-                )
-                if match_pct >= 0.9:
-                    angle_color = NeonTheme.NEON_GREEN.as_tuple()
-                elif match_pct >= 0.6:
-                    angle_color = (1.0, 0.9, 0.0, 1.0)
-                else:
-                    angle_color = NeonTheme.NEON_PINK.as_tuple()
+                match_pct = self._visual_cues.get_angle_match_pct(jname)
 
-            # Joint name
+            # Match quality → color
+            if match_pct >= 0.9:
+                val_color = NeonTheme.NEON_GREEN
+            elif match_pct >= 0.6:
+                val_color = NeonTheme.PERFECT
+            else:
+                val_color = NeonTheme.NEON_PINK
+
+            # Cell background — subtle highlight
+            self._draw_rect_2d(
+                cx, cy, cell_w, cell_h,
+                NeonTheme.BG, alpha=0.35,
+            )
+
+            # Joint name label (left-aligned)
             self._text.render(
                 jname.value.upper(),
-                panel_x,
-                y,
+                cx + int(10 * s),
+                cy + int(5 * s),
                 color=color.as_tuple(),
-                scale=max(1.2 * s, 0.75),
+                scale=max(1.1 * s, 0.65),
             )
 
-            # Angle difference (current − target); raw angle if no target
+            # Error value (right-aligned, large font)
             if target is not None:
                 diff = angle - target
-                line = f"{diff:+.1f}°"
+                error_text = f"{diff:+.1f}°"
             else:
-                line = f"{angle:+.1f}°"
+                error_text = f"{angle:+.1f}°"
+
             self._text.render(
-                line,
-                panel_x + int(95 * s),
-                y,
-                color=angle_color,
-                scale=max(1.2 * s, 0.75),
+                error_text,
+                cx + cell_w - int(10 * s),
+                cy + int(3 * s),
+                color=val_color.as_tuple(),
+                scale=max(1.35 * s, 0.75),
+                large=True,
+                align="right",
             )
 
-            # Match percentage bar
-            bar_y_pos = y + int(26 * s)
-            bar_h_bar = max(int(6 * s), 4)
+            # Match bar — full cell width
+            bar_y_pos = cy + cell_h - int(14 * s)
+            bar_w_total = cell_w - int(20 * s)
+            bar_h_bar = max(int(6 * s), 3)
+
             self._draw_rect_2d(
-                panel_x,
-                bar_y_pos,
-                bar_total_w,
-                bar_h_bar,
-                NeonTheme.BG_PANEL,
+                cx + int(10 * s), bar_y_pos,
+                bar_w_total, bar_h_bar,
+                NeonTheme.BG, alpha=0.5,
             )
-            fill_w = int(bar_total_w * match_pct)
+            fill_w = int(bar_w_total * match_pct)
             if fill_w > 0:
-                if match_pct >= 0.9:
-                    bar_color = NeonTheme.NEON_GREEN
-                elif match_pct >= 0.6:
-                    bar_color = NeonTheme.PERFECT
-                else:
-                    bar_color = NeonTheme.NEON_PINK
                 self._draw_rect_2d(
-                    panel_x,
-                    bar_y_pos,
-                    fill_w,
-                    bar_h_bar,
-                    bar_color,
+                    cx + int(10 * s), bar_y_pos,
+                    fill_w, bar_h_bar,
+                    val_color, alpha=0.85,
                 )
 
         # ── FPS counter (top-left, debug) ──────────────────────────
