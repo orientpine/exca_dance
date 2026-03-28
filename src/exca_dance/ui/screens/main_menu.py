@@ -99,13 +99,14 @@ class MainMenuScreen:
             joint_colors=neon_colors,
         )
 
-        # Camera: cinematic angle, excavator on the left
+        # Camera: cinematic angle, excavator fills the right column
         W, H = renderer.width, renderer.height
-        aspect = W / H
+        self._3d_vp_frac = 0.58  # right 58% for 3D viewport
+        aspect_3d = (W * self._3d_vp_frac) / H
         eye = np.array([8.0, -10.0, 5.0], dtype="f4")
         target = np.array([1.0, 0.0, 1.8], dtype="f4")
         up = np.array([0.0, 0.0, 1.0], dtype="f4")
-        proj = _perspective(40.0, aspect, 0.1, 100.0)
+        proj = _perspective(40.0, aspect_3d, 0.1, 100.0)
         view = _look_at(eye, target, up)
         self._mvp: np.ndarray = (proj @ view).astype("f4")
 
@@ -324,24 +325,22 @@ class MainMenuScreen:
             return
         W, H = renderer.width, renderer.height
         ctx = renderer.ctx
+        ctx = renderer.ctx
 
-        # Layer 1: Ground grid
+        # ── Right column: 3D excavator viewport ──
+        vp_x = int(W * (1.0 - self._3d_vp_frac))
+        vp_w = W - vp_x
+        ctx.viewport = (vp_x, 0, vp_w, H)
+
         self._render_grid(ctx)
-
-        # Layer 2: 3D excavator (solid)
         self._menu_model.render_3d(self._mvp, alpha=0.9)
-
-        # Layer 2.5: Energy rings around excavator
         self._render_energy_rings(ctx)
-
-        # Layer 3: Excavator additive glow overlay
-        # render_3d left DEPTH_TEST disabled, reuse same VAO
         self._render_excavator_glow(ctx)
-
-        # Layer 3.5: Radial glow behind excavator
         self._render_radial_glow(ctx)
 
-        # Layer 4: Dim overlay on right half for text readability
+        # ── Full viewport: 2D overlays + text ──
+        ctx.viewport = (0, 0, W, H)
+
         self._render_overlay(ctx, W, H)
 
         # Layer 5: Floating neon particles
@@ -360,7 +359,7 @@ class MainMenuScreen:
         s = H / 1080.0
         text_renderer.render(
             f"MODE: {self._mode_label}",
-            W // 2,
+            int(W * 0.21),
             H - int(30 * s),
             color=NeonTheme.TEXT_DIM.with_alpha(0.5).as_tuple(),
             scale=max(0.9 * s, 0.6),
@@ -368,7 +367,7 @@ class MainMenuScreen:
         )
         text_renderer.render(
             "\u2191\u2193 SELECT   ENTER CONFIRM   Q QUIT",
-            W // 2,
+            int(W * 0.21),
             H - int(60 * s),
             color=NeonTheme.TEXT_DIM.with_alpha(0.3).as_tuple(),
             scale=max(0.8 * s, 0.55),
@@ -413,17 +412,17 @@ class MainMenuScreen:
         W: int,
         H: int,
     ) -> None:
-        """Semi-transparent dark overlay band at the bottom for menu readability."""
+        """Semi-transparent dark overlay on left column."""
         prog = self._renderer.prog_solid
         identity = np.eye(4, dtype="f4")
         prog["mvp"].write(
             np.ascontiguousarray(identity).tobytes(),
         )
-        prog["alpha"].value = 0.70
+        prog["alpha"].value = 0.65
 
         bg = NeonTheme.BG
         r, g, b = bg.r, bg.g, bg.b
-        y0_ndc = 1.0 - (H * 0.55) / H * 2.0  # start at 55% from top
+        x1_ndc = 0.42 * 2.0 - 1.0  # left 42% of screen
         verts = np.array(
             [
                 -1.0,
@@ -432,32 +431,32 @@ class MainMenuScreen:
                 r,
                 g,
                 b,
+                x1_ndc,
+                -1.0,
+                0.0,
+                r,
+                g,
+                b,
+                x1_ndc,
                 1.0,
+                0.0,
+                r,
+                g,
+                b,
+                -1.0,
                 -1.0,
                 0.0,
                 r,
                 g,
                 b,
+                x1_ndc,
                 1.0,
-                y0_ndc,
                 0.0,
                 r,
                 g,
                 b,
                 -1.0,
-                -1.0,
-                0.0,
-                r,
-                g,
-                b,
                 1.0,
-                y0_ndc,
-                0.0,
-                r,
-                g,
-                b,
-                -1.0,
-                y0_ndc,
                 0.0,
                 r,
                 g,
@@ -789,7 +788,7 @@ class MainMenuScreen:
         """Render pulsing neon title with glow layer — resolution-aware."""
         t = self._time
         s = H / 1080.0
-        cx = W // 2
+        cx = int(W * 0.21)
         title_y = int(H * 0.18)
 
         # Glow layer (title=True → 128px base for high-res rendering)
@@ -840,9 +839,9 @@ class MainMenuScreen:
         """Render animated menu items with highlight bar — resolution-aware."""
         t = self._time
         s = H / 1080.0
-        cx = W // 2
-        start_y = int(H * 0.62)
-        spacing = int(max(45 * s, 28))
+        cx = int(W * 0.21)
+        start_y = int(H * 0.42)
+        spacing = int(max(50 * s, 32))
         ctx = self._renderer.ctx
 
         for i, (label, _) in enumerate(MENU_ITEMS):
