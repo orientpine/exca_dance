@@ -98,7 +98,8 @@ class GameplayHUD:
             sc_x,
             sc_y + int(24 * s),
             color=NeonTheme.NEON_BLUE.as_tuple(),
-            scale=max(2.5 * s, 1.4),
+            scale=max(1.25 * s, 0.7),
+            large=True,
             align="right",
         )
 
@@ -112,16 +113,16 @@ class GameplayHUD:
 
             if combo >= 50:
                 combo_color = NeonTheme.NEON_PINK
-                combo_scale = 3.5 * pulse
+                combo_scale = 1.75 * pulse
             elif combo >= 25:
                 combo_color = NeonTheme.PERFECT
-                combo_scale = 3.0 * pulse
+                combo_scale = 1.5 * pulse
             elif combo >= 10:
                 combo_color = NeonTheme.NEON_GREEN
-                combo_scale = 2.5 * pulse
+                combo_scale = 1.25 * pulse
             else:
                 combo_color = NeonTheme.TEXT_WHITE
-                combo_scale = 2.5 * pulse
+                combo_scale = 1.25 * pulse
 
             if combo in (10, 25, 50):
                 if self._combo_pulse_time > 0.15:
@@ -133,6 +134,7 @@ class GameplayHUD:
                 int(15 * s),
                 color=combo_color.as_tuple(),
                 scale=max(combo_scale * s, combo_scale * 0.55),
+                large=True,
                 align="center",
             )
             mult = self._scoring.get_combo_multiplier()
@@ -142,7 +144,8 @@ class GameplayHUD:
                     main_center_x,
                     int(68 * s),
                     color=NeonTheme.NEON_ORANGE.as_tuple(),
-                    scale=max(1.5 * s, 0.85),
+                    scale=max(0.75 * s, 0.43),
+                    large=True,
                     align="center",
                 )
 

@@ -68,9 +68,9 @@ class SongSelectScreen:
             W // 2,
             int(40 * s),
             color=NeonTheme.NEON_BLUE.as_tuple(),
-            scale=max(2.2 * s, 1.2),
-            align="center",
+            scale=max(1.1 * s, 0.6),
             large=True,
+            align="center",
         )
 
         if not self._songs:

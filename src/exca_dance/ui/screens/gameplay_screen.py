@@ -346,7 +346,7 @@ class GameplayScreen:
             items = ["RESUME", "RESTART", "SETTINGS", "QUIT TO MENU"]
             item_start_y = panel_y + int(125 * s)
             item_spacing = int(max(65 * s, 40))
-            item_scale = max(1.8 * s, 1.0)
+            item_scale = max(0.9 * s, 0.5)
 
             for i, label in enumerate(items):
                 iy = item_start_y + i * item_spacing
@@ -375,6 +375,7 @@ class GameplayScreen:
                     iy,
                     color=color,
                     scale=item_scale,
+                    large=True,
                     align="center",
                 )
 

@@ -93,9 +93,9 @@ class TutorialScreen:
             W // 2,
             int(120 * s),
             color=NeonTheme.NEON_PINK.as_tuple(),
-            scale=max(2.2 * s, 1.2),
-            align="center",
+            scale=max(1.1 * s, 0.6),
             large=True,
+            align="center",
         )
 
         body_start_y = int(220 * s)
@@ -119,11 +119,7 @@ class TutorialScreen:
             align="center",
         )
 
-        nav = (
-            "ENTER: Next  |  ESC: Menu"
-            if self._step < 4
-            else "ENTER: Back to Menu  |  ESC: Menu"
-        )
+        nav = "ENTER: Next  |  ESC: Menu" if self._step < 4 else "ENTER: Back to Menu  |  ESC: Menu"
         text_renderer.render(
             nav,
             W // 2,

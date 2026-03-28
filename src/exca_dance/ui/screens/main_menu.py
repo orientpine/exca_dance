@@ -867,7 +867,7 @@ class MainMenuScreen:
                 color = NeonTheme.NEON_PINK.with_alpha(
                     pulse,
                 ).as_tuple()
-                scale = max((2.2 + 0.06 * math.sin(t * 2.5)) * s, 1.15)
+                scale = max((1.1 + 0.03 * math.sin(t * 2.5)) * s, 0.58)
 
                 # Glow behind selected text
                 glow_c = NeonTheme.NEON_PINK.with_alpha(
@@ -878,20 +878,22 @@ class MainMenuScreen:
                     cx,
                     y - 2,
                     color=glow_c,
-                    scale=scale + max(0.3 * s, 0.15),
+                    scale=scale + max(0.15 * s, 0.08),
+                    large=True,
                     align="center",
                 )
 
                 # Animated arrow indicators
                 arrow_off = int(5.0 * math.sin(t * 4.0))
                 arrow_x = int(max(150 * s, 85))
-                arrow_s = max(1.5 * s, 0.85)
+                arrow_s = max(0.75 * s, 0.43)
                 text_renderer.render(
                     "\u25b6",
                     cx - arrow_x - arrow_off,
                     y + int(2 * s),
                     color=color,
                     scale=arrow_s,
+                    large=True,
                     align="center",
                 )
                 text_renderer.render(
@@ -900,13 +902,14 @@ class MainMenuScreen:
                     y + int(2 * s),
                     color=color,
                     scale=arrow_s,
+                    large=True,
                     align="center",
                 )
             else:
                 color = NeonTheme.TEXT_WHITE.with_alpha(
                     0.55,
                 ).as_tuple()
-                scale = max(1.6 * s, 0.9)
+                scale = max(0.8 * s, 0.45)
 
             text_renderer.render(
                 label,
@@ -914,6 +917,7 @@ class MainMenuScreen:
                 y,
                 color=color,
                 scale=scale,
+                large=True,
                 align="center",
             )
 

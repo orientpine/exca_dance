@@ -173,7 +173,8 @@ class SettingsScreen:
             W // 2,
             int(30 * s),
             color=NeonTheme.NEON_BLUE.as_tuple(),
-            scale=max(2.2 * s, 1.2),
+            scale=max(1.1 * s, 0.6),
+            large=True,
             align="center",
         )
 
@@ -195,7 +196,8 @@ class SettingsScreen:
                 W // 2,
                 H // 2,
                 color=NeonTheme.NEON_ORANGE.as_tuple(),
-                scale=max(2.2 * s, 1.2),
+                scale=max(1.1 * s, 0.6),
+                large=True,
                 align="center",
             )
             return
@@ -277,7 +279,8 @@ class SettingsScreen:
                 W // 2,
                 content_y,
                 color=mode_color.as_tuple(),
-                scale=max(1.6 * s, 0.9),
+                scale=max(0.8 * s, 0.45),
+                large=True,
                 align="center",
             )
             text_renderer.render(

@@ -75,9 +75,9 @@ class LeaderboardScreen:
             W // 2,
             int(80 * s),
             color=NeonTheme.NEON_BLUE.as_tuple(),
-            scale=max(2.2 * s, 1.2),
-            align="center",
+            scale=max(1.1 * s, 0.6),
             large=True,
+            align="center",
         )
         if self._scoring:
             text_renderer.render(
@@ -99,8 +99,12 @@ class LeaderboardScreen:
             char = CHARS[self._slots[i]]
             color = NeonTheme.NEON_PINK if i == self._cursor else NeonTheme.TEXT_WHITE
             text_renderer.render(
-                char, x, slot_y,
-                color=color.as_tuple(), scale=char_scale, align="center",
+                char,
+                x,
+                slot_y,
+                color=color.as_tuple(),
+                scale=char_scale,
+                align="center",
                 large=True,
             )
             if i == self._cursor:
@@ -136,9 +140,9 @@ class LeaderboardScreen:
             W // 2,
             int(40 * s),
             color=NeonTheme.NEON_BLUE.as_tuple(),
-            scale=max(2.5 * s, 1.3),
-            align="center",
+            scale=max(1.25 * s, 0.65),
             large=True,
+            align="center",
         )
 
         entries = self._lb.get_top_scores(limit=10)

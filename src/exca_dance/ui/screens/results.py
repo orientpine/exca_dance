@@ -64,9 +64,9 @@ class ResultsScreen:
             W // 2,
             int(40 * s),
             color=NeonTheme.NEON_BLUE.as_tuple(),
-            scale=max(2.5 * s, 1.3),
+            scale=max(0.94 * s, 0.49),
             align="center",
-            large=True,
+            title=True,
         )
         text_renderer.render(
             self._song_title,
@@ -98,9 +98,9 @@ class ResultsScreen:
             W // 4,
             int(H * 0.42),
             color=grade_color.as_tuple(),
-            scale=max(6.0 * s, 3.0),
+            scale=max(2.25 * s, 1.125),
             align="center",
-            large=True,
+            title=True,
         )
 
         # Score
@@ -109,9 +109,9 @@ class ResultsScreen:
             W * 3 // 4,
             int(H * 0.40),
             color=NeonTheme.NEON_BLUE.as_tuple(),
-            scale=max(3.0 * s, 1.6),
+            scale=max(1.125 * s, 0.6),
             align="center",
-            large=True,
+            title=True,
         )
 
         # Judgment breakdown
