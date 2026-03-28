@@ -32,6 +32,8 @@ class GameLoop:
         bridge,
         viewport_layout,
         excavator_model,
+        *,
+        mode: str = "virtual",
     ) -> None:
         self._renderer = renderer
         self._audio = audio
@@ -41,6 +43,7 @@ class GameLoop:
         self._bridge = bridge
         self._viewport_layout = viewport_layout
         self._excavator_model = excavator_model
+        self._mode = mode
 
         self._state = GameState.MENU
         self._beatmap: BeatMap | None = None
@@ -123,7 +126,8 @@ class GameLoop:
             self._check_song_end()
 
         # Always update bridge with current angles
-        self._bridge.send_command(self._joint_angles)
+        if self._mode != "real":
+            self._bridge.send_command(self._joint_angles)
         # Update excavator model
         self._excavator_model.update(self._joint_angles)
 
@@ -152,8 +156,17 @@ class GameLoop:
     # Internal helpers
     # ------------------------------------------------------------------ #
 
+    def _update_joints_from_bridge(self) -> None:
+        angles = self._bridge.get_current_angles()
+        for joint, value in angles.items():
+            lo, hi = JOINT_LIMITS[joint]
+            self._joint_angles[joint] = max(lo, min(hi, value))
+
     def _update_joints(self, dt: float) -> None:
         """Apply angular velocity to joints based on held keys."""
+        if self._mode == "real":
+            self._update_joints_from_bridge()
+            return
         for key in self._held_keys:
             result = self._keybinding.get_joint_for_key(key)
             if result is None:
