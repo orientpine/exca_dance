@@ -103,10 +103,10 @@ class MainMenuScreen:
         W, H = renderer.width, renderer.height
         self._3d_vp_frac = 0.52  # right 52% for 3D viewport
         aspect_3d = (W * self._3d_vp_frac) / H
-        eye = np.array([4.5, -6.5, 3.0], dtype="f4")
-        target = np.array([1.5, 0.0, 2.0], dtype="f4")
+        eye = np.array([5.2, -6.5, 3.0], dtype="f4")
+        target = np.array([-1.5, 0.0, 1.8], dtype="f4")
         up = np.array([0.0, 0.0, 1.0], dtype="f4")
-        proj = _perspective(31.0, aspect_3d, 0.1, 100.0)
+        proj = _perspective(33.0, aspect_3d, 0.1, 100.0)
         view = _look_at(eye, target, up)
         self._mvp: np.ndarray = (proj @ view).astype("f4")
 
