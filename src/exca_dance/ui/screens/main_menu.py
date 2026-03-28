@@ -413,7 +413,7 @@ class MainMenuScreen:
         W: int,
         H: int,
     ) -> None:
-        """Semi-transparent dark overlay on right half."""
+        """Semi-transparent dark overlay band at the bottom for menu readability."""
         prog = self._renderer.prog_solid
         identity = np.eye(4, dtype="f4")
         prog["mvp"].write(
@@ -423,10 +423,10 @@ class MainMenuScreen:
 
         bg = NeonTheme.BG
         r, g, b = bg.r, bg.g, bg.b
-        x0 = -0.05  # NDC: cover slightly left of center
+        y0_ndc = 1.0 - (H * 0.55) / H * 2.0  # start at 55% from top
         verts = np.array(
             [
-                x0,
+                -1.0,
                 -1.0,
                 0.0,
                 r,
@@ -439,25 +439,25 @@ class MainMenuScreen:
                 g,
                 b,
                 1.0,
-                1.0,
+                y0_ndc,
                 0.0,
                 r,
                 g,
                 b,
-                x0,
+                -1.0,
                 -1.0,
                 0.0,
                 r,
                 g,
                 b,
                 1.0,
-                1.0,
+                y0_ndc,
                 0.0,
                 r,
                 g,
                 b,
-                x0,
-                1.0,
+                -1.0,
+                y0_ndc,
                 0.0,
                 r,
                 g,
@@ -841,8 +841,8 @@ class MainMenuScreen:
         t = self._time
         s = H / 1080.0
         cx = W // 2
-        start_y = int(H * 0.44)
-        spacing = int(max(62 * s, 36))
+        start_y = int(H * 0.62)
+        spacing = int(max(45 * s, 28))
         ctx = self._renderer.ctx
 
         for i, (label, _) in enumerate(MENU_ITEMS):
