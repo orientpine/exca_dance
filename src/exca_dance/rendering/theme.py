@@ -62,7 +62,7 @@ class NeonTheme:
     BORDER: Color = Color(0.0, 0.83, 1.0, 0.6)
 
     # Joint colors (match excavator_model.py)
-    JOINT_SWING: Color = Color(0.5, 0.5, 0.6)
+    JOINT_SWING: Color = Color(0.0, 0.9, 0.4)
     JOINT_BOOM: Color = Color(1.0, 0.4, 0.0)
     JOINT_ARM: Color = Color(1.0, 0.8, 0.0)
     JOINT_BUCKET: Color = Color(0.0, 0.8, 1.0)
