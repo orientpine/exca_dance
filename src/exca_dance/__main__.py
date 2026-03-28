@@ -179,7 +179,8 @@ def main(argv: list[str] | None = None) -> int:
         from exca_dance.core.game_loop import GameLoop
 
         game_loop = GameLoop(
-            renderer, audio, fk, scoring, keybinding, bridge, viewport_layout, excavator_model
+            renderer, audio, fk, scoring, keybinding, bridge, viewport_layout, excavator_model,
+            mode=args.mode,
         )
 
         # HUD + visual cues
