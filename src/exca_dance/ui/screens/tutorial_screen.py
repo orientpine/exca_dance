@@ -20,10 +20,12 @@ STEPS = [
         "title": "Move the Joints",
         "body": (
             "Try moving each joint:\n"
-            "SWING: A / D\n"
-            "BOOM: W / S\n"
-            "ARM: UP / DOWN\n"
-            "BUCKET: LEFT / RIGHT"
+            "Left Stick (WASD):\n"
+            "  SWING: A(left) / D(right)\n"
+            "  ARM:   W(extend) / S(retract)\n"
+            "Right Stick (UHJK):\n"
+            "  BOOM:   U(down) / J(up)\n"
+            "  BUCKET: H(curl) / K(open)"
         ),
         "hint": "Hold keys to move. Press ENTER when ready.",
     },

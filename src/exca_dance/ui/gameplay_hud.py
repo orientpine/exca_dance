@@ -1,10 +1,11 @@
-"""Gameplay HUD: score, combo, judgment flash, progress bar, joint status."""
+"""Gameplay HUD: score, combo, judgment flash, progress bar, joint status, control guide."""
 
 from __future__ import annotations
 from exca_dance.core.models import JointName
 from exca_dance.rendering.theme import NeonTheme
 from exca_dance.core.hit_detection import JudgmentDisplay
 from exca_dance.rendering.visual_cues import VisualCueRenderer
+from exca_dance.ui.control_guide import ControlGuide
 
 
 class GameplayHUD:
@@ -28,6 +29,7 @@ class GameplayHUD:
     ) -> None:
         self._renderer = renderer
         self._text = text_renderer
+        self._control_guide = ControlGuide(renderer, text_renderer)
         self._audio = audio
         self._scoring = scoring
         self._visual_cues = visual_cues
@@ -58,11 +60,15 @@ class GameplayHUD:
         if combo > self._last_combo and combo > 0:
             self._combo_pulse_time = 0.2
         self._last_combo = combo
+        self._control_guide.update(dt)
 
     def render(self, joint_angles: dict[JointName, float]) -> None:
         """Render all HUD elements — resolution-aware modern layout."""
         if self._text is None:
             return
+
+        # ── Control guide (joystick arrows) ─────────────────────
+        self._control_guide.render(joint_angles, self._target_angles)
 
         W = self._renderer.width
         H = self._renderer.height
@@ -229,13 +235,21 @@ class GameplayHUD:
 
         # Panel background — semi-transparent, blends with 3D scene
         self._draw_rect_2d(
-            panel_x, panel_y, panel_w, panel_h,
-            NeonTheme.BG_PANEL, alpha=0.55,
+            panel_x,
+            panel_y,
+            panel_w,
+            panel_h,
+            NeonTheme.BG_PANEL,
+            alpha=0.55,
         )
         # Top accent line — thin neon blue border
         self._draw_rect_2d(
-            panel_x, panel_y, panel_w, max(int(2 * s), 1),
-            NeonTheme.NEON_BLUE, alpha=0.35,
+            panel_x,
+            panel_y,
+            panel_w,
+            max(int(2 * s), 1),
+            NeonTheme.NEON_BLUE,
+            alpha=0.35,
         )
 
         # 2×2 grid layout: [SWING, BOOM] / [ARM, BUCKET]
@@ -269,8 +283,12 @@ class GameplayHUD:
 
             # Cell background — subtle highlight
             self._draw_rect_2d(
-                cx, cy, cell_w, cell_h,
-                NeonTheme.BG, alpha=0.35,
+                cx,
+                cy,
+                cell_w,
+                cell_h,
+                NeonTheme.BG,
+                alpha=0.35,
             )
 
             # Joint name label (left-aligned)
@@ -305,16 +323,22 @@ class GameplayHUD:
             bar_h_bar = max(int(6 * s), 3)
 
             self._draw_rect_2d(
-                cx + int(10 * s), bar_y_pos,
-                bar_w_total, bar_h_bar,
-                NeonTheme.BG, alpha=0.5,
+                cx + int(10 * s),
+                bar_y_pos,
+                bar_w_total,
+                bar_h_bar,
+                NeonTheme.BG,
+                alpha=0.5,
             )
             fill_w = int(bar_w_total * match_pct)
             if fill_w > 0:
                 self._draw_rect_2d(
-                    cx + int(10 * s), bar_y_pos,
-                    fill_w, bar_h_bar,
-                    val_color, alpha=0.85,
+                    cx + int(10 * s),
+                    bar_y_pos,
+                    fill_w,
+                    bar_h_bar,
+                    val_color,
+                    alpha=0.85,
                 )
 
         # ── FPS counter (top-left, debug) ──────────────────────────

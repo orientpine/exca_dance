@@ -58,11 +58,12 @@ SCREEN_HEIGHT: int = 1080
 JOINT_ANGULAR_VELOCITY: float = 60.0
 
 # Default key bindings: (positive_key, negative_key) per joint
+# Left stick (WASD): swing + arm  |  Right stick (UHJK): boom + bucket
 DEFAULT_KEY_BINDINGS: dict[JointName, tuple[int, int]] = {
-    JointName.SWING: (pygame.K_a, pygame.K_d),
-    JointName.BOOM: (pygame.K_w, pygame.K_s),
-    JointName.ARM: (pygame.K_UP, pygame.K_DOWN),
-    JointName.BUCKET: (pygame.K_LEFT, pygame.K_RIGHT),
+    JointName.SWING: (pygame.K_a, pygame.K_d),  # left stick: A=left(+), D=right(-)
+    JointName.ARM: (pygame.K_w, pygame.K_s),  # left stick: W=extend(+), S=retract(-)
+    JointName.BOOM: (pygame.K_j, pygame.K_u),  # right stick: J=ascend(+), U=descend(-)
+    JointName.BUCKET: (pygame.K_k, pygame.K_h),  # right stick: K=open(+), H=curl(-)
 }
 
 # Excavator link lengths (meters)

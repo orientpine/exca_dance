@@ -170,14 +170,16 @@ class PoseEditorScreen:
         for key in self._held_keys:
             # Use default WASD-like mapping for editor
             key_map: dict[int, tuple[JointName, int]] = {
-                pygame.K_w: (cast(JointName, JointName.BOOM), 1),
-                pygame.K_s: (cast(JointName, JointName.BOOM), -1),
-                pygame.K_a: (cast(JointName, JointName.SWING), -1),
-                pygame.K_d: (cast(JointName, JointName.SWING), 1),
-                pygame.K_UP: (cast(JointName, JointName.ARM), 1),
-                pygame.K_DOWN: (cast(JointName, JointName.ARM), -1),
-                pygame.K_LEFT: (cast(JointName, JointName.BUCKET), -1),
-                pygame.K_RIGHT: (cast(JointName, JointName.BUCKET), 1),
+                # Left stick (WASD)
+                pygame.K_w: (cast(JointName, JointName.ARM), 1),
+                pygame.K_s: (cast(JointName, JointName.ARM), -1),
+                pygame.K_a: (cast(JointName, JointName.SWING), 1),
+                pygame.K_d: (cast(JointName, JointName.SWING), -1),
+                # Right stick (UHJK)
+                pygame.K_u: (cast(JointName, JointName.BOOM), -1),
+                pygame.K_j: (cast(JointName, JointName.BOOM), 1),
+                pygame.K_h: (cast(JointName, JointName.BUCKET), -1),
+                pygame.K_k: (cast(JointName, JointName.BUCKET), 1),
             }
             if key in key_map:
                 jname, direction = key_map[key]
