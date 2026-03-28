@@ -120,9 +120,9 @@ class SettingsScreen:
                 dict[JointName, float],
                 {
                     JointName.SWING: 0.0,
-                    JointName.BOOM: 25.0,
-                    JointName.ARM: -10.0,
-                    JointName.BUCKET: 90.0,
+                    JointName.BOOM: -20.0,
+                    JointName.ARM: 80.0,
+                    JointName.BUCKET: -40.0,
                 },
             )
             self._preview_model.update(preview_angles)

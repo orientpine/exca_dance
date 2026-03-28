@@ -17,6 +17,7 @@ import moderngl
 import numpy as np
 
 from exca_dance.core.kinematics import ExcavatorFK
+from exca_dance.core.constants import DEFAULT_JOINT_ANGLES
 from exca_dance.core.models import BeatEvent, JointName
 from exca_dance.rendering.excavator_model import ExcavatorModel
 from exca_dance.rendering.renderer import GameRenderer
@@ -71,7 +72,7 @@ class VisualCueRenderer:
         self._active_target: dict[JointName, float] | None = None
         self._next_event_time_ms: float = 0.0
         self._current_time_ms: float = 0.0
-        self._current_angles: dict[JointName, float] = {j: 0.0 for j in JointName}
+        self._current_angles: dict[JointName, float] = dict(DEFAULT_JOINT_ANGLES)
         self._upcoming_events: list[BeatEvent] = []
         self._prev_ghost_angles: dict[JointName, float] | None = None
 
@@ -166,7 +167,7 @@ class VisualCueRenderer:
             self._active_target = dict(nearest.target_angles)
             self._next_event_time_ms = float(nearest.time_ms)
             # Update ghost model to target pose
-            ghost_angles: dict[JointName, float] = {j: 0.0 for j in JointName}
+            ghost_angles: dict[JointName, float] = dict(DEFAULT_JOINT_ANGLES)
             ghost_angles.update(nearest.target_angles)
             if self._prev_ghost_angles is None or any(
                 abs(ghost_angles.get(k, 0) - self._prev_ghost_angles.get(k, 0)) > 0.01

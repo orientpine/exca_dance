@@ -5,11 +5,25 @@ import pygame
 from .models import JointName, Judgment
 
 # Joint angle limits (degrees): (min, max)
+# Derived from real excavator sensor data (action_space_finder workspace analysis).
+# Sensor data uses absolute inclinometer angles; game uses cumulative/relative angles:
+#   game_boom = boom_latitude  (absolute)
+#   game_arm  = arm_latitude - boom_latitude  (relative to boom)
+#   game_bucket = bucket_latitude - arm_latitude  (relative to arm)
 JOINT_LIMITS: dict[JointName, tuple[float, float]] = {
-    JointName.SWING: (-66.0, 64.0),
-    JointName.BOOM: (-34.0, 26.0),
-    JointName.ARM: (-6.0, 112.0),
-    JointName.BUCKET: (-132.0, 62.0),
+    JointName.SWING: (-180.0, 180.0),
+    JointName.BOOM: (-52.0, 13.0),
+    JointName.ARM: (21.0, 153.0),
+    JointName.BUCKET: (-132.0, 47.0),
+}
+
+# Default starting angles (degrees) — clamped to JOINT_LIMITS.
+# 0.0 for all joints except ARM which has a positive minimum.
+DEFAULT_JOINT_ANGLES: dict[JointName, float] = {
+    JointName.SWING: 0.0,
+    JointName.BOOM: 0.0,
+    JointName.ARM: 21.0,
+    JointName.BUCKET: 0.0,
 }
 
 # Timing judgment windows (ms — half-window, symmetric)

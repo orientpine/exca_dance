@@ -24,6 +24,7 @@ from .constants import (
     BOOM_LENGTH,
     ARM_LENGTH,
     BUCKET_LENGTH,
+    DEFAULT_JOINT_ANGLES,
 )
 
 __all__ = [
@@ -48,4 +49,5 @@ __all__ = [
     "BOOM_LENGTH",
     "ARM_LENGTH",
     "BUCKET_LENGTH",
+    "DEFAULT_JOINT_ANGLES",
 ]

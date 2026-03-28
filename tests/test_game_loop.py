@@ -11,7 +11,7 @@ from unittest.mock import MagicMock
 
 import pygame
 
-from exca_dance.core.constants import JOINT_ANGULAR_VELOCITY, JOINT_LIMITS
+from exca_dance.core.constants import DEFAULT_JOINT_ANGLES, JOINT_ANGULAR_VELOCITY, JOINT_LIMITS
 from exca_dance.core.game_loop import GameLoop
 from exca_dance.core.models import BeatEvent, JointName
 
@@ -144,8 +144,8 @@ def test_joint_angles_property_returns_copy() -> None:
     angles[JointName.BOOM] = 999.0  # mutate the returned copy
 
     # Internal state must be unaffected
-    assert loop._joint_angles[JointName.BOOM] == 0.0
-    assert loop.joint_angles[JointName.BOOM] == 0.0
+    assert loop._joint_angles[JointName.BOOM] == DEFAULT_JOINT_ANGLES[JointName.BOOM]
+    assert loop.joint_angles[JointName.BOOM] == DEFAULT_JOINT_ANGLES[JointName.BOOM]
 
 
 def test_multiple_keys_held_only_affect_respective_joints() -> None:
@@ -170,11 +170,11 @@ def test_multiple_keys_held_only_affect_respective_joints() -> None:
     loop._update_joints(dt)
 
     expected = JOINT_ANGULAR_VELOCITY * dt
-    assert loop._joint_angles[JointName.BOOM] == expected
-    assert loop._joint_angles[JointName.ARM] == expected
-    # Untouched joints
-    assert loop._joint_angles[JointName.SWING] == 0.0
-    assert loop._joint_angles[JointName.BUCKET] == 0.0
+    assert loop._joint_angles[JointName.BOOM] == DEFAULT_JOINT_ANGLES[JointName.BOOM] + expected
+    assert loop._joint_angles[JointName.ARM] == DEFAULT_JOINT_ANGLES[JointName.ARM] + expected
+    # Untouched joints stay at defaults
+    assert loop._joint_angles[JointName.SWING] == DEFAULT_JOINT_ANGLES[JointName.SWING]
+    assert loop._joint_angles[JointName.BUCKET] == DEFAULT_JOINT_ANGLES[JointName.BUCKET]
 
 
 def test_joint_angles_clamped_to_limits() -> None:
@@ -231,7 +231,7 @@ def test_excavator_model_update_receives_only_player_state() -> None:
     # Model receives player's SWING angle (modified by input)
     assert passed_angles[JointName.SWING] == 1 * JOINT_ANGULAR_VELOCITY * 0.1
     # Model receives player's BOOM at 0.0 (player hasn't touched it)
-    assert passed_angles[JointName.BOOM] == 0.0
+    assert passed_angles[JointName.BOOM] == DEFAULT_JOINT_ANGLES[JointName.BOOM]
     # NOT the target's BOOM=45.0
     assert passed_angles[JointName.BOOM] != target[JointName.BOOM]
 
@@ -251,8 +251,8 @@ def test_bridge_receives_only_player_angles() -> None:
     loop.tick(0.05)
 
     passed_angles = bridge.send_command.call_args[0][0]
-    # Bridge receives player's ARM at 0.0 (not target's -30.0)
-    assert passed_angles[JointName.ARM] == 0.0
+    # Bridge receives player's ARM at default (not target's -30.0)
+    assert passed_angles[JointName.ARM] == DEFAULT_JOINT_ANGLES[JointName.ARM]
 
 
 def test_player_input_across_multiple_frames_does_not_leak() -> None:
@@ -280,10 +280,10 @@ def test_player_input_across_multiple_frames_does_not_leak() -> None:
         assert abs(passed[JointName.BOOM] - expected_boom) < 0.001, (
             f"Frame {frame}: expected BOOM={expected_boom:.3f}, got {passed[JointName.BOOM]:.3f}"
         )
-        # Non-operated joints stay at 0
-        assert passed[JointName.SWING] == 0.0
-        assert passed[JointName.ARM] == 0.0
-        assert passed[JointName.BUCKET] == 0.0
+        # Non-operated joints stay at defaults
+        assert passed[JointName.SWING] == DEFAULT_JOINT_ANGLES[JointName.SWING]
+        assert passed[JointName.ARM] == DEFAULT_JOINT_ANGLES[JointName.ARM]
+        assert passed[JointName.BUCKET] == DEFAULT_JOINT_ANGLES[JointName.BUCKET]
 
 
 def test_handle_event_keydown_only_adds_to_held_keys() -> None:

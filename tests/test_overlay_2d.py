@@ -6,7 +6,7 @@ from exca_dance.core.models import JointName
 
 
 def test_overlay_target_pose_uses_defaults_not_player_angles() -> None:
-    """2D overlay target FK must use 0.0 for unspecified joints, not player angles.
+    """2D overlay target FK must use defaults for unspecified joints, not player angles.
 
     Regression test: previously, full_target started from dict(current_angles),
     so non-targeted joints in the 2D ghost tracked the player's movements.
@@ -56,15 +56,16 @@ def test_overlay_target_pose_uses_defaults_not_player_angles() -> None:
 
     # Target BOOM must be 45.0 (from target_angles)
     assert target_call_angles[JointName.BOOM] == 45.0
-    # Non-targeted joints must be 0.0 (default), NOT the player's angles
-    assert target_call_angles[JointName.SWING] == 0.0, (
-        f"Expected SWING=0.0, got {target_call_angles[JointName.SWING]}"
+    # Non-targeted joints must be at defaults, NOT the player's angles
+    from exca_dance.core.constants import DEFAULT_JOINT_ANGLES
+    assert target_call_angles[JointName.SWING] == DEFAULT_JOINT_ANGLES[JointName.SWING], (
+        f"Expected SWING={DEFAULT_JOINT_ANGLES[JointName.SWING]}, got {target_call_angles[JointName.SWING]}"
     )
-    assert target_call_angles[JointName.ARM] == 0.0, (
-        f"Expected ARM=0.0, got {target_call_angles[JointName.ARM]}"
+    assert target_call_angles[JointName.ARM] == DEFAULT_JOINT_ANGLES[JointName.ARM], (
+        f"Expected ARM={DEFAULT_JOINT_ANGLES[JointName.ARM]}, got {target_call_angles[JointName.ARM]}"
     )
-    assert target_call_angles[JointName.BUCKET] == 0.0, (
-        f"Expected BUCKET=0.0, got {target_call_angles[JointName.BUCKET]}"
+    assert target_call_angles[JointName.BUCKET] == DEFAULT_JOINT_ANGLES[JointName.BUCKET], (
+        f"Expected BUCKET={DEFAULT_JOINT_ANGLES[JointName.BUCKET]}, got {target_call_angles[JointName.BUCKET]}"
     )
 
 
@@ -112,6 +113,7 @@ def test_overlay_target_pose_side_view_uses_defaults() -> None:
     # Targeted joints use target values
     assert target_call_angles[JointName.ARM] == -20.0
     assert target_call_angles[JointName.BUCKET] == 80.0
-    # Non-targeted joints use 0.0 defaults
-    assert target_call_angles[JointName.SWING] == 0.0
-    assert target_call_angles[JointName.BOOM] == 0.0
+    # Non-targeted joints use default angles
+    from exca_dance.core.constants import DEFAULT_JOINT_ANGLES
+    assert target_call_angles[JointName.SWING] == DEFAULT_JOINT_ANGLES[JointName.SWING]
+    assert target_call_angles[JointName.BOOM] == DEFAULT_JOINT_ANGLES[JointName.BOOM]

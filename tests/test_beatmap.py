@@ -19,7 +19,7 @@ def _valid_payload() -> dict[str, Any]:
         "events": [
             {
                 "time_ms": 1000,
-                "target_angles": {"boom": 10.0, "arm": 5.0},
+                "target_angles": {"boom": 10.0, "arm": 25.0},
                 "duration_ms": 250,
             }
         ],
@@ -64,9 +64,9 @@ def test_validate_invalid_angle_outside_joint_limits_returns_error() -> None:
 def test_events_are_sorted_by_time_after_load(tmp_path) -> None:
     data = _valid_payload()
     data["events"] = [
-        {"time_ms": 800, "target_angles": {"arm": 5.0}, "duration_ms": 300},
+        {"time_ms": 800, "target_angles": {"arm": 25.0}, "duration_ms": 300},
         {"time_ms": 100, "target_angles": {"boom": 10.0}, "duration_ms": 200},
-        {"time_ms": 400, "target_angles": {"bucket": 50.0}, "duration_ms": 250},
+        {"time_ms": 400, "target_angles": {"bucket": 40.0}, "duration_ms": 250},
     ]
     path = tmp_path / "unsorted.json"
     path.write_text(json.dumps(data), encoding="utf-8")
@@ -86,7 +86,7 @@ def test_save_then_load_roundtrip_preserves_data(tmp_path) -> None:
         events=[
             BeatEvent(
                 time_ms=500,
-                target_angles={JointName.BOOM: 10.0, JointName.ARM: 20.0},
+                target_angles={JointName.BOOM: 10.0, JointName.ARM: 25.0},
                 duration_ms=300,
             ),
             BeatEvent(
@@ -109,7 +109,7 @@ def test_save_then_load_roundtrip_preserves_data(tmp_path) -> None:
     assert [event.time_ms for event in loaded.events] == [100, 500]
     assert loaded.events[0].target_angles[JointName.SWING] == -45.0
     assert loaded.events[1].target_angles[JointName.BOOM] == 10.0
-    assert loaded.events[1].target_angles[JointName.ARM] == 20.0
+    assert loaded.events[1].target_angles[JointName.ARM] == 25.0
 
 
 def test_validate_empty_events_list_is_valid() -> None:

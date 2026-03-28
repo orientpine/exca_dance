@@ -79,20 +79,21 @@ def test_ghost_angles_independent_of_player_input() -> None:
 
     # Ghost BOOM must be the target value
     assert actual_ghost_angles[JointName.BOOM] == 45.0
-    # Ghost joints NOT in the target must be 0.0 (default), NOT the player's angles
+    # Ghost joints NOT in the target must be at DEFAULT values, NOT the player's angles
     assert actual_ghost_angles[JointName.SWING] == 0.0, (
         f"Ghost SWING should be 0.0 (default), got {actual_ghost_angles[JointName.SWING]}"
     )
-    assert actual_ghost_angles[JointName.ARM] == 0.0, (
-        f"Ghost ARM should be 0.0 (default), got {actual_ghost_angles[JointName.ARM]}"
+    from exca_dance.core.constants import DEFAULT_JOINT_ANGLES
+    assert actual_ghost_angles[JointName.ARM] == DEFAULT_JOINT_ANGLES[JointName.ARM], (
+        f"Ghost ARM should be {DEFAULT_JOINT_ANGLES[JointName.ARM]} (default), got {actual_ghost_angles[JointName.ARM]}"
     )
-    assert actual_ghost_angles[JointName.BUCKET] == 0.0, (
-        f"Ghost BUCKET should be 0.0 (default), got {actual_ghost_angles[JointName.BUCKET]}"
+    assert actual_ghost_angles[JointName.BUCKET] == DEFAULT_JOINT_ANGLES[JointName.BUCKET], (
+        f"Ghost BUCKET should be {DEFAULT_JOINT_ANGLES[JointName.BUCKET]} (default), got {actual_ghost_angles[JointName.BUCKET]}"
     )
 
 
 def test_ghost_unspecified_joints_use_default_not_player() -> None:
-    """When only some joints are targeted, others must stay at default (0.0).
+    """When only some joints are targeted, others must stay at defaults.
 
     Verifies: changing player angles between frames does not alter the ghost
     for joints not in the beat event's target_angles.
@@ -132,8 +133,8 @@ def test_ghost_unspecified_joints_use_default_not_player() -> None:
 
     # Ghost non-target joints must be identical between frames
     # (both 0.0 — default) regardless of player movement
-    assert ghost_angles_1[JointName.SWING] == ghost_angles_2[JointName.SWING] == 0.0
-    assert ghost_angles_1[JointName.BUCKET] == ghost_angles_2[JointName.BUCKET] == 0.0
+    assert ghost_angles_1[JointName.SWING] == ghost_angles_2[JointName.SWING]
+    assert ghost_angles_1[JointName.BUCKET] == ghost_angles_2[JointName.BUCKET]
 
 
 def test_ghost_does_not_update_when_target_angles_unchanged() -> None:

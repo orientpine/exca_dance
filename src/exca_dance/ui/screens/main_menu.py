@@ -305,9 +305,9 @@ class MainMenuScreen:
         # Animate excavator joints with layered sine waves
         angles: dict[JointName, float] = {
             JointName.SWING: 20.0 * math.sin(t * 0.25),
-            JointName.BOOM: 15.0 + 18.0 * math.sin(t * 0.4),
-            JointName.ARM: (-5.0 + 25.0 * math.sin(t * 0.55 + 1.2)),
-            JointName.BUCKET: (80.0 + 35.0 * math.sin(t * 0.35 + 2.5)),
+            JointName.BOOM: -20.0 + 15.0 * math.sin(t * 0.4),
+            JointName.ARM: 87.0 + 30.0 * math.sin(t * 0.55 + 1.2),
+            JointName.BUCKET: -42.0 + 40.0 * math.sin(t * 0.35 + 2.5),
         }
         self._menu_model.update(angles)
 

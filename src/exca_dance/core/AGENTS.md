@@ -59,7 +59,7 @@ JointName.ARM    # "arm"
 JointName.BUCKET # "bucket"
 
 # JOINT_LIMITS: dict[JointName, tuple[float, float]]  (min_deg, max_deg)
-SWING:  (-180, 180)   BOOM: (-30, 60)   ARM: (-50, 90)   BUCKET: (0, 200)
+SWING:  (-180, 180)   BOOM: (-52, 13)   ARM: (21, 153)   BUCKET: (-132, 47)
 
 # BeatEvent (frozen dataclass)
 time_ms: int                          # absolute ms

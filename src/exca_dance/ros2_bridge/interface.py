@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from typing import override
 
 from exca_dance.core.models import JointName
+from exca_dance.core.constants import DEFAULT_JOINT_ANGLES
 
 
 class ExcavatorBridgeInterface(ABC):
@@ -39,7 +40,7 @@ class VirtualBridge(ExcavatorBridgeInterface):
     """Virtual excavator bridge — angles stored internally, no hardware."""
 
     def __init__(self):
-        self._angles: dict[JointName, float] = {j: 0.0 for j in JointName}
+        self._angles: dict[JointName, float] = dict(DEFAULT_JOINT_ANGLES)
         self._connected: bool = False
 
     @override

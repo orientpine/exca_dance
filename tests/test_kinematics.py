@@ -31,7 +31,7 @@ def test_boom_beyond_max_clamps_and_goes_up() -> None:
 
 def test_swing_ninety_rotates_reach_into_positive_y() -> None:
     fk = ExcavatorFK()
-    pos = fk.forward_kinematics({JointName.SWING: 64.0})
+    pos = fk.forward_kinematics({JointName.SWING: 64.0, JointName.ARM: 45.0})
 
     for key in ("boom_pivot", "arm_pivot", "bucket_tip"):
         assert pos[key][1] > 0.0

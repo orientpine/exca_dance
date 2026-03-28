@@ -6,7 +6,7 @@ from typing import Any, cast
 
 import pygame
 from exca_dance.core.models import JointName, BeatMap, BeatEvent
-from exca_dance.core.constants import JOINT_ANGULAR_VELOCITY, JOINT_LIMITS
+from exca_dance.core.constants import DEFAULT_JOINT_ANGLES, JOINT_ANGULAR_VELOCITY, JOINT_LIMITS
 
 
 class GameState:
@@ -49,7 +49,7 @@ class GameLoop:
         self._all_events_consumed_at_ms: float | None = None
 
         # Joint angles (degrees)
-        self._joint_angles: dict[JointName, float] = {j: 0.0 for j in JointName}
+        self._joint_angles: dict[JointName, float] = dict(DEFAULT_JOINT_ANGLES)
         # Keys currently held down
         self._held_keys: set[int] = set()
 
@@ -70,7 +70,7 @@ class GameLoop:
         self._pending_events = list(beatmap.events)  # already sorted by time_ms
         self._processed_events = []
         self._scoring.reset()
-        self._joint_angles = {j: 0.0 for j in JointName}
+        self._joint_angles = dict(DEFAULT_JOINT_ANGLES)
         self._held_keys.clear()
         self._audio.load_music(beatmap.audio_file)
         self._audio.play()

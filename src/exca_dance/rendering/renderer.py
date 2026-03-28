@@ -76,9 +76,7 @@ class GameRenderer:
         )
         # Set model uniform to identity by default
         _id4 = np.eye(4, dtype="f4")
-        self._prog_solid["model"].write(
-            np.ascontiguousarray(_id4.T).tobytes()
-        )
+        self._prog_solid["model"].write(np.ascontiguousarray(_id4.T).tobytes())
         # Textured quad shader (for GL text)
         self._prog_tex = self._ctx.program(
             vertex_shader="""

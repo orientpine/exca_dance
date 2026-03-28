@@ -17,6 +17,7 @@ import numpy as np
 import moderngl
 
 from exca_dance.core.kinematics import ExcavatorFK
+from exca_dance.core.constants import DEFAULT_JOINT_ANGLES
 from exca_dance.core.models import JointName
 from exca_dance.rendering.stl_loader import load_binary_stl
 from exca_dance.rendering.urdf_kin import (
@@ -126,11 +127,12 @@ class ExcavatorModel:
         self._joint_colors: dict[str | JointName, tuple[float, float, float]] = (
             joint_colors if joint_colors is not None else JOINT_COLORS
         )
-        self._current_angles: dict[JointName, float] = {j: 0.0 for j in JointName}
+        self._current_angles: dict[JointName, float] = dict(DEFAULT_JOINT_ANGLES)
 
         self._link_color_map: dict[str, str | JointName] = build_link_to_color_key()
 
         from exca_dance.rendering.urdf_kin import compute_mesh_corrections
+
         self._mesh_corrections: dict[str, np.ndarray] = compute_mesh_corrections()
 
         # Current link transforms — updated each frame

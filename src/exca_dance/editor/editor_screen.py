@@ -6,7 +6,7 @@ import pygame
 from typing import cast
 from exca_dance.core.models import JointName, BeatEvent, BeatMap
 from exca_dance.core.beatmap import load_beatmap, save_beatmap
-from exca_dance.core.constants import JOINT_ANGULAR_VELOCITY, JOINT_LIMITS
+from exca_dance.core.constants import DEFAULT_JOINT_ANGLES, JOINT_ANGULAR_VELOCITY, JOINT_LIMITS
 from exca_dance.rendering.theme import NeonTheme
 from exca_dance.core.game_state import ScreenName
 
@@ -37,7 +37,7 @@ class PoseEditorScreen:
         self._selected_idx: int = -1
         self._cursor_ms: float = 0.0
         self._playing: bool = False
-        self._joint_angles: dict[JointName, float] = {j: 0.0 for j in JointName}
+        self._joint_angles: dict[JointName, float] = dict(DEFAULT_JOINT_ANGLES)
         self._held_keys: set[int] = set()
         self._filepath: str = ""
         self._status_msg: str = "Ctrl+N: New  Ctrl+O: Load  Ctrl+S: Save"

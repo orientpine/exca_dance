@@ -271,11 +271,7 @@ def _compute_raw_origin_fk() -> dict[str, np.ndarray]:
 def compute_mesh_corrections() -> dict[str, np.ndarray]:
     corrected = compute_zero_angle_transforms()
     raw = _compute_raw_origin_fk()
-    return {
-        link: np.linalg.inv(corrected[link]) @ raw[link]
-        for link in corrected
-        if link in raw
-    }
+    return {link: np.linalg.inv(corrected[link]) @ raw[link] for link in corrected if link in raw}
 
 
 # ---------------------------------------------------------------------------
