@@ -219,7 +219,7 @@ class GameplayHUD:
             align="right",
         )
 
-        # ── Error panel (bottom of 3D view, 2×2 grid) ─────────────
+        # ── Error panel (stacked above control guide, 2×2 grid) ─────
         main_3d_bottom = int(H * 0.72)
         joint_colors = {
             JointName.SWING: NeonTheme.JOINT_SWING,
@@ -228,10 +228,14 @@ class GameplayHUD:
             JointName.BUCKET: NeonTheme.JOINT_BUCKET,
         }
 
-        panel_h = int(148 * s)
+        # Control guide sits at bottom; error panel stacks above it.
+        guide_h = int(self._control_guide.PANEL_HEIGHT_REF * s)
+        guide_bottom = main_3d_bottom - int(6 * s)
+
+        panel_h = int(115 * s)
         panel_w = main_w - int(32 * s)
         panel_x = int(16 * s)
-        panel_y = main_3d_bottom - panel_h - int(6 * s)
+        panel_y = guide_bottom - guide_h - int(4 * s) - panel_h
 
         # Panel background — semi-transparent, blends with 3D scene
         self._draw_rect_2d(

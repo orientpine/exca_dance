@@ -70,6 +70,8 @@ class ControlGuide:
 
     # Minimum angle difference (degrees) to trigger an active arrow.
     THRESHOLD_DEG: float = 3.0
+    # Panel height at 1080p reference — used by HUD for stacking.
+    PANEL_HEIGHT_REF: int = 100
 
     def __init__(self, renderer: GameRenderer, text_renderer: GLTextRenderer) -> None:
         self._renderer = renderer
@@ -95,11 +97,11 @@ class ControlGuide:
         H = self._renderer.height
         s = H / 1080.0
 
-        # ── Panel geometry ─────────────────────────────────────────
-        guide_w = int(350 * s)
-        guide_h = int(155 * s)
-        # Position: right side of main viewport, above timeline area
-        guide_x = int(W * 0.56)
+        # ── Panel geometry (full width, stacked at bottom) ─────────
+        main_w = int(W * 0.55)
+        guide_w = main_w - int(32 * s)
+        guide_h = int(self.PANEL_HEIGHT_REF * s)
+        guide_x = int(16 * s)
         main_3d_bottom = int(H * 0.72)
         guide_y = main_3d_bottom - guide_h - int(6 * s)
 
@@ -126,8 +128,8 @@ class ControlGuide:
         active = self._compute_active(current_angles, target_angles)
 
         # ── Left stick diagram ─────────────────────────────────────
-        left_cx = guide_x + int(guide_w * 0.28)
-        stick_cy = guide_y + int(guide_h * 0.52)
+        left_cx = guide_x + int(guide_w * 0.25)
+        stick_cy = guide_y + int(guide_h * 0.55)
         self._draw_stick_diagram(left_cx, stick_cy, s, "left", active)
 
         # Title: 좌 (WASD)
@@ -141,7 +143,7 @@ class ControlGuide:
         )
 
         # ── Right stick diagram ────────────────────────────────────
-        right_cx = guide_x + int(guide_w * 0.72)
+        right_cx = guide_x + int(guide_w * 0.75)
         self._draw_stick_diagram(right_cx, stick_cy, s, "right", active)
 
         # Title: 우 (UHJK)

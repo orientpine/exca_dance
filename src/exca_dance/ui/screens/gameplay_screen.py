@@ -236,10 +236,15 @@ class GameplayScreen:
             if hit_sound is not None:
                 hit_sound.play()
 
-        # Always sync HUD target with visual_cues (same 6000ms lookahead)
+        # Sync HUD target — merge ALL upcoming events (nearest wins per joint)
         if self._beatmap:
             _upcoming = self._game_loop.get_upcoming_events(6000.0)
-            self._hud.set_target_angles(_upcoming[0].target_angles if _upcoming else {})
+            merged: dict[JointName, float] = {}
+            for ev in _upcoming:  # already sorted by time_ms — nearest first
+                for jn, ang in ev.target_angles.items():
+                    if jn not in merged:
+                        merged[jn] = ang
+            self._hud.set_target_angles(merged)
         self._hud.update(dt)
 
         # Update visual cues
