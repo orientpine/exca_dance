@@ -65,8 +65,8 @@ class Overlay2DRenderer:
     TARGET_JOINT_RADIUS: float = 0.40
     MATCH_RING_RADIUS: float = 0.45
     CIRCLE_SEGMENTS: int = 24
-    ARROW_SIZE: float = 0.42
-    ARROW_OFFSET: float = 0.65
+    ARROW_SIZE: float = 0.55
+    ARROW_OFFSET: float = 0.80
     ARC_RADIUS: float = 0.90
     ARC_SEGMENTS: int = 28
     OUTLINE_EXTRA: float = 0.14
@@ -423,7 +423,7 @@ class Overlay2DRenderer:
         tip_y = origin[1] + dy * offset
         base_x = origin[0] + dx * (offset - size)
         base_y = origin[1] + dy * (offset - size)
-        px, py = -dy * size * 0.45, dx * size * 0.45
+        px, py = -dy * size * 0.50, dx * size * 0.50
         return [
             tip_x,
             tip_y,
@@ -466,7 +466,7 @@ class Overlay2DRenderer:
         tip_z = origin[1] + dz * offset
         base_x = origin[0] + dx * (offset - size)
         base_z = origin[1] + dz * (offset - size)
-        px, pz = -dz * size * 0.45, dx * size * 0.45
+        px, pz = -dz * size * 0.50, dx * size * 0.50
         return [
             tip_x,
             0.0,
@@ -793,9 +793,9 @@ class Overlay2DRenderer:
                 continue
             color = _CURRENT_LINK_COLORS[min(i - 1, len(_CURRENT_LINK_COLORS) - 1)]
             bright = (
-                min(1.0, color[0] * 1.3),
-                min(1.0, color[1] * 1.3),
-                min(1.0, color[2] * 1.3),
+                min(1.0, color[0] * 1.5),
+                min(1.0, color[1] * 1.5),
+                min(1.0, color[2] * 1.5),
             )
             verts += arrow_fn(
                 current_pts[i],
@@ -1128,18 +1128,8 @@ class Overlay2DRenderer:
         if target_pts is not None:
             arrow_verts = self._build_direction_arrows(viewport_name, current_pts, target_pts)
             if arrow_verts:
-                self._draw_triangles(ctx, prog, mvp, arrow_verts, alpha=0.90)
+                self._draw_triangles(ctx, prog, mvp, arrow_verts, alpha=0.95)
 
-        # ── Layer 8: Angle arcs (side view only) ────────────────────
-        if viewport_name == "side_2d":
-            arc_verts = self._build_angle_arcs(
-                current_pts,
-                current_angles,
-                target_angles,
-                match_pct,
-            )
-            if arc_verts:
-                self._draw_triangles(ctx, prog, mvp, arc_verts, alpha=0.85)
 
 
     def _render_labels(
