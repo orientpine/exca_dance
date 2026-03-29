@@ -348,7 +348,7 @@ class GameplayScreen:
             W, H = renderer.width, renderer.height
             s = H / 1080.0
 
-            panel_h = int(max(400 * s, 270))
+            panel_h = int(max(430 * s, 285))
             panel_y = (H - panel_h) // 2
 
             # "PAUSED" title
@@ -356,7 +356,7 @@ class GameplayScreen:
             text_renderer.render(
                 "PAUSED",
                 W // 2,
-                panel_y + int(35 * s),
+                panel_y + int(40 * s),
                 color=NeonTheme.NEON_BLUE.as_tuple(),
                 scale=title_scale,
                 align="center",
@@ -364,8 +364,8 @@ class GameplayScreen:
             )
 
             items = ["RESUME", "RESTART", "SETTINGS", "QUIT TO MENU"]
-            item_start_y = panel_y + int(125 * s)
-            item_spacing = int(max(65 * s, 40))
+            item_start_y = panel_y + int(140 * s)
+            item_spacing = int(max(72 * s, 45))
             item_scale = max(0.9 * s, 0.5)
 
             for i, label in enumerate(items):

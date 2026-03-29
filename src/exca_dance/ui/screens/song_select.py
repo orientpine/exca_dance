@@ -66,7 +66,7 @@ class SongSelectScreen:
         text_renderer.render(
             "SELECT SONG",
             W // 2,
-            int(40 * s),
+            int(50 * s),
             color=NeonTheme.NEON_BLUE.as_tuple(),
             scale=max(0.55 * s, 0.30),
             title=True,
@@ -85,8 +85,8 @@ class SongSelectScreen:
             )
             return
 
-        start_y = int(120 * s)
-        item_spacing = int(max(80 * s, 48))
+        start_y = int(140 * s)
+        item_spacing = int(max(100 * s, 60))
         for i, (bm, audio_ok) in enumerate(self._songs):
             y = start_y + i * item_spacing
             if i == self._selected:
@@ -108,7 +108,7 @@ class SongSelectScreen:
             text_renderer.render(
                 f"{bm.artist}  |  {bm.bpm:.0f} BPM  |  {len(bm.events)} events",
                 W // 2,
-                y + int(30 * s),
+                y + int(40 * s),
                 color=NeonTheme.TEXT_DIM.as_tuple(),
                 scale=max(0.55 * s, 0.35),
                 large=True,
@@ -118,7 +118,7 @@ class SongSelectScreen:
                 text_renderer.render(
                     "[AUDIO MISSING]",
                     W // 2,
-                    y + int(50 * s),
+                    y + int(65 * s),
                     color=NeonTheme.MISS.as_tuple(),
                     scale=max(0.50 * s, 0.33),
                     large=True,
@@ -128,7 +128,7 @@ class SongSelectScreen:
         text_renderer.render(
             "\u2191\u2193 Navigate  |  ENTER Play  |  ESC Back",
             W // 2,
-            H - int(40 * s),
+            H - int(45 * s),
             color=NeonTheme.TEXT_DIM.as_tuple(),
             scale=max(0.55 * s, 0.35),
             large=True,

@@ -360,7 +360,7 @@ class MainMenuScreen:
         text_renderer.render(
             f"MODE: {self._mode_label}",
             int(W * 0.24),
-            H - int(30 * s),
+            H - int(38 * s),
             color=NeonTheme.TEXT_DIM.with_alpha(0.5).as_tuple(),
             scale=max(0.9 * s, 0.6),
             align="center",
@@ -368,7 +368,7 @@ class MainMenuScreen:
         text_renderer.render(
             "\u2191\u2193 SELECT   ENTER CONFIRM   Q QUIT",
             int(W * 0.24),
-            H - int(60 * s),
+            H - int(75 * s),
             color=NeonTheme.TEXT_DIM.with_alpha(0.3).as_tuple(),
             scale=max(0.8 * s, 0.55),
             align="center",
@@ -818,7 +818,7 @@ class MainMenuScreen:
         )
 
         # Subtitle (neon pink accent)
-        sub_y = title_y + int(80 * s)
+        sub_y = title_y + int(95 * s)
         sub_a = 0.4 + 0.15 * math.sin(t * 0.8 + 1.0)
         sub_s = max(1.4 * s, 0.75)
         text_renderer.render(
@@ -841,7 +841,7 @@ class MainMenuScreen:
         s = H / 1080.0
         cx = int(W * 0.24)
         start_y = int(H * 0.42)
-        spacing = int(max(50 * s, 32))
+        spacing = int(max(64 * s, 40))
         ctx = self._renderer.ctx
 
         for i, (label, _) in enumerate(MENU_ITEMS):
