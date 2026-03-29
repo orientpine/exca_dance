@@ -354,7 +354,7 @@ class BeatmapSampler:
 
 def main() -> None:
     default_dir = str(
-        Path.home() / "Documents/action_space_finder/raw_data/pipe_expert_standard_25m"
+        Path(__file__).resolve().parent / "csv"
     )
     csv_dir = sys.argv[1] if len(sys.argv) > 1 else default_dir
 
