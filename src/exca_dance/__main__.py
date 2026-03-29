@@ -124,7 +124,7 @@ def main(argv: list[str] | None = None) -> int:
         # Renderer
         from exca_dance.rendering.renderer import GameRenderer
 
-        renderer = GameRenderer(W, H, "Exca Dance")
+        renderer = GameRenderer(W, H, "Exca Dance", fullscreen=not args.windowed)
 
         # GL text renderer (prefer bundled D2Coding Nerd Font)
         from exca_dance.rendering.gl_text import GLTextRenderer

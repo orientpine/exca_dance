@@ -12,10 +12,18 @@ class GameRenderer:
     """Manages the ModernGL rendering context and window."""
 
     def __init__(
-        self, width: int = SCREEN_WIDTH, height: int = SCREEN_HEIGHT, title: str = "Exca Dance"
+        self,
+        width: int = SCREEN_WIDTH,
+        height: int = SCREEN_HEIGHT,
+        title: str = "Exca Dance",
+        fullscreen: bool = False,
     ):
         pygame.display.init()
-        flags = pygame.OPENGL | pygame.DOUBLEBUF | pygame.NOFRAME
+        flags = pygame.OPENGL | pygame.DOUBLEBUF
+        if fullscreen:
+            flags |= pygame.FULLSCREEN
+        else:
+            flags |= pygame.NOFRAME
         self._surface = pygame.display.set_mode((width, height), flags)
         pygame.display.set_caption(title)
         self._ctx = moderngl.create_context()
