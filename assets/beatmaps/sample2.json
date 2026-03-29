@@ -165,6 +165,126 @@
         "bucket": -19.3
       },
       "duration_ms": 1200
+    },
+    {
+      "time_ms": 96000,
+      "target_angles": {
+        "swing": 18.1,
+        "boom": -36.6,
+        "arm": 90.2,
+        "bucket": -111.0
+      },
+      "duration_ms": 1200
+    },
+    {
+      "time_ms": 101800,
+      "target_angles": {
+        "swing": -5.2,
+        "boom": -34.5,
+        "arm": 97.8,
+        "bucket": -18.2
+      },
+      "duration_ms": 1200
+    },
+    {
+      "time_ms": 107600,
+      "target_angles": {
+        "swing": -3.4,
+        "boom": -31.6,
+        "arm": 87.1,
+        "bucket": -58.3
+      },
+      "duration_ms": 1200
+    },
+    {
+      "time_ms": 113400,
+      "target_angles": {
+        "swing": -2.9,
+        "boom": -2.2,
+        "arm": 62.9,
+        "bucket": -110.4
+      },
+      "duration_ms": 1200
+    },
+    {
+      "time_ms": 119200,
+      "target_angles": {
+        "swing": -1.7,
+        "boom": -19.7,
+        "arm": 102.9,
+        "bucket": -16.4
+      },
+      "duration_ms": 1200
+    },
+    {
+      "time_ms": 125000,
+      "target_angles": {
+        "swing": 10.4,
+        "boom": -34.5,
+        "arm": 90.1,
+        "bucket": -105.2
+      },
+      "duration_ms": 1200
+    },
+    {
+      "time_ms": 130800,
+      "target_angles": {
+        "swing": -2.9,
+        "boom": 6.5,
+        "arm": 39.8,
+        "bucket": -107.8
+      },
+      "duration_ms": 1200
+    },
+    {
+      "time_ms": 136600,
+      "target_angles": {
+        "swing": -2.8,
+        "boom": -17.0,
+        "arm": 102.3,
+        "bucket": -53.3
+      },
+      "duration_ms": 1200
+    },
+    {
+      "time_ms": 142400,
+      "target_angles": {
+        "swing": 15.4,
+        "boom": -34.1,
+        "arm": 109.2,
+        "bucket": -34.6
+      },
+      "duration_ms": 1200
+    },
+    {
+      "time_ms": 148200,
+      "target_angles": {
+        "swing": -7.5,
+        "boom": -16.2,
+        "arm": 74.8,
+        "bucket": -107.4
+      },
+      "duration_ms": 1200
+    },
+    {
+      "time_ms": 154000,
+      "target_angles": {
+        "swing": -7.1,
+        "boom": -16.1,
+        "arm": 98.6,
+        "bucket": -79.7
+      },
+      "duration_ms": 1200
+    },
+    {
+      "time_ms": 159800,
+      "target_angles": {
+        "swing": 6.1,
+        "boom": -32.6,
+        "arm": 117.8,
+        "bucket": -20.6
+      },
+      "duration_ms": 1200
     }
   ]
 }
