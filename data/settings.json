@@ -4,17 +4,17 @@
       "positive": 97,
       "negative": 100
     },
-    "boom": {
+    "arm": {
       "positive": 119,
       "negative": 115
     },
-    "arm": {
-      "positive": 1073741906,
-      "negative": 1073741905
+    "boom": {
+      "positive": 106,
+      "negative": 117
     },
     "bucket": {
-      "positive": 1073741904,
-      "negative": 1073741903
+      "positive": 107,
+      "negative": 104
     }
   }
 }
