@@ -1,6 +1,7 @@
 """ModernGL-based game renderer using Pygame as window backend."""
 
 from __future__ import annotations
+import os
 from typing import Any, cast
 import pygame
 import moderngl
@@ -19,11 +20,9 @@ class GameRenderer:
         fullscreen: bool = False,
     ):
         pygame.display.init()
-        flags = pygame.OPENGL | pygame.DOUBLEBUF
+        flags = pygame.OPENGL | pygame.DOUBLEBUF | pygame.NOFRAME
         if fullscreen:
-            flags |= pygame.FULLSCREEN
-        else:
-            flags |= pygame.NOFRAME
+            os.environ["SDL_VIDEO_WINDOW_POS"] = "0,0"
         self._surface = pygame.display.set_mode((width, height), flags)
         pygame.display.set_caption(title)
         self._ctx = moderngl.create_context()
