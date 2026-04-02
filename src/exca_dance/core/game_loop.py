@@ -8,6 +8,8 @@ import pygame
 from exca_dance.core.models import JointName, BeatMap, BeatEvent
 from exca_dance.core.constants import DEFAULT_JOINT_ANGLES, JOINT_ANGULAR_VELOCITY, JOINT_LIMITS
 
+from exca_dance.core.gamepad import GamepadManager
+
 
 class GameState:
     PLAYING = "playing"
@@ -34,6 +36,7 @@ class GameLoop:
         excavator_model,
         *,
         mode: str = "virtual",
+        gamepad: GamepadManager | None = None,
     ) -> None:
         self._renderer = renderer
         self._audio = audio
@@ -44,6 +47,7 @@ class GameLoop:
         self._viewport_layout = viewport_layout
         self._excavator_model = excavator_model
         self._mode = mode
+        self._gamepad = gamepad
 
         self._state = GameState.MENU
         self._beatmap: BeatMap | None = None
@@ -139,7 +143,6 @@ class GameLoop:
         return hit_results
 
     def handle_event(self, event: pygame.event.Event) -> None:
-        """Process a pygame event."""
         if event.type == pygame.KEYDOWN:
             self._held_keys.add(event.key)
             if event.key == pygame.K_F3:
@@ -151,6 +154,11 @@ class GameLoop:
                     self.resume()
         elif event.type == pygame.KEYUP:
             self._held_keys.discard(event.key)
+        elif self._gamepad is not None and self._gamepad.is_start(event):
+            if self._state == GameState.PLAYING:
+                self.pause()
+            elif self._state == GameState.PAUSED:
+                self.resume()
         elif event.type == pygame.ACTIVEEVENT:
             # Auto-pause on focus loss
             if hasattr(event, "gain") and event.gain == 0 and event.state == 1:
@@ -168,16 +176,28 @@ class GameLoop:
             self._joint_angles[joint] = max(lo, min(hi, value))
 
     def _update_joints(self, dt: float) -> None:
-        """Apply angular velocity to joints based on held keys."""
         if self._mode == "real":
             self._update_joints_from_bridge()
             return
+
+        input_per_joint: dict[JointName, float] = {j: 0.0 for j in JointName}
+
         for key in self._held_keys:
             result = self._keybinding.get_joint_for_key(key)
             if result is None:
                 continue
             joint, direction = result
-            delta = direction * JOINT_ANGULAR_VELOCITY * dt
+            input_per_joint[joint] += float(direction)
+
+        if self._gamepad is not None:
+            for joint in JointName:
+                input_per_joint[joint] += self._gamepad.get_joint_input(joint)
+
+        for joint, raw in input_per_joint.items():
+            if raw == 0.0:
+                continue
+            clamped = max(-1.0, min(1.0, raw))
+            delta = clamped * JOINT_ANGULAR_VELOCITY * dt
             lo, hi = JOINT_LIMITS[joint]
             self._joint_angles[joint] = max(lo, min(hi, self._joint_angles[joint] + delta))
 

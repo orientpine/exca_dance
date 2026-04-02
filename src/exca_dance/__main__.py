@@ -157,12 +157,15 @@ def main(argv: list[str] | None = None) -> int:
         from exca_dance.core.keybinding import KeyBindingManager
         from exca_dance.core.leaderboard import LeaderboardManager
         from exca_dance.core.camera_settings import CameraSettings
+        from exca_dance.core.gamepad import GamepadManager
 
         fk = ExcavatorFK()
         scoring = ScoringEngine()
         keybinding = KeyBindingManager()
         leaderboard = LeaderboardManager()
         camera_settings = CameraSettings()
+        pygame.joystick.init()
+        gamepad = GamepadManager()
 
         # Bridge
         from exca_dance.ros2_bridge import create_bridge
@@ -182,6 +185,7 @@ def main(argv: list[str] | None = None) -> int:
         game_loop = GameLoop(
             renderer, audio, fk, scoring, keybinding, bridge, viewport_layout, excavator_model,
             mode=args.mode,
+            gamepad=gamepad,
         )
 
         # HUD + visual cues
@@ -264,12 +268,32 @@ def main(argv: list[str] | None = None) -> int:
         running = True
         while running:
             for event in pygame.event.get():
+                gamepad.handle_event(event)
+
                 if event.type == pygame.QUIT:
                     running = False
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_q:
                     if state_mgr.get_current_state() == ScreenName.MAIN_MENU:
                         running = False
                 state_mgr.handle_event(event)
+
+                menu_dir = gamepad.get_menu_direction(event)
+                if menu_dir == -1:
+                    state_mgr.handle_event(
+                        pygame.event.Event(pygame.KEYDOWN, key=pygame.K_UP)
+                    )
+                elif menu_dir == 1:
+                    state_mgr.handle_event(
+                        pygame.event.Event(pygame.KEYDOWN, key=pygame.K_DOWN)
+                    )
+                if gamepad.is_confirm(event):
+                    state_mgr.handle_event(
+                        pygame.event.Event(pygame.KEYDOWN, key=pygame.K_RETURN)
+                    )
+                if gamepad.is_back(event):
+                    state_mgr.handle_event(
+                        pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE)
+                    )
 
             dt = clock.tick(TARGET_FPS) / 1000.0
             result = state_mgr.update(dt)
