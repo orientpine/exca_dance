@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any, cast
 
 import pygame
 from exca_dance.core.models import JointName, BeatMap, BeatEvent
 from exca_dance.core.constants import DEFAULT_JOINT_ANGLES, JOINT_ANGULAR_VELOCITY, JOINT_LIMITS
+from exca_dance.core.game_settings import GameSettings
 
 from exca_dance.core.gamepad import GamepadManager
 
@@ -36,6 +38,8 @@ class GameLoop:
         excavator_model,
         *,
         mode: str = "virtual",
+        game_settings: GameSettings | None = None,
+        bridge_factory: Callable[[str], Any] | None = None,
         gamepad: GamepadManager | None = None,
     ) -> None:
         self._renderer = renderer
@@ -46,7 +50,10 @@ class GameLoop:
         self._bridge = bridge
         self._viewport_layout = viewport_layout
         self._excavator_model = excavator_model
-        self._mode = mode
+        self._game_settings = game_settings
+        self._fallback_mode = mode
+        self._bridge_factory = bridge_factory
+        self._active_bridge_mode = game_settings.mode if game_settings is not None else mode
         self._gamepad = gamepad
 
         self._state = GameState.MENU
@@ -55,24 +62,34 @@ class GameLoop:
         self._processed_events: list[BeatEvent] = []
         self._all_events_consumed_at_ms: float | None = None
 
-        # Joint angles (degrees)
         self._joint_angles: dict[JointName, float] = dict(DEFAULT_JOINT_ANGLES)
-        # Keys currently held down
         self._held_keys: set[int] = set()
 
         self._clock = pygame.time.Clock()
         self._running = False
         self._debug_fps = False
 
-        # Callbacks for screen transitions
         self._on_song_end = None
 
     # ------------------------------------------------------------------ #
     # Public API
     # ------------------------------------------------------------------ #
 
+    @property
+    def _mode(self) -> str:
+        if self._game_settings is not None:
+            return self._game_settings.mode
+        return self._fallback_mode
+
+    def _sync_bridge_if_mode_changed(self) -> None:
+        current = self._mode
+        if current != self._active_bridge_mode and self._bridge_factory is not None:
+            self._bridge.disconnect()
+            self._bridge = self._bridge_factory(current)
+            self._active_bridge_mode = current
+
     def start_song(self, beatmap: BeatMap) -> None:
-        """Load and start playing a beat map."""
+        self._sync_bridge_if_mode_changed()
         self._beatmap = beatmap
         self._pending_events = list(beatmap.events)  # already sorted by time_ms
         self._processed_events = []
@@ -134,10 +151,8 @@ class GameLoop:
             hit_results = self._check_beats()
             self._check_song_end()
 
-        # Always update bridge with current angles
         if self._mode != "real":
             self._bridge.send_command(self._joint_angles)
-        # Update excavator model
         self._excavator_model.update(self._joint_angles)
 
         return hit_results

@@ -6,9 +6,25 @@ based on mode and ROS2 availability.
 
 from __future__ import annotations
 import logging
+import os
 from exca_dance.ros2_bridge.interface import ExcavatorBridgeInterface, VirtualBridge
 
 logger = logging.getLogger(__name__)
+
+
+def is_ros2_available() -> bool:
+    try:
+        import rclpy  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
+def is_ros2_installed_but_not_sourced() -> bool:
+    if is_ros2_available():
+        return False
+    from pathlib import Path
+    return Path("/opt/ros").is_dir() or bool(os.environ.get("ROS_DISTRO"))
 
 
 def create_bridge(mode: str = "virtual") -> ExcavatorBridgeInterface:

@@ -111,7 +111,10 @@ def _ros2_process_main(
     finally:
         node.destroy_node()
         executor.shutdown()
-        rclpy.shutdown()
+        try:
+            rclpy.shutdown()
+        except Exception:
+            pass  # SIGTERM signal handler may have already called shutdown
 
 
 class ROS2Bridge:
@@ -163,21 +166,17 @@ class ROS2Bridge:
             pass
 
     def get_current_angles(self) -> dict[JointName, float]:
-        missed = 0
-        while missed < 2:
+        # Non-blocking drain: read all available state updates without waiting.
+        # Previous implementation used get(timeout=0.01) which blocked 10-20ms
+        # per frame — exceeding the 16.67ms frame budget at 60 FPS.
+        for _ in range(20):  # safety cap to prevent unbounded drain
             try:
-                update = self._state_queue.get(timeout=0.01)
-                missed = 0
+                update = self._state_queue.get_nowait()
                 for key, value in update.items():
                     key_name = key.value if isinstance(key, JointName) else str(key)
-                    if isinstance(key, str) and any(
-                        isinstance(existing, JointName) and existing.value == key
-                        for existing in self._latest_angles
-                    ):
-                        continue
                     self._latest_angles[key_name] = float(value)
             except Empty:
-                missed += 1
+                break
             except Exception:
                 break
 

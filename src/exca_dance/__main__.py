@@ -89,7 +89,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--mode",
         choices=["virtual", "real"],
-        default="virtual",
+        default=None,
         help="virtual: keyboard controls virtual excavator; real: ROS2 mode",
     )
     parser.add_argument("--windowed", action="store_true", help="Run in windowed mode (800x600)")
@@ -98,7 +98,13 @@ def main(argv: list[str] | None = None) -> int:
 
     _setup_logging(args.debug)
     logger = logging.getLogger("exca_dance")
-    logger.info("Exca Dance starting... mode=%s", args.mode)
+
+    from exca_dance.core.game_settings import GameSettings
+
+    game_settings = GameSettings()
+    if args.mode is not None:
+        game_settings.mode = args.mode
+    logger.info("Exca Dance starting... mode=%s", game_settings.mode)
 
     # Headless/CI: only force dummy audio when no display is available
     if (
@@ -170,7 +176,7 @@ def main(argv: list[str] | None = None) -> int:
         # Bridge
         from exca_dance.ros2_bridge import create_bridge
 
-        bridge = create_bridge(args.mode)
+        bridge = create_bridge(game_settings.mode)
 
         # 3D model + layout
         from exca_dance.rendering.excavator_model import ExcavatorModel
@@ -184,7 +190,8 @@ def main(argv: list[str] | None = None) -> int:
 
         game_loop = GameLoop(
             renderer, audio, fk, scoring, keybinding, bridge, viewport_layout, excavator_model,
-            mode=args.mode,
+            game_settings=game_settings,
+            bridge_factory=create_bridge,
             gamepad=gamepad,
         )
 
@@ -215,9 +222,10 @@ def main(argv: list[str] | None = None) -> int:
             MainMenuScreen(
                 renderer,
                 text_renderer,
-                args.mode.upper(),
+                game_settings.mode.upper(),
                 fk,
                 ExcavatorModel,
+                game_settings=game_settings,
             ),
         )
         state_mgr.register(
@@ -251,6 +259,7 @@ def main(argv: list[str] | None = None) -> int:
                 camera_settings=camera_settings,
                 fk=fk,
                 excavator_model_class=ExcavatorModel,
+                game_settings=game_settings,
             ),
         )
         tutorial_screen_class = import_module(
@@ -326,6 +335,7 @@ def _safe_cleanup(ctx: dict, logger: logging.Logger) -> None:
     _try_call(logger, "game_loop.stop", lambda: ctx["game_loop"].stop())
     _try_call(logger, "keybinding.save", lambda: ctx["keybinding"].save())
     _try_call(logger, "camera_settings.save", lambda: ctx["camera_settings"].save())
+    _try_call(logger, "game_settings.save", lambda: ctx["game_settings"].save())
     _try_call(logger, "audio.destroy", lambda: ctx["audio"].destroy())
     _try_call(logger, "bridge.disconnect", lambda: ctx["bridge"].disconnect())
     _try_call(logger, "visual_cues.destroy", lambda: ctx["visual_cues"].destroy())

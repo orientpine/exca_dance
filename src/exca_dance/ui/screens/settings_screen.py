@@ -7,7 +7,9 @@ import numpy as np
 import pygame
 
 from exca_dance.core.camera_settings import CameraSettings
+from exca_dance.core.game_settings import GameSettings
 from exca_dance.core.game_state import ScreenName
+from exca_dance.ros2_bridge import is_ros2_available, is_ros2_installed_but_not_sourced
 from exca_dance.core.kinematics import ExcavatorFK
 from exca_dance.core.models import JointName
 from exca_dance.rendering.excavator_model import ExcavatorModel
@@ -85,6 +87,7 @@ class SettingsScreen:
         bridge_factory: object | None = None,
         fk: ExcavatorFK | None = None,
         excavator_model_class: type[ExcavatorModel] | None = None,
+        game_settings: GameSettings | None = None,
     ) -> None:
         self._renderer = renderer
         self._text = text_renderer
@@ -92,6 +95,7 @@ class SettingsScreen:
         self._audio: _AudioLike = audio
         self._camera: CameraSettings | None = camera_settings
         self._bridge_factory: object | None = bridge_factory
+        self._game_settings: GameSettings | None = game_settings
         self._section: int = 0
         self._row: int = 0
         self._waiting_key: bool = False
@@ -99,7 +103,8 @@ class SettingsScreen:
         self._waiting_positive: bool = True
         self._volume: float = 1.0
         self._sfx_volume: float = 1.0
-        self._mode: str = "virtual"
+        self._mode: str = game_settings.mode if game_settings is not None else "virtual"
+        self._ros2_status: str = "ok"
 
         # Camera 3D preview model
         self._preview_model: ExcavatorModel | None = None
@@ -159,6 +164,9 @@ class SettingsScreen:
         self._waiting_key = False
         self._volume = self._audio.get_bgm_volume()
         self._sfx_volume = self._audio.get_sfx_volume()
+        if self._game_settings is not None:
+            self._mode = self._game_settings.mode
+        self._ros2_status = self._check_ros2_status()
 
     def handle_event(self, event: pygame.event.Event) -> str | tuple[str, dict[str, object]] | None:
         if event.type == pygame.KEYDOWN:
@@ -216,6 +224,8 @@ class SettingsScreen:
         self._audio.save_volume_settings("data/volume.json")
         if self._camera is not None:
             self._camera.save()
+        if self._game_settings is not None:
+            self._game_settings.save()
 
     def _max_row_for_section(self) -> int:
         if self._section == 0:
@@ -264,10 +274,22 @@ class SettingsScreen:
             pass  # volume adjusted via LEFT/RIGHT
         elif self._section == 2:
             self._mode = "real" if self._mode == "virtual" else "virtual"
+            self._ros2_status = self._check_ros2_status()
+            if self._game_settings is not None:
+                self._game_settings.mode = self._mode
         elif self._section == 3:
             if self._row == 2 and self._camera is not None:
                 self._camera.reset_to_defaults()
                 self._camera.save()
+
+    def _check_ros2_status(self) -> str:
+        if self._mode != "real":
+            return "ok"
+        if is_ros2_available():
+            return "ok"
+        if is_ros2_installed_but_not_sourced():
+            return "not_sourced"
+        return "not_installed"
 
     def update(self, _dt: float) -> None:
         return None
@@ -473,6 +495,44 @@ class SettingsScreen:
             title=True,
             align="center",
         )
+        if self._ros2_status == "not_sourced":
+            tr.render(  # type: ignore[union-attr]
+                "ROS2 INSTALLED BUT NOT SOURCED",
+                W // 2,
+                start_y + int(130 * s),
+                color=NeonTheme.NEON_ORANGE.as_tuple(),
+                scale=max(0.45 * s, 0.26),
+                large=True,
+                align="center",
+            )
+            tr.render(  # type: ignore[union-attr]
+                "Run: source /opt/ros/jazzy/setup.bash",
+                W // 2,
+                start_y + int(170 * s),
+                color=NeonTheme.TEXT_DIM.as_tuple(),
+                scale=max(0.4 * s, 0.24),
+                large=True,
+                align="center",
+            )
+        elif self._ros2_status == "not_installed":
+            tr.render(  # type: ignore[union-attr]
+                "ROS2 NOT INSTALLED",
+                W // 2,
+                start_y + int(130 * s),
+                color=NeonTheme.NEON_ORANGE.as_tuple(),
+                scale=max(0.45 * s, 0.26),
+                large=True,
+                align="center",
+            )
+            tr.render(  # type: ignore[union-attr]
+                "Excavator will stay at default pose",
+                W // 2,
+                start_y + int(170 * s),
+                color=NeonTheme.TEXT_DIM.as_tuple(),
+                scale=max(0.4 * s, 0.24),
+                large=True,
+                align="center",
+            )
         tr.render(  # type: ignore[union-attr]
             "ENTER: Toggle  |  TAB: Switch Section  |  ESC: Save & Back",
             W // 2,

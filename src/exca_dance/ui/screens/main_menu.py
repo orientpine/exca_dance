@@ -10,6 +10,7 @@ import moderngl
 import numpy as np
 import pygame
 
+from exca_dance.core.game_settings import GameSettings
 from exca_dance.core.game_state import ScreenName
 from exca_dance.core.kinematics import ExcavatorFK
 from exca_dance.core.models import JointName
@@ -78,11 +79,13 @@ class MainMenuScreen:
         mode_label: str,
         fk: ExcavatorFK,
         excavator_model_class: type[ExcavatorModel],
+        game_settings: GameSettings | None = None,
     ) -> None:
         self._renderer = renderer
         self._text = text_renderer
         self._selected = 0
         self._mode_label = mode_label
+        self._game_settings = game_settings
         self._time: float = 0.0
 
         # Neon-colored excavator for menu background
@@ -358,7 +361,7 @@ class MainMenuScreen:
         # Layer 9: Footer (resolution-aware)
         s = H / 1080.0
         text_renderer.render(
-            f"MODE: {self._mode_label}",
+            f"MODE: {self._game_settings.mode.upper() if self._game_settings else self._mode_label}",
             int(W * 0.24),
             H - int(38 * s),
             color=NeonTheme.TEXT_DIM.with_alpha(0.5).as_tuple(),
