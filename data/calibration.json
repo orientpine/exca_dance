@@ -1,0 +1,26 @@
+{
+  "swing": {
+    "velocity_sign": 1.0,
+    "angle_sign": 1.0,
+    "angle_scale": 1.0,
+    "angle_offset": 0.0
+  },
+  "boom": {
+    "velocity_sign": 1.0,
+    "angle_sign": 1.0,
+    "angle_scale": 1.0,
+    "angle_offset": 0.0
+  },
+  "arm": {
+    "velocity_sign": 1.0,
+    "angle_sign": 1.0,
+    "angle_scale": 1.004,
+    "angle_offset": 0.0
+  },
+  "bucket": {
+    "velocity_sign": 1.0,
+    "angle_sign": 1.0,
+    "angle_scale": 1.0,
+    "angle_offset": 0.0
+  }
+}
