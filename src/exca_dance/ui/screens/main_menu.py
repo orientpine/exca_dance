@@ -374,6 +374,9 @@ class MainMenuScreen:
             align="center",
         )
 
+        # Layer 10: Sponsor badge (bottom-right, over 3D viewport)
+        self._render_sponsor_badge(text_renderer, W, H)
+
     # ── Render helpers ───────────────────────────────────────────
 
     def _render_grid(self, ctx: moderngl.Context) -> None:
@@ -828,6 +831,42 @@ class MainMenuScreen:
             color=NeonTheme.NEON_PINK.with_alpha(sub_a).as_tuple(),
             scale=sub_s,
             align="center",
+        )
+
+    def _render_sponsor_badge(
+        self,
+        text_renderer: GLTextRenderer,
+        W: int,
+        H: int,
+    ) -> None:
+        t = self._time
+        s = H / 1080.0
+
+        badge_x = int(W * 0.76)
+        badge_y = H - int(48 * s)
+
+        glow_a = 0.15 + 0.08 * math.sin(t * 1.2)
+        glow_s = max(1.1 * s, 0.6)
+        text_renderer.render(
+            "한국기계연구원 50주년",
+            badge_x,
+            badge_y - 2,
+            color=NeonTheme.NEON_PURPLE.with_alpha(glow_a).as_tuple(),
+            scale=glow_s,
+            align="center",
+            large=True,
+        )
+
+        main_a = 0.55 + 0.12 * math.sin(t * 0.8 + 0.5)
+        main_s = max(1.0 * s, 0.55)
+        text_renderer.render(
+            "한국기계연구원 50주년",
+            badge_x,
+            badge_y,
+            color=NeonTheme.NEON_PURPLE.with_alpha(main_a).as_tuple(),
+            scale=main_s,
+            align="center",
+            large=True,
         )
 
     def _render_menu(
