@@ -114,12 +114,13 @@ def main(argv: list[str] | None = None) -> int:
         pygame.init()
 
         # Window setup
-        from exca_dance.core.constants import SCREEN_WIDTH, SCREEN_HEIGHT, TARGET_FPS
+        from exca_dance.core.constants import TARGET_FPS
 
         if args.windowed:
             W, H = 800, 600
         else:
-            W, H = SCREEN_WIDTH, SCREEN_HEIGHT
+            display_info = pygame.display.Info()
+            W, H = display_info.current_w, display_info.current_h
 
         # Renderer
         from exca_dance.rendering.renderer import GameRenderer
