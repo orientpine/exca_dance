@@ -841,29 +841,28 @@ class MainMenuScreen:
     ) -> None:
         t = self._time
         s = H / 1080.0
+        cx = int(W * 0.24)
+        badge_y = int(H * 0.18) - int(55 * s)
 
-        badge_x = int(W * 0.76)
-        badge_y = H - int(48 * s)
-
-        glow_a = 0.15 + 0.08 * math.sin(t * 1.2)
-        glow_s = max(1.1 * s, 0.6)
+        glow_a = 0.25 + 0.10 * math.sin(t * 1.2)
+        glow_s = max(1.15 * s, 0.65)
         text_renderer.render(
             "한국기계연구원 50주년",
-            badge_x,
+            cx,
             badge_y - 2,
-            color=NeonTheme.NEON_PURPLE.with_alpha(glow_a).as_tuple(),
+            color=NeonTheme.TEXT_WHITE.with_alpha(glow_a).as_tuple(),
             scale=glow_s,
             align="center",
             large=True,
         )
 
-        main_a = 0.55 + 0.12 * math.sin(t * 0.8 + 0.5)
-        main_s = max(1.0 * s, 0.55)
+        main_a = 0.85 + 0.10 * math.sin(t * 0.8 + 0.5)
+        main_s = max(1.05 * s, 0.6)
         text_renderer.render(
             "한국기계연구원 50주년",
-            badge_x,
+            cx,
             badge_y,
-            color=NeonTheme.NEON_PURPLE.with_alpha(main_a).as_tuple(),
+            color=NeonTheme.TEXT_WHITE.with_alpha(main_a).as_tuple(),
             scale=main_s,
             align="center",
             large=True,
