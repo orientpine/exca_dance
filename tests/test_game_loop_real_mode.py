@@ -89,7 +89,7 @@ def _start_song(loop: GameLoop) -> None:
 
 def test_real_mode_reads_bridge_angles() -> None:
     loop, _, bridge = _make_game_loop_real()
-    bridge.get_current_angles.return_value = {
+    bridge.get_raw_angles.return_value = {
         JointName.SWING: 45.0,
         JointName.BOOM: -30.0,
         JointName.ARM: 55.0,
@@ -106,7 +106,7 @@ def test_real_mode_reads_bridge_angles() -> None:
 def test_real_mode_ignores_keyboard() -> None:
     loop, keybinding, bridge = _make_game_loop_real()
     keybinding.get_joint_for_key.return_value = (JointName.BOOM, 1)
-    bridge.get_current_angles.return_value = {
+    bridge.get_raw_angles.return_value = {
         JointName.SWING: 0.0,
         JointName.BOOM: -10.0,
         JointName.ARM: 21.0,
@@ -123,7 +123,7 @@ def test_real_mode_ignores_keyboard() -> None:
 
 def test_real_mode_skips_send_command() -> None:
     loop, _, bridge = _make_game_loop_real()
-    bridge.get_current_angles.return_value = dict(DEFAULT_JOINT_ANGLES)
+    bridge.get_raw_angles.return_value = dict(DEFAULT_JOINT_ANGLES)
     _start_song(loop)
     bridge.send_command.reset_mock()
 
@@ -134,7 +134,7 @@ def test_real_mode_skips_send_command() -> None:
 
 def test_real_mode_clamps_to_joint_limits() -> None:
     loop, _, bridge = _make_game_loop_real()
-    bridge.get_current_angles.return_value = {
+    bridge.get_raw_angles.return_value = {
         JointName.SWING: 0.0,
         JointName.BOOM: 999.0,
         JointName.ARM: 21.0,
@@ -150,7 +150,7 @@ def test_real_mode_clamps_to_joint_limits() -> None:
 
 def test_real_mode_handles_empty_angles() -> None:
     loop, _, bridge = _make_game_loop_real()
-    bridge.get_current_angles.return_value = {}
+    bridge.get_raw_angles.return_value = {}
     _start_song(loop)
 
     loop.tick(0.016)

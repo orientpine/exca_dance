@@ -9,7 +9,7 @@ import pygame
 from exca_dance.core.models import JointName, BeatMap, BeatEvent
 from exca_dance.core.constants import DEFAULT_JOINT_ANGLES, JOINT_ANGULAR_VELOCITY, JOINT_LIMITS
 from exca_dance.core.game_settings import GameSettings
-
+from exca_dance.core.calibration import CalibrationSettings
 from exca_dance.core.gamepad import GamepadManager
 
 
@@ -41,6 +41,7 @@ class GameLoop:
         game_settings: GameSettings | None = None,
         bridge_factory: Callable[[str], Any] | None = None,
         gamepad: GamepadManager | None = None,
+        calibration: CalibrationSettings | None = None,
     ) -> None:
         self._renderer = renderer
         self._audio = audio
@@ -55,6 +56,7 @@ class GameLoop:
         self._bridge_factory = bridge_factory
         self._active_bridge_mode = game_settings.mode if game_settings is not None else mode
         self._gamepad = gamepad
+        self._calibration = calibration
 
         self._state = GameState.MENU
         self._beatmap: BeatMap | None = None
@@ -151,7 +153,9 @@ class GameLoop:
             hit_results = self._check_beats()
             self._check_song_end()
 
-        if self._mode != "real":
+        if self._mode == "real":
+            self._send_velocity_to_bridge()
+        else:
             self._bridge.send_command(self._joint_angles)
         self._excavator_model.update(self._joint_angles)
 
@@ -185,16 +189,18 @@ class GameLoop:
     # ------------------------------------------------------------------ #
 
     def _update_joints_from_bridge(self) -> None:
-        angles = self._bridge.get_current_angles()
-        for joint, value in angles.items():
+        """Real mode: read joint angles from ROS2, apply calibration transform."""
+        raw_angles = self._bridge.get_raw_angles()
+        for joint, raw_value in raw_angles.items():
+            if self._calibration is not None:
+                value = self._calibration.transform_angle(joint, raw_value)
+            else:
+                value = raw_value
             lo, hi = JOINT_LIMITS[joint]
             self._joint_angles[joint] = max(lo, min(hi, value))
 
-    def _update_joints(self, dt: float) -> None:
-        if self._mode == "real":
-            self._update_joints_from_bridge()
-            return
-
+    def _get_input_velocities(self) -> dict[JointName, float]:
+        """Collect keyboard + gamepad input as -1.0~1.0 per joint."""
         input_per_joint: dict[JointName, float] = {j: 0.0 for j in JointName}
 
         for key in self._held_keys:
@@ -208,11 +214,30 @@ class GameLoop:
             for joint in JointName:
                 input_per_joint[joint] += self._gamepad.get_joint_input(joint)
 
-        for joint, raw in input_per_joint.items():
+        # Clamp to -1.0~1.0
+        return {j: max(-1.0, min(1.0, v)) for j, v in input_per_joint.items()}
+
+    def _send_velocity_to_bridge(self) -> None:
+        """Real mode: send calibrated velocity to ROS2 UpperControlCmd."""
+        raw_velocities = self._get_input_velocities()
+        calibrated: dict[JointName, float] = {}
+        for joint, vel in raw_velocities.items():
+            if self._calibration is not None:
+                calibrated[joint] = self._calibration.transform_velocity(joint, vel)
+            else:
+                calibrated[joint] = vel
+        self._bridge.send_velocity(calibrated)
+
+    def _update_joints(self, dt: float) -> None:
+        if self._mode == "real":
+            self._update_joints_from_bridge()
+            return
+
+        velocities = self._get_input_velocities()
+        for joint, raw in velocities.items():
             if raw == 0.0:
                 continue
-            clamped = max(-1.0, min(1.0, raw))
-            delta = clamped * JOINT_ANGULAR_VELOCITY * dt
+            delta = raw * JOINT_ANGULAR_VELOCITY * dt
             lo, hi = JOINT_LIMITS[joint]
             self._joint_angles[joint] = max(lo, min(hi, self._joint_angles[joint] + delta))
 

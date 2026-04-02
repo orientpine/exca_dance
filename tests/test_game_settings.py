@@ -94,7 +94,7 @@ def test_game_loop_reads_mode_from_settings() -> None:
     gs.mode = "real"
     loop, _, bridge = _make_loop_with_settings(gs)
 
-    bridge.get_current_angles.return_value = {
+    bridge.get_raw_angles.return_value = {
         JointName.SWING: 30.0,
         JointName.BOOM: -10.0,
         JointName.ARM: 50.0,
@@ -116,7 +116,7 @@ def test_game_loop_responds_to_settings_change_at_start_song() -> None:
     loop, keybinding, bridge = _make_loop_with_settings(gs)
 
     keybinding.get_joint_for_key.return_value = None
-    bridge.get_current_angles.return_value = {
+    bridge.get_raw_angles.return_value = {
         JointName.SWING: 99.0,
         JointName.BOOM: -10.0,
         JointName.ARM: 50.0,
@@ -141,7 +141,7 @@ def test_bridge_recreated_on_mode_change() -> None:
     gs = GameSettings(filepath="nonexistent/path.json")
     original_bridge = MagicMock()
     new_bridge = MagicMock()
-    new_bridge.get_current_angles.return_value = dict(DEFAULT_JOINT_ANGLES)
+    new_bridge.get_raw_angles.return_value = dict(DEFAULT_JOINT_ANGLES)
     factory = MagicMock(return_value=new_bridge)
 
     renderer = MagicMock()

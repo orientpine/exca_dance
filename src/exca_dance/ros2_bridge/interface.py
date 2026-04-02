@@ -20,8 +20,16 @@ class ExcavatorBridgeInterface(ABC):
         """Send joint angle commands to the excavator."""
 
     @abstractmethod
+    def send_velocity(self, velocities: dict[JointName, float]) -> None:
+        """Send velocity commands (-1.0~1.0) to the excavator."""
+
+    @abstractmethod
     def get_current_angles(self) -> dict[JointName, float]:
         """Get current joint angles from excavator."""
+
+    @abstractmethod
+    def get_raw_angles(self) -> dict[JointName, float]:
+        """Get raw (uncalibrated) joint angles from excavator."""
 
     @abstractmethod
     def is_connected(self) -> bool:
@@ -61,4 +69,12 @@ class VirtualBridge(ExcavatorBridgeInterface):
 
     @override
     def get_current_angles(self) -> dict[JointName, float]:
+        return dict(self._angles)
+
+    @override
+    def send_velocity(self, velocities: dict[JointName, float]) -> None:
+        pass  # virtual mode: no hardware to drive
+
+    @override
+    def get_raw_angles(self) -> dict[JointName, float]:
         return dict(self._angles)

@@ -164,6 +164,7 @@ def main(argv: list[str] | None = None) -> int:
         from exca_dance.core.leaderboard import LeaderboardManager
         from exca_dance.core.camera_settings import CameraSettings
         from exca_dance.core.gamepad import GamepadManager
+        from exca_dance.core.calibration import CalibrationSettings
 
         fk = ExcavatorFK()
         scoring = ScoringEngine()
@@ -172,6 +173,7 @@ def main(argv: list[str] | None = None) -> int:
         camera_settings = CameraSettings()
         pygame.joystick.init()
         gamepad = GamepadManager()
+        calibration = CalibrationSettings()
 
         # Bridge
         from exca_dance.ros2_bridge import create_bridge
@@ -193,6 +195,7 @@ def main(argv: list[str] | None = None) -> int:
             game_settings=game_settings,
             bridge_factory=create_bridge,
             gamepad=gamepad,
+            calibration=calibration,
         )
 
         # HUD + visual cues
@@ -260,6 +263,8 @@ def main(argv: list[str] | None = None) -> int:
                 fk=fk,
                 excavator_model_class=ExcavatorModel,
                 game_settings=game_settings,
+                calibration=calibration,
+                bridge=bridge,
             ),
         )
         tutorial_screen_class = import_module(
@@ -336,6 +341,7 @@ def _safe_cleanup(ctx: dict, logger: logging.Logger) -> None:
     _try_call(logger, "keybinding.save", lambda: ctx["keybinding"].save())
     _try_call(logger, "camera_settings.save", lambda: ctx["camera_settings"].save())
     _try_call(logger, "game_settings.save", lambda: ctx["game_settings"].save())
+    _try_call(logger, "calibration.save", lambda: ctx["calibration"].save())
     _try_call(logger, "audio.destroy", lambda: ctx["audio"].destroy())
     _try_call(logger, "bridge.disconnect", lambda: ctx["bridge"].disconnect())
     _try_call(logger, "visual_cues.destroy", lambda: ctx["visual_cues"].destroy())
