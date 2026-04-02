@@ -839,31 +839,16 @@ class MainMenuScreen:
         W: int,
         H: int,
     ) -> None:
-        t = self._time
         s = H / 1080.0
         cx = int(W * 0.24)
         badge_y = int(H * 0.18) - int(55 * s)
 
-        glow_a = 0.25 + 0.10 * math.sin(t * 1.2)
-        glow_s = max(1.15 * s, 0.65)
-        text_renderer.render(
-            "한국기계연구원 50주년",
-            cx,
-            badge_y - 2,
-            color=NeonTheme.TEXT_WHITE.with_alpha(glow_a).as_tuple(),
-            scale=glow_s,
-            align="center",
-            large=True,
-        )
-
-        main_a = 0.85 + 0.10 * math.sin(t * 0.8 + 0.5)
-        main_s = max(1.05 * s, 0.6)
         text_renderer.render(
             "한국기계연구원 50주년",
             cx,
             badge_y,
-            color=NeonTheme.TEXT_WHITE.with_alpha(main_a).as_tuple(),
-            scale=main_s,
+            color=NeonTheme.TEXT_WHITE.with_alpha(0.9).as_tuple(),
+            scale=max(1.05 * s, 0.6),
             align="center",
             large=True,
         )
