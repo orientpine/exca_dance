@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
 import time
 from pathlib import Path
 from typing import cast
@@ -186,5 +187,25 @@ class AudioSystem:
 
     def destroy(self) -> None:
         if self._initialized and not self._silent_mode:
-            pygame.mixer.quit()
+            # Stop all playback BEFORE quitting mixer — prevents hang when
+            # audio backend (PipeWire/PulseAudio) is in a broken-pipe state.
+            try:
+                pygame.mixer.music.stop()
+            except Exception:
+                pass
+            try:
+                pygame.mixer.stop()
+            except Exception:
+                pass
+            self._quit_mixer_safe()
         self._sfx_cache.clear()
+
+    def _quit_mixer_safe(self, timeout: float = 2.0) -> None:
+        """Quit mixer with timeout — prevents indefinite hang on stuck audio backends."""
+        t = threading.Thread(target=pygame.mixer.quit, daemon=True)
+        t.start()
+        t.join(timeout=timeout)
+        if t.is_alive():
+            logger.warning(
+                "pygame.mixer.quit() timed out (%.1fs) — audio backend may be stuck", timeout
+            )

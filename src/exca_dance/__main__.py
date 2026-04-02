@@ -306,16 +306,6 @@ def main(argv: list[str] | None = None) -> int:
                 _draw_fade_overlay(renderer, state_mgr.fade_alpha)
             renderer.end_frame()
 
-        # Cleanup
-        keybinding.save()
-        camera_settings.save()
-        audio.destroy()
-        bridge.disconnect()
-        visual_cues.destroy()
-        excavator_model.destroy()
-        renderer.destroy()
-        pygame.quit()
-        logger.info("Exca Dance exited cleanly")
         return 0
 
     except Exception as exc:
@@ -326,6 +316,32 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Fatal error: {exc}", file=sys.stderr)
         traceback.print_exc()
         return 1
+
+    finally:
+        _safe_cleanup(locals(), logging.getLogger("exca_dance"))
+
+
+def _safe_cleanup(ctx: dict, logger: logging.Logger) -> None:
+    """Run each cleanup step independently so one failure never blocks another."""
+    _try_call(logger, "game_loop.stop", lambda: ctx["game_loop"].stop())
+    _try_call(logger, "keybinding.save", lambda: ctx["keybinding"].save())
+    _try_call(logger, "camera_settings.save", lambda: ctx["camera_settings"].save())
+    _try_call(logger, "audio.destroy", lambda: ctx["audio"].destroy())
+    _try_call(logger, "bridge.disconnect", lambda: ctx["bridge"].disconnect())
+    _try_call(logger, "visual_cues.destroy", lambda: ctx["visual_cues"].destroy())
+    _try_call(logger, "excavator_model.destroy", lambda: ctx["excavator_model"].destroy())
+    _try_call(logger, "renderer.destroy", lambda: ctx["renderer"].destroy())
+    _try_call(logger, "pygame.quit", lambda: __import__("pygame").quit())
+    logger.info("Exca Dance cleanup finished")
+
+
+def _try_call(logger: logging.Logger, label: str, fn) -> None:
+    try:
+        fn()
+    except (KeyError, NameError):
+        pass
+    except Exception as exc:
+        logger.warning("Cleanup [%s] failed: %s", label, exc)
 
 
 if __name__ == "__main__":
