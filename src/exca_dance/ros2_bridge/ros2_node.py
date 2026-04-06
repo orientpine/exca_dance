@@ -44,7 +44,11 @@ def _ros2_process_main(
         logger.error("excavator_msgs not available (UpperControlCmd)")
         return
 
-    rclpy.init()
+    try:
+        rclpy.init()
+    except Exception as e:
+        logger.error("rclpy.init() failed: %s", e)
+        return
 
     class ExcavatorNode(Node):
         def __init__(self) -> None:
@@ -138,7 +142,16 @@ def _ros2_process_main(
             msg.safety_override = False
             self._cmd_pub.publish(msg)
 
-    node = ExcavatorNode()
+    try:
+        node = ExcavatorNode()
+    except Exception as e:
+        logger.error("ROS2 node creation failed (DDS domain error?): %s", e)
+        try:
+            rclpy.shutdown()
+        except Exception:
+            pass
+        return
+
     executor = SingleThreadedExecutor()
     executor.add_node(node)
     try:
@@ -176,7 +189,12 @@ class ROS2Bridge:
         self._process.start()
         time.sleep(0.5)
         if not self._process.is_alive():
-            raise RuntimeError("ROS2 subprocess exited immediately (excavator_msgs unavailable?)")
+            exit_code = self._process.exitcode
+            raise RuntimeError(
+                f"ROS2 subprocess exited immediately (exit_code={exit_code}). "
+                "Check: excavator_msgs installed? DDS network interface available? "
+                "CYCLONEDDS_URI config valid?"
+            )
         self._connected = True
         logger.info("ROS2 bridge process started (PID %d)", self._process.pid)
 
