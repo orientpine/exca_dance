@@ -27,6 +27,20 @@ def is_ros2_installed_but_not_sourced() -> bool:
     return Path("/opt/ros").is_dir() or bool(os.environ.get("ROS_DISTRO"))
 
 
+def get_ros2_distro() -> str:
+    """Detect installed ROS2 distro name. Falls back to 'humble'."""
+    distro = os.environ.get("ROS_DISTRO")
+    if distro:
+        return distro
+    from pathlib import Path
+    ros_path = Path("/opt/ros")
+    if ros_path.is_dir():
+        distros = [d.name for d in ros_path.iterdir() if d.is_dir()]
+        if distros:
+            return distros[0]
+    return "humble"
+
+
 def create_bridge(mode: str = "virtual") -> ExcavatorBridgeInterface:
     """
     Factory function for excavator bridge.

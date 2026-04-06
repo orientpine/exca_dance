@@ -6,7 +6,16 @@ Virtual mode works standalone without ROS2 installed.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import override
+import sys
+
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    try:
+        from typing_extensions import override
+    except ImportError:
+        def override(func):  # type: ignore[assignment]
+            return func
 
 from exca_dance.core.models import JointName
 from exca_dance.core.constants import DEFAULT_JOINT_ANGLES

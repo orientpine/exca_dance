@@ -45,14 +45,41 @@ def _ros2_process_main(
         return
 
     try:
+        from std_srvs.srv import SetBool
+    except ImportError:
+        SetBool = None
+
+    try:
         rclpy.init()
     except Exception as e:
         logger.error("rclpy.init() failed: %s", e)
         return
 
+    def call_enable_service(node, enable: bool, timeout_sec: float = 5.0) -> bool:
+        """Call /upper_controller/enable to take/release control authority."""
+        if SetBool is None:
+            logger.warning("std_srvs not available, skipping enable service call")
+            return False
+        cli = node.create_client(SetBool, "/upper_controller/enable")
+        if not cli.wait_for_service(timeout_sec=timeout_sec):
+            logger.warning("upper_controller/enable service not available (timeout)")
+            return False
+        req = SetBool.Request()
+        req.data = enable
+        future = cli.call_async(req)
+        rclpy.spin_until_future_complete(node, future, timeout_sec=timeout_sec)
+        if future.result() is not None:
+            logger.info("upper_controller enable=%s → success=%s", enable, future.result().success)
+            return future.result().success
+        logger.error("upper_controller enable=%s service call failed", enable)
+        return False
+
     class ExcavatorNode(Node):
         def __init__(self) -> None:
             super().__init__("exca_dance_bridge")
+
+            # Latest sensor state (updated by callbacks, pushed by timer)
+            self._latest_state: dict[str, float] = {}
 
             # Publisher: velocity commands → CAN bridge
             self._cmd_pub = self.create_publisher(
@@ -85,50 +112,38 @@ def _ros2_process_main(
                 10,
             )
 
-            # 20 Hz publish timer — matches CAN bridge 50ms cycle
-            self._timer = self.create_timer(1.0 / 20.0, self._tick)
+            # 50 Hz timer — velocity publish + state snapshot push
+            self._timer = self.create_timer(1.0 / 50.0, self._tick)
 
-        # ── Subscriber callbacks ─────────────────────────────────
+        # ── Subscriber callbacks: store latest value (no queue) ──
 
         def _boom_cb(self, msg: Float32MultiArray) -> None:
             if msg.data:
-                try:
-                    state_queue.put_nowait({"boom": float(msg.data[0])})
-                except Exception:
-                    pass
+                self._latest_state["boom"] = float(msg.data[0])
 
         def _arm_cb(self, msg: Float32MultiArray) -> None:
             if msg.data:
-                try:
-                    state_queue.put_nowait({"arm": float(msg.data[0])})
-                except Exception:
-                    pass
+                self._latest_state["arm"] = float(msg.data[0])
 
         def _bucket_cb(self, msg: Float32MultiArray) -> None:
             if msg.data:
-                try:
-                    state_queue.put_nowait({"bucket": float(msg.data[0])})
-                except Exception:
-                    pass
+                self._latest_state["bucket"] = float(msg.data[0])
 
         def _swing_cb(self, msg: Float32) -> None:
-            try:
-                state_queue.put_nowait({"swing": float(msg.data)})
-            except Exception:
-                pass
+            self._latest_state["swing"] = float(msg.data)
 
-        # ── Timer tick: drain velocity queue → publish ────────────
+        # ── Timer tick: drain velocity queue → publish, push state ─
 
         def _tick(self) -> None:
+            # --- velocity command ---
             latest: dict[str, float] | None = None
-            while not velocity_queue.empty():
+            while True:
                 try:
                     latest = velocity_queue.get_nowait()
-                except Exception:
+                except Empty:
                     break
 
             if latest is None:
-                # No new command: publish zero velocities (hold still)
                 latest = {"boom": 0.0, "arm": 0.0, "bucket": 0.0, "swing": 0.0}
 
             msg = UpperControlCmd()
@@ -137,10 +152,17 @@ def _ros2_process_main(
             msg.arm_velocity = float(latest.get("arm", 0.0))
             msg.bucket_velocity = float(latest.get("bucket", 0.0))
             msg.swing_velocity = float(latest.get("swing", 0.0))
-            msg.control_mode = 0  # manual
+            msg.control_mode = 1  # auto (matches upper_controller_node protocol)
             msg.emergency_stop = False
             msg.safety_override = False
             self._cmd_pub.publish(msg)
+
+            # --- state snapshot (complete joint set per push) ---
+            if self._latest_state:
+                try:
+                    state_queue.put_nowait(dict(self._latest_state))
+                except Exception:
+                    pass
 
     try:
         node = ExcavatorNode()
@@ -152,6 +174,9 @@ def _ros2_process_main(
             pass
         return
 
+    # Disable upper_controller_node so our commands reach CAN bridge exclusively
+    call_enable_service(node, enable=False)
+
     executor = SingleThreadedExecutor()
     executor.add_node(node)
     try:
@@ -159,6 +184,11 @@ def _ros2_process_main(
     except Exception:
         pass
     finally:
+        # Re-enable upper_controller_node before shutting down
+        try:
+            call_enable_service(node, enable=True, timeout_sec=2.0)
+        except Exception:
+            pass
         node.destroy_node()
         executor.shutdown()
         try:
@@ -174,8 +204,8 @@ class ROS2Bridge:
     """
 
     def __init__(self) -> None:
-        self._velocity_queue: mp.Queue[dict[str, float]] = mp.Queue(maxsize=10)
-        self._state_queue: mp.Queue[dict[str, float]] = mp.Queue(maxsize=10)
+        self._velocity_queue: mp.Queue[dict[str, float]] = mp.Queue(maxsize=50)
+        self._state_queue: mp.Queue[dict[str, float]] = mp.Queue(maxsize=50)
         self._process: mp.Process | None = None
         self._latest_angles: dict[str, float] = {}
         self._connected: bool = False
@@ -213,13 +243,35 @@ class ROS2Bridge:
         """Legacy: send joint angles (kept for virtual-mode compatibility)."""
         pass  # real mode no longer sends angle commands
 
+    _restart_count: int = 0
+
     def send_velocity(self, velocities: dict[JointName, float]) -> None:
         """Send velocity commands to UpperControlCmd publisher."""
+        if self._process is not None and not self._process.is_alive():
+            if self._restart_count < 3:
+                self._restart_count += 1
+                logger.error(
+                    "ROS2 subprocess died (exit_code=%s), restarting (%d/3)...",
+                    self._process.exitcode, self._restart_count,
+                )
+                # Drain stale queue before restart
+                while not self._velocity_queue.empty():
+                    try:
+                        self._velocity_queue.get_nowait()
+                    except Exception:
+                        break
+                try:
+                    self.connect()
+                except Exception as e:
+                    logger.error("ROS2 subprocess restart failed: %s", e)
+                    return
+            else:
+                return  # Give up after 3 restarts
         try:
             str_vel = {k.value if hasattr(k, "value") else str(k): v for k, v in velocities.items()}
             self._velocity_queue.put_nowait(str_vel)
         except Exception:
-            pass
+            pass  # Queue full — silently drop (next tick will drain)
 
     def get_current_angles(self) -> dict[JointName, float]:
         """Get calibrated angles (same as raw for ROS2Bridge — calibration in game_loop)."""
@@ -227,7 +279,7 @@ class ROS2Bridge:
 
     def get_raw_angles(self) -> dict[JointName, float]:
         """Non-blocking drain of state queue. Returns latest known angles."""
-        for _ in range(20):  # safety cap to prevent unbounded drain
+        for _ in range(60):  # safety cap to prevent unbounded drain
             try:
                 update = self._state_queue.get_nowait()
                 for key, value in update.items():

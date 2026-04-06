@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from typing import Any, cast
 
@@ -11,6 +12,8 @@ from exca_dance.core.constants import DEFAULT_JOINT_ANGLES, JOINT_ANGULAR_VELOCI
 from exca_dance.core.game_settings import GameSettings
 from exca_dance.core.calibration import CalibrationSettings
 from exca_dance.core.gamepad import GamepadManager
+
+logger = logging.getLogger(__name__)
 
 
 class GameState:
@@ -141,6 +144,14 @@ class GameLoop:
     # Per-frame update (called by screen/state manager)
     # ------------------------------------------------------------------ #
 
+    def update_bridge(self) -> None:
+        """Real mode: read sensors + send velocity. Call every frame from main loop."""
+        if self._mode != "real":
+            return
+        self._update_joints_from_bridge()
+        self._send_velocity_to_bridge()
+        self._excavator_model.update(self._joint_angles)
+
     def tick(self, dt: float) -> list[Any]:
         """
         Process one frame. Returns list of HitResult from this frame.
@@ -149,15 +160,14 @@ class GameLoop:
         hit_results = []
 
         if self._state == GameState.PLAYING:
-            self._update_joints(dt)
+            if self._mode != "real":
+                self._update_joints(dt)
             hit_results = self._check_beats()
             self._check_song_end()
 
-        if self._mode == "real":
-            self._send_velocity_to_bridge()
-        else:
+        if self._mode != "real":
             self._bridge.send_command(self._joint_angles)
-        self._excavator_model.update(self._joint_angles)
+            self._excavator_model.update(self._joint_angles)
 
         return hit_results
 
@@ -217,8 +227,15 @@ class GameLoop:
         # Clamp to -1.0~1.0
         return {j: max(-1.0, min(1.0, v)) for j, v in input_per_joint.items()}
 
+    _vel_log_counter: int = 0
+
     def _send_velocity_to_bridge(self) -> None:
         """Real mode: send calibrated velocity to ROS2 UpperControlCmd."""
+        if self._gamepad is not None and not self._gamepad.connected:
+            GameLoop._vel_log_counter += 1
+            if GameLoop._vel_log_counter % 300 == 1:
+                logger.warning("Gamepad disconnected — sending zero velocities")
+
         raw_velocities = self._get_input_velocities()
         calibrated: dict[JointName, float] = {}
         for joint, vel in raw_velocities.items():
@@ -226,6 +243,18 @@ class GameLoop:
                 calibrated[joint] = self._calibration.transform_velocity(joint, vel)
             else:
                 calibrated[joint] = vel
+
+        # Periodic diagnostic log (every ~5 seconds at 60 FPS)
+        GameLoop._vel_log_counter += 1
+        if GameLoop._vel_log_counter % 300 == 0:
+            has_input = any(abs(v) > 0.01 for v in calibrated.values())
+            logger.info(
+                "bridge vel: %s | gamepad=%s | input=%s",
+                {k.value: round(v, 2) for k, v in calibrated.items()},
+                self._gamepad.connected if self._gamepad else "N/A",
+                has_input,
+            )
+
         self._bridge.send_velocity(calibrated)
 
     def _update_joints(self, dt: float) -> None:

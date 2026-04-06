@@ -28,9 +28,7 @@ def test_no_rclpy_import():
     import ast
     from pathlib import Path
 
-    source = Path(
-        "/home/cha/Documents/exca_dance/src/exca_dance/ros2_bridge/interface.py"
-    ).read_text()
+    source = (Path(__file__).resolve().parent.parent / "src" / "exca_dance" / "ros2_bridge" / "interface.py").read_text()
     tree = ast.parse(source)
     imported_modules = {
         node.module

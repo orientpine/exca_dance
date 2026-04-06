@@ -310,6 +310,7 @@ def main(argv: list[str] | None = None) -> int:
                     )
 
             dt = clock.tick(TARGET_FPS) / 1000.0
+            game_loop.update_bridge()
             result = state_mgr.update(dt)
             if result == "quit":
                 running = False

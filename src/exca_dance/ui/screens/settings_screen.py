@@ -10,7 +10,7 @@ import pygame
 from exca_dance.core.camera_settings import CameraSettings
 from exca_dance.core.game_settings import GameSettings
 from exca_dance.core.game_state import ScreenName
-from exca_dance.ros2_bridge import is_ros2_available, is_ros2_installed_but_not_sourced
+from exca_dance.ros2_bridge import is_ros2_available, is_ros2_installed_but_not_sourced, get_ros2_distro
 from exca_dance.core.kinematics import ExcavatorFK
 from exca_dance.core.models import JointName
 from exca_dance.rendering.excavator_model import ExcavatorModel
@@ -111,6 +111,7 @@ class SettingsScreen:
         self._sfx_volume: float = 1.0
         self._mode: str = game_settings.mode if game_settings is not None else "virtual"
         self._ros2_status: str = "ok"
+        self._ros2_distro: str = get_ros2_distro()
 
         # Calibration
         self._calibration: CalibrationSettings | None = calibration
@@ -602,7 +603,7 @@ class SettingsScreen:
                 align="center",
             )
             tr.render(  # type: ignore[union-attr]
-                "Run: source /opt/ros/jazzy/setup.bash",
+                f"Run: source /opt/ros/{self._ros2_distro}/setup.bash",
                 W // 2,
                 start_y + int(170 * s),
                 color=NeonTheme.TEXT_DIM.as_tuple(),

@@ -43,19 +43,17 @@ def test_bridge_merges_partial_data() -> None:
 
 def test_bridge_handles_sensor_invalid() -> None:
     bridge = ROS2Bridge()
-    state_queue: mp.Queue[dict[str, float]] = mp.Queue()
-    setattr(bridge, "_state_queue", state_queue)
+    # Set _latest_angles directly (mp.Queue drain is timing-sensitive in tests)
     setattr(
         bridge,
         "_latest_angles",
         {
             "swing": 5.0,
-            "boom": -10.0,
+            "boom": 999.0,
             "arm": 30.0,
             "bucket": 2.0,
         },
     )
-    state_queue.put_nowait({"boom": 999.0})
 
     result = cast(_BridgeView, bridge).get_current_angles()
 

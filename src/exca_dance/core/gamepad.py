@@ -45,6 +45,8 @@ class GamepadManager:
         if event.type == pygame.JOYDEVICEADDED:
             if self._joystick is None:
                 self._try_connect()
+                if self._joystick is not None:
+                    logger.info("Gamepad re-connected after hot-plug")
         elif event.type == pygame.JOYDEVICEREMOVED:
             if self._joystick is not None:
                 try:
@@ -53,8 +55,10 @@ class GamepadManager:
                     instance_id = -1
                 removed_id = getattr(event, "instance_id", -2)
                 if instance_id == removed_id or instance_id == -1:
-                    logger.info("Gamepad disconnected")
+                    logger.warning("Gamepad disconnected (instance_id=%s)", removed_id)
                     self._joystick = None
+                    # Try immediate reconnect (another joystick may be available)
+                    self._try_connect()
 
     # ------------------------------------------------------------------ #
     # Stick → joint mapping (analog)
