@@ -244,6 +244,7 @@ class ROS2Bridge:
         pass  # real mode no longer sends angle commands
 
     _restart_count: int = 0
+    _give_up_log_counter: int = 0
 
     def send_velocity(self, velocities: dict[JointName, float]) -> None:
         """Send velocity commands to UpperControlCmd publisher."""
@@ -255,7 +256,7 @@ class ROS2Bridge:
                     self._process.exitcode, self._restart_count,
                 )
                 # Drain stale queue before restart
-                while not self._velocity_queue.empty():
+                while True:
                     try:
                         self._velocity_queue.get_nowait()
                     except Exception:
@@ -266,12 +267,17 @@ class ROS2Bridge:
                     logger.error("ROS2 subprocess restart failed: %s", e)
                     return
             else:
-                return  # Give up after 3 restarts
+                self._give_up_log_counter += 1
+                if self._give_up_log_counter % 300 == 1:
+                    logger.warning(
+                        "ROS2 subprocess gave up after 3 restarts — velocity commands dropped"
+                    )
+                return
         try:
             str_vel = {k.value if hasattr(k, "value") else str(k): v for k, v in velocities.items()}
             self._velocity_queue.put_nowait(str_vel)
         except Exception:
-            pass  # Queue full — silently drop (next tick will drain)
+            logger.debug("velocity_queue full — command dropped (next tick will drain)")
 
     def get_current_angles(self) -> dict[JointName, float]:
         """Get calibrated angles (same as raw for ROS2Bridge — calibration in game_loop)."""

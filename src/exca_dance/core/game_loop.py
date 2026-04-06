@@ -232,9 +232,8 @@ class GameLoop:
     def _send_velocity_to_bridge(self) -> None:
         """Real mode: send calibrated velocity to ROS2 UpperControlCmd."""
         if self._gamepad is not None and not self._gamepad.connected:
-            GameLoop._vel_log_counter += 1
             if GameLoop._vel_log_counter % 300 == 1:
-                logger.warning("Gamepad disconnected — sending zero velocities")
+                logger.warning("Gamepad disconnected \u2014 sending zero velocities")
 
         raw_velocities = self._get_input_velocities()
         calibrated: dict[JointName, float] = {}

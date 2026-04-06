@@ -118,12 +118,16 @@
 - `call_enable_service()`: 시작 시 upper_controller disable, 종료 시 re-enable
 - `send_velocity()`: subprocess 생존 확인 + 자동 재시작 (최대 3회)
 - drain safety cap: 20 → 60
+- `send_velocity()`: 재시작 drain 패턴을 `while True` / `except Empty`로 통일
+- `send_velocity()`: 큐 오버플로 시 경고 로그 추가 (기존 무음 → `logger.debug`)
+- `send_velocity()`: 3회 재시작 실패 후 매 프레임 경고 로그 (기존 무음 → `logger.warning`)
 
 ### `src/exca_dance/core/game_loop.py`
 - `update_bridge()` 메서드 추가: real 모드에서 매 프레임 bridge I/O
 - `tick()`: real 모드일 때 bridge I/O 분리 (update_bridge에서 처리)
 - `_send_velocity_to_bridge()`: 5초마다 진단 로그 출력
 - gamepad 연결 상태 로그 추가
+- `_send_velocity_to_bridge()`: `_vel_log_counter` 이중 증가 버그 수정
 
 ### `src/exca_dance/__main__.py`
 - 메인 루프에 `game_loop.update_bridge()` 호출 추가
@@ -158,9 +162,67 @@
    - 위 테스트에서 CAN 메시지가 정상 전달되는데도 3-5초 후 먹통이면 하드웨어 문제
    - 하드웨어 프로토콜 문서 확인 필요
 
+5. **upper_controller_node vs 게임 메시지 필드 비교**
+   - `ros2 topic echo /upper_controller/control_cmd`로 upper_controller_node 메시지 캡처
+   - 게임 실행 시 같은 명령으로 캡처 → 두 메시지의 필드 차이 비교
+   - 누락된 필드가 CAN bridge 또는 ECU 동작에 영향을 줄 수 있음
+
+6. **디버그 로깅 강화 확인 (코드 분석에서 수정 완료)**
+   - `put_nowait` 실패 시 로그 추가됨
+   - subprocess 재시작 실패 시 반복 로그 추가됨
+   - 다음 테스트에서 더 명확한 진단 확보 가능
+
 ---
 
-## 5. 참고: 원격 SSH 접속 정보
+## 5. 코드 분석 결과 (2026-04-06)
+
+### 수정 사항 (A-F) 코드 검증
+
+| 수정 항목 | 상태 | 검증 위치 |
+|---|---|---|
+| (A) 화면 전환 시 velocity 중단 | ✅ 적용됨 | `__main__.py:313` — `game_loop.update_bridge()` 매 프레임 호출 |
+| (B) state_queue 오버플로우 | ✅ 적용됨 | `ros2_node.py:82,120-133` — 콜백→dict, 50Hz 타이머 push |
+| (C) `queue.empty()` 신뢰성 | ✅ 적용됨 | `ros2_node.py:140-144` — `while True` / `except Empty` |
+| (D) upper_controller_node 충돌 | ✅ 적용됨 | `ros2_node.py:178` — `call_enable_service(False)` |
+| (E) control_mode 불일치 | ✅ 적용됨 | `ros2_node.py:155` — `msg.control_mode = 1` |
+| (F) subprocess 자동 재시작 | ✅ 적용됨 | `ros2_node.py:250-269` — 최대 3회 재시작 |
+
+### 전체 데이터 흐름 (정상 동작 확인)
+
+```
+__main__.py:313  game_loop.update_bridge()          ← 매 프레임 (~60Hz) ✅
+  → game_loop.py:152  _send_velocity_to_bridge()     ← real 모드면 항상 실행 ✅
+    → game_loop.py:258  bridge.send_velocity()         ← calibrated velocity 전송 ✅
+      → ros2_node.py:272  velocity_queue.put_nowait()   ← IPC 큐에 삽입 ✅
+        → ros2_node.py:142  velocity_queue.get_nowait()  ← 50Hz 타이머 drain ✅
+          → ros2_node.py:158  cmd_pub.publish(msg)       ← ROS2 토픽 발행 ✅
+```
+
+real 모드에서 정상 동작 중 velocity가 중단될 코드 경로는 없음.
+
+### 발견된 부수적 문제점 (수정 완료)
+
+| # | 문제 | 위치 | 영향 | 수정 |
+|---|---|---|---|---|
+| 1 | restart drain에 unreliable `while not empty()` 패턴 | `ros2_node.py:258` | 재시작 시 큐 drain 불완전 가능 | `while True` / `except Empty`로 통일 |
+| 2 | `put_nowait()` 실패 시 무음 처리 | `ros2_node.py:272-274` | 큐 오버플로 디버깅 불가 | `logger.debug` 추가 |
+| 3 | 3회 재시작 실패 후 조용히 포기 | `ros2_node.py:268-269` | 사용자에게 피드백 없음 | 매 프레임 `logger.warning` (300프레임 스로틀) |
+| 4 | `_vel_log_counter` 이중 증가 | `game_loop.py:235,248` | gamepad 미연결 시 진단 로그 주기 왜곡 | 중복 증가 제거 |
+
+### 결론: 코드베이스 내 근본 원인 없음
+
+전체 코드 추적 결과, real 모드에서 velocity 전송이 중단되는 코드 버그는 없다.
+원격 42-53Hz 수신 확인과 일치하며, 근본 원인은 코드 밖에 있다.
+
+| 우선순위 | 의심점 | 근거 |
+|---|---|---|
+| ★★★ | tmux CYCLONEDDS_URI 미적용 | `ros2 topic hz`(새 SSH)에선 보이나 can_bridge_node(옛 tmux)의 실제 수신 미확인 |
+| ★★☆ | 하드웨어 ECU 워치독 | CAN byte 7=0x20, upper_controller_node만 작동 → ECU 기대 패턴 불일치 가능 |
+| ★☆☆ | UpperControlCmd 필드 차이 | 우리 메시지에 누락된 필드가 CAN bridge/ECU 동작에 영향 가능 |
+
+---
+
+## 6. 참고: 원격 SSH 접속 정보
 - Host: 192.168.0.8
 - User: kimm
 - Password: kimm
