@@ -11,3 +11,27 @@ Traceback (most recent call last):
   File "/home/cha/Documents/exca_dance/.venv/lib/python3.12/site-packages/moderngl/__init__.py", line 1559, in blend_func
     raise NotImplementedError()
 NotImplementedError
+Traceback (most recent call last):
+  File "/home/kbj/Documents/exca_dance/src/exca_dance/__main__.py", line 179, in main
+    from exca_dance.ros2_bridge import create_bridge
+  File "/home/kbj/Documents/exca_dance/src/exca_dance/ros2_bridge/__init__.py", line 10, in <module>
+    from exca_dance.ros2_bridge.interface import ExcavatorBridgeInterface, VirtualBridge
+  File "/home/kbj/Documents/exca_dance/src/exca_dance/ros2_bridge/interface.py", line 9, in <module>
+    from typing import override
+ImportError: cannot import name 'override' from 'typing' (/usr/lib/python3.10/typing.py)
+Traceback (most recent call last):
+  File "/home/kbj/Documents/exca_dance/src/exca_dance/__main__.py", line 179, in main
+    from exca_dance.ros2_bridge import create_bridge
+  File "/home/kbj/Documents/exca_dance/src/exca_dance/ros2_bridge/__init__.py", line 10, in <module>
+    from exca_dance.ros2_bridge.interface import ExcavatorBridgeInterface, VirtualBridge
+  File "/home/kbj/Documents/exca_dance/src/exca_dance/ros2_bridge/interface.py", line 9, in <module>
+    from typing import override
+ImportError: cannot import name 'override' from 'typing' (/usr/lib/python3.10/typing.py)
+Traceback (most recent call last):
+  File "/home/kbj/Documents/exca_dance/src/exca_dance/__main__.py", line 179, in main
+    from exca_dance.ros2_bridge import create_bridge
+  File "/home/kbj/Documents/exca_dance/src/exca_dance/ros2_bridge/__init__.py", line 10, in <module>
+    from exca_dance.ros2_bridge.interface import ExcavatorBridgeInterface, VirtualBridge
+  File "/home/kbj/Documents/exca_dance/src/exca_dance/ros2_bridge/interface.py", line 9, in <module>
+    from typing import override
+ImportError: cannot import name 'override' from 'typing' (/usr/lib/python3.10/typing.py)

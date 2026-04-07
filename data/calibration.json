@@ -9,7 +9,7 @@
     "velocity_sign": 1.0,
     "angle_sign": 1.0,
     "angle_scale": 1.0,
-    "angle_offset": -7.7
+    "angle_offset": -30.7
   },
   "arm": {
     "velocity_sign": 1.0,
@@ -21,6 +21,6 @@
     "velocity_sign": 1.0,
     "angle_sign": 1.0,
     "angle_scale": 1.0,
-    "angle_offset": -122.1
+    "angle_offset": -136.1
   }
 }
