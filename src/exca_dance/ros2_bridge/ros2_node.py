@@ -94,6 +94,14 @@ def _ros2_process_main(
             # Latest sensor state (updated by callbacks, pushed by timer)
             self._latest_state: dict[str, float] = {}
 
+            # Last published velocity — reused on empty-queue ticks to avoid
+            # rate-mismatch toggling (game 60Hz vs this timer 100Hz). Without
+            # this, ~40% of CAN frames would alternate to neutral, tripping
+            # the excavator ECU's PC-control watchdog after ~1 second.
+            self._last_velocity: dict[str, float] = {
+                "boom": 0.0, "arm": 0.0, "bucket": 0.0, "swing": 0.0
+            }
+
             # Publisher: velocity commands → CAN bridge
             self._cmd_pub = self.create_publisher(
                 UpperControlCmd, "/upper_controller/control_cmd", 10
@@ -157,7 +165,9 @@ def _ros2_process_main(
                     break
 
             if latest is None:
-                latest = {"boom": 0.0, "arm": 0.0, "bucket": 0.0, "swing": 0.0}
+                latest = self._last_velocity
+            else:
+                self._last_velocity = latest
 
             msg = UpperControlCmd()
             msg.header.stamp = self.get_clock().now().to_msg()
