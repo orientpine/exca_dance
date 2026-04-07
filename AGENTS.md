@@ -68,6 +68,30 @@ assets/beatmaps/         # JSON beatmaps (sample1.json, sample2.json)
 
 ---
 
+## SSH REMOTE MACHINES
+
+| Host | IP | User | 비고 |
+|------|-----|------|------|
+| `inner_orin1` | 192.168.0.8 | kimm | Jetson Orin (내부망) |
+| `inner_orin2` | 192.168.0.10 | kimm | Jetson Orin (내부망) |
+| `outer_orin1` | 223.171.67.107:4003 | kimm | Jetson Orin (외부망) |
+| `outer_orin2` | 223.171.67.107:4004 | kimm | Jetson Orin (외부망) |
+| `kbj_machine` | 192.168.0.21 | kbj | ROG Z G14 (내부망) |
+
+```bash
+# 접속 (SSH config에 등록됨 — ~/.ssh/config)
+ssh inner_orin1
+ssh kbj_machine
+
+# 원격 명령 실행
+ssh inner_orin1 "ros2 topic list"
+ssh kbj_machine "hostname"
+```
+
+인증: `~/.ssh/id_ed25519` 키 기반. `ssh-copy-id`로 등록 완료.
+
+---
+
 ## COMMANDS
 
 ```bash
