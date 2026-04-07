@@ -249,6 +249,10 @@ class GameplayScreen:
                     for jn, ang in ev.target_angles.items():
                         if jn not in merged:
                             merged[jn] = ang
+                if not merged:
+                    next_pending = self._game_loop.next_pending_event
+                    if next_pending is not None:
+                        merged = dict(next_pending.target_angles)
                 if merged:
                     full = dict(DEFAULT_JOINT_ANGLES)
                     full.update(merged)
@@ -263,6 +267,7 @@ class GameplayScreen:
             upcoming,
             active_event=self._game_loop.active_event,
             active_deadline_ms=self._game_loop.active_deadline_ms,
+            next_pending_event=self._game_loop.next_pending_event,
         )
 
         # Pause → show pause overlay

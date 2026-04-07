@@ -242,3 +242,59 @@ def test_render_ghost_full_alpha_during_active_event() -> None:
     ghost_model.render_3d.assert_called()
     call_kwargs = ghost_model.render_3d.call_args.kwargs
     assert call_kwargs["alpha"] == NeonTheme.GHOST_ALPHA
+
+
+def test_ghost_uses_next_pending_when_upcoming_empty() -> None:
+    """Regression: beatmaps with >6s gaps between beats. The 6s timeline
+    lookahead leaves upcoming_events empty between beats, but the ghost
+    must still immediately show the next pending beat's pose.
+    """
+    from exca_dance.core.models import BeatEvent, JointName
+
+    cues, _, ghost_model = _make_visual_cue_renderer()
+
+    next_event = BeatEvent(
+        time_ms=15000,
+        target_angles={JointName.BOOM: 45.0, JointName.ARM: -20.0},
+    )
+
+    cues.update(
+        current_time_ms=2000.0,
+        current_angles={j: 0.0 for j in JointName},
+        upcoming_events=[],
+        active_event=None,
+        next_pending_event=next_event,
+    )
+
+    ghost_model.update.assert_called_once()
+    ghost_angles = ghost_model.update.call_args[0][0]
+    assert ghost_angles[JointName.BOOM] == 45.0
+    assert ghost_angles[JointName.ARM] == -20.0
+
+
+def test_active_event_takes_priority_over_next_pending() -> None:
+    """When active_event is set, it beats next_pending_event.
+
+    Prevents accidental pose switching during an active judgment window.
+    """
+    from exca_dance.core.models import BeatEvent, JointName
+
+    cues, _, ghost_model = _make_visual_cue_renderer()
+
+    active = BeatEvent(time_ms=1000, target_angles={JointName.BOOM: 10.0})
+    next_pending = BeatEvent(time_ms=20000, target_angles={JointName.BOOM: 80.0})
+
+    cues.update(
+        current_time_ms=1200.0,
+        current_angles={j: 0.0 for j in JointName},
+        upcoming_events=[],
+        active_event=active,
+        active_deadline_ms=2500.0,
+        next_pending_event=next_pending,
+    )
+
+    ghost_model.update.assert_called_once()
+    ghost_angles = ghost_model.update.call_args[0][0]
+    assert ghost_angles[JointName.BOOM] == 10.0, (
+        "Active event must override next_pending_event for ghost display"
+    )

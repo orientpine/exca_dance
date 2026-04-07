@@ -158,6 +158,7 @@ class VisualCueRenderer:
         *,
         active_event: BeatEvent | None = None,
         active_deadline_ms: float | None = None,
+        next_pending_event: BeatEvent | None = None,
     ) -> None:
         self._current_time_ms = current_time_ms
         self._current_angles = dict(current_angles)
@@ -165,7 +166,14 @@ class VisualCueRenderer:
         self._is_active_window = active_event is not None
         self._active_window_deadline_ms = active_deadline_ms or 0.0
 
+        # Ghost display priority: active > next_pending (distance-unbounded) >
+        # earliest upcoming (6s window fallback for backwards compat).
+        # next_pending_event is the immediately next unactivated beat — used so
+        # the ghost pose appears right after a judgment even when the next beat
+        # is beyond the timeline's 6s lookahead (beatmaps with long gaps).
         display_event: BeatEvent | None = active_event
+        if display_event is None:
+            display_event = next_pending_event
         if display_event is None and upcoming_events:
             display_event = min(upcoming_events, key=lambda e: e.time_ms)
 

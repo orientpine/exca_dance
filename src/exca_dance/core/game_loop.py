@@ -151,6 +151,10 @@ class GameLoop:
     def last_processed_event(self) -> BeatEvent | None:
         return self._processed_events[-1] if self._processed_events else None
 
+    @property
+    def next_pending_event(self) -> BeatEvent | None:
+        return self._pending_events[0] if self._pending_events else None
+
     # ------------------------------------------------------------------ #
     # Per-frame update (called by screen/state manager)
     # ------------------------------------------------------------------ #
