@@ -44,8 +44,6 @@ class VisualCueRenderer:
     - Beat timeline: scrolling event markers at bottom
     """
 
-    GHOST_FADE_MS: float = 8000.0  # fade in over ~8 s before event
-
     # Pre-allocated buffer sizes (vertices)
     _TL_SOLID_RESERVE: int = 256  # ~42 solid rects
     _TL_ADD_RESERVE: int = 256  # ~36 additive rects
@@ -196,17 +194,12 @@ class VisualCueRenderer:
     def render_ghost(self, mvp: np.ndarray) -> None:
         if self._active_target is None:
             return
-        ghost_alpha = NeonTheme.GHOST_ALPHA
-
-        if self._is_active_window:
-            alpha = ghost_alpha
-        else:
-            time_to_event = self._next_event_time_ms - self._current_time_ms
-            if time_to_event > self.GHOST_FADE_MS or time_to_event < 0:
-                return
-            alpha = ghost_alpha * (1.0 - time_to_event / self.GHOST_FADE_MS)
-            alpha = max(0.0, min(ghost_alpha, alpha))
-
+        # Always render the next target at full alpha so the player can
+        # prepare between beats. A prior time-based fade-in (8s ramp) made
+        # the ghost appear sluggishly after a beat was judged and hid it
+        # entirely when the next beat was >8s away — regression reported as
+        # "target appears slowly after previous one is confirmed".
+        alpha = NeonTheme.GHOST_ALPHA
         self._ghost_model.render_3d(mvp, alpha=alpha)
 
         # Additive glow pass — reuses existing static VBOs via render_glow()

@@ -159,3 +159,86 @@ def test_ghost_does_not_update_when_target_angles_unchanged() -> None:
     )
     # Ghost should NOT have been updated again (angles unchanged)
     assert ghost_model.update.call_count == 1
+
+
+def test_render_ghost_full_alpha_when_active_event_none() -> None:
+    """Regression: ghost must render at full GHOST_ALPHA even when
+    active_event is None (between beats). Previously a time-based fade-in
+    caused the next target to appear sluggishly after a beat was judged.
+    """
+    from exca_dance.core.models import BeatEvent, JointName
+    from exca_dance.rendering.theme import NeonTheme
+
+    cues, _, ghost_model = _make_visual_cue_renderer()
+
+    event = BeatEvent(time_ms=5000, target_angles={JointName.BOOM: 45.0})
+
+    cues.update(
+        current_time_ms=1000.0,
+        current_angles={j: 0.0 for j in JointName},
+        upcoming_events=[event],
+        active_event=None,
+    )
+
+    identity_mvp = np.eye(4, dtype=np.float32)
+    cues.render_ghost(identity_mvp)
+
+    ghost_model.render_3d.assert_called()
+    call_kwargs = ghost_model.render_3d.call_args.kwargs
+    assert call_kwargs["alpha"] == NeonTheme.GHOST_ALPHA, (
+        f"Expected GHOST_ALPHA={NeonTheme.GHOST_ALPHA}, got {call_kwargs['alpha']}"
+    )
+
+
+def test_render_ghost_full_alpha_when_beat_far_in_future() -> None:
+    """Regression: ghost must render at full GHOST_ALPHA even when next
+    beat is far away. Previously any beat >8s away was invisible entirely
+    because of the GHOST_FADE_MS cutoff.
+    """
+    from exca_dance.core.models import BeatEvent, JointName
+    from exca_dance.rendering.theme import NeonTheme
+
+    cues, _, ghost_model = _make_visual_cue_renderer()
+
+    event = BeatEvent(time_ms=30000, target_angles={JointName.BOOM: 45.0})
+
+    cues.update(
+        current_time_ms=0.0,
+        current_angles={j: 0.0 for j in JointName},
+        upcoming_events=[event],
+        active_event=None,
+    )
+
+    identity_mvp = np.eye(4, dtype=np.float32)
+    cues.render_ghost(identity_mvp)
+
+    ghost_model.render_3d.assert_called()
+    call_kwargs = ghost_model.render_3d.call_args.kwargs
+    assert call_kwargs["alpha"] == NeonTheme.GHOST_ALPHA, (
+        f"Expected GHOST_ALPHA={NeonTheme.GHOST_ALPHA}, got {call_kwargs['alpha']}"
+    )
+
+
+def test_render_ghost_full_alpha_during_active_event() -> None:
+    """Sanity: ghost still renders at full alpha during an active event."""
+    from exca_dance.core.models import BeatEvent, JointName
+    from exca_dance.rendering.theme import NeonTheme
+
+    cues, _, ghost_model = _make_visual_cue_renderer()
+
+    event = BeatEvent(time_ms=1000, target_angles={JointName.BOOM: 45.0})
+
+    cues.update(
+        current_time_ms=1200.0,
+        current_angles={j: 0.0 for j in JointName},
+        upcoming_events=[],
+        active_event=event,
+        active_deadline_ms=2000.0,
+    )
+
+    identity_mvp = np.eye(4, dtype=np.float32)
+    cues.render_ghost(identity_mvp)
+
+    ghost_model.render_3d.assert_called()
+    call_kwargs = ghost_model.render_3d.call_args.kwargs
+    assert call_kwargs["alpha"] == NeonTheme.GHOST_ALPHA
