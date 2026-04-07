@@ -33,6 +33,9 @@ JUDGMENT_WINDOWS: dict[Judgment, float] = {
     Judgment.GOOD: 120.0,
 }
 
+# Grace period (ms) after duration_ms before auto-MISS
+MISS_GRACE_MS: float = 500.0
+
 # Base score per judgment
 SCORE_VALUES: dict[Judgment, int] = {
     Judgment.PERFECT: 300,

@@ -75,6 +75,8 @@ class VisualCueRenderer:
         self._current_angles: dict[JointName, float] = dict(DEFAULT_JOINT_ANGLES)
         self._upcoming_events: list[BeatEvent] = []
         self._prev_ghost_angles: dict[JointName, float] | None = None
+        self._is_active_window: bool = False
+        self._active_window_deadline_ms: float = 0.0
 
         # ── Cached outline VBO (rebuilt only when ghost angles change) ──
         self._outline_vbo: moderngl.Buffer | None = None
@@ -155,22 +157,27 @@ class VisualCueRenderer:
         current_time_ms: float,
         current_angles: dict[JointName, float],
         upcoming_events: list[BeatEvent],
+        *,
+        active_event: BeatEvent | None = None,
+        active_deadline_ms: float | None = None,
     ) -> None:
-        """Update cue state each frame."""
         self._current_time_ms = current_time_ms
         self._current_angles = dict(current_angles)
         self._upcoming_events = upcoming_events
+        self._is_active_window = active_event is not None
+        self._active_window_deadline_ms = active_deadline_ms or 0.0
 
-        # Find the nearest upcoming event for ghost
-        if upcoming_events:
-            nearest = min(upcoming_events, key=lambda e: e.time_ms)
+        display_event: BeatEvent | None = active_event
+        if display_event is None and upcoming_events:
+            display_event = min(upcoming_events, key=lambda e: e.time_ms)
+
+        if display_event is not None:
             full_target: dict[JointName, float] = dict(DEFAULT_JOINT_ANGLES)
-            full_target.update(nearest.target_angles)
+            full_target.update(display_event.target_angles)
             self._active_target = full_target
-            self._next_event_time_ms = float(nearest.time_ms)
-            # Update ghost model to target pose
+            self._next_event_time_ms = float(display_event.time_ms)
             ghost_angles: dict[JointName, float] = dict(DEFAULT_JOINT_ANGLES)
-            ghost_angles.update(nearest.target_angles)
+            ghost_angles.update(display_event.target_angles)
             if self._prev_ghost_angles is None or any(
                 abs(ghost_angles.get(k, 0) - self._prev_ghost_angles.get(k, 0)) > 0.01
                 for k in ghost_angles
@@ -187,16 +194,19 @@ class VisualCueRenderer:
     # ------------------------------------------------------------------
 
     def render_ghost(self, mvp: np.ndarray) -> None:
-        """Render semi-transparent ghost excavator at target pose."""
         if self._active_target is None:
             return
-        time_to_event = self._next_event_time_ms - self._current_time_ms
-        if time_to_event > self.GHOST_FADE_MS or time_to_event < 0:
-            return
-        # Fade in: alpha 0 → GHOST_ALPHA as event approaches
         ghost_alpha = NeonTheme.GHOST_ALPHA
-        alpha = ghost_alpha * (1.0 - time_to_event / self.GHOST_FADE_MS)
-        alpha = max(0.0, min(ghost_alpha, alpha))
+
+        if self._is_active_window:
+            alpha = ghost_alpha
+        else:
+            time_to_event = self._next_event_time_ms - self._current_time_ms
+            if time_to_event > self.GHOST_FADE_MS or time_to_event < 0:
+                return
+            alpha = ghost_alpha * (1.0 - time_to_event / self.GHOST_FADE_MS)
+            alpha = max(0.0, min(ghost_alpha, alpha))
+
         self._ghost_model.render_3d(mvp, alpha=alpha)
 
         # Additive glow pass — reuses existing static VBOs via render_glow()

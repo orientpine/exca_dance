@@ -30,6 +30,7 @@ from .constants import (
     GAMEPAD_BUTTON_A,
     GAMEPAD_BUTTON_B,
     GAMEPAD_BUTTON_START,
+    MISS_GRACE_MS,
 )
 
 __all__ = [
@@ -60,4 +61,5 @@ __all__ = [
     "GAMEPAD_BUTTON_A",
     "GAMEPAD_BUTTON_B",
     "GAMEPAD_BUTTON_START",
+    "MISS_GRACE_MS",
 ]

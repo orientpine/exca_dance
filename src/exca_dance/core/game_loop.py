@@ -64,6 +64,8 @@ class GameLoop:
         self._state = GameState.MENU
         self._beatmap: BeatMap | None = None
         self._pending_events: list[BeatEvent] = []
+        self._active_event: BeatEvent | None = None
+        self._active_deadline_ms: float | None = None
         self._processed_events: list[BeatEvent] = []
         self._all_events_consumed_at_ms: float | None = None
 
@@ -97,6 +99,8 @@ class GameLoop:
         self._sync_bridge_if_mode_changed()
         self._beatmap = beatmap
         self._pending_events = list(beatmap.events)  # already sorted by time_ms
+        self._active_event = None
+        self._active_deadline_ms = None
         self._processed_events = []
         self._scoring.reset()
         self._joint_angles = dict(DEFAULT_JOINT_ANGLES)
@@ -136,8 +140,15 @@ class GameLoop:
         return self._audio.get_position_ms()
 
     @property
+    def active_event(self) -> BeatEvent | None:
+        return self._active_event
+
+    @property
+    def active_deadline_ms(self) -> float | None:
+        return self._active_deadline_ms
+
+    @property
     def last_processed_event(self) -> BeatEvent | None:
-        """Return the most recently scored beat event, or None."""
         return self._processed_events[-1] if self._processed_events else None
 
     # ------------------------------------------------------------------ #
@@ -270,38 +281,60 @@ class GameLoop:
             self._joint_angles[joint] = max(lo, min(hi, self._joint_angles[joint] + delta))
 
     def _check_beats(self) -> list[Any]:
-        """Evaluate beat events whose time has passed."""
-        from exca_dance.core.constants import JUDGMENT_WINDOWS
+        from exca_dance.core.constants import JUDGMENT_WINDOWS, MISS_GRACE_MS
         from exca_dance.core.models import Judgment
 
         current_ms = self._audio.get_position_ms()
         good_window = JUDGMENT_WINDOWS[cast(Judgment, Judgment.GOOD)]
         hit_results: list[Any] = []
-        remaining = []
 
-        for event in self._pending_events:
-            if current_ms >= event.time_ms:
-                timing_error = abs(current_ms - event.time_ms)
-                # Auto-miss if past GOOD window
-                if timing_error > good_window:
-                    result = self._scoring.judge({}, good_window + 1)
-                else:
-                    angle_errors = {
-                        j: abs(self._joint_angles.get(j, 0.0) - target)
-                        for j, target in event.target_angles.items()
-                    }
-                    result = self._scoring.judge(angle_errors, timing_error)
+        if self._active_event is None and self._pending_events:
+            nxt = self._pending_events[0]
+            if current_ms >= nxt.time_ms:
+                self._active_event = nxt
+                active_window = nxt.duration_ms + MISS_GRACE_MS
+                self._active_deadline_ms = nxt.time_ms + active_window
+                self._pending_events = self._pending_events[1:]
+
+        if self._active_event is not None:
+            ev = self._active_event
+            deadline = self._active_deadline_ms or 0.0
+            active_window = deadline - ev.time_ms
+            elapsed_ms = current_ms - ev.time_ms
+
+            angle_errors = {
+                j: abs(self._joint_angles.get(j, 0.0) - target)
+                for j, target in ev.target_angles.items()
+            }
+            avg_err = (
+                sum(angle_errors.values()) / len(angle_errors)
+                if angle_errors
+                else 0.0
+            )
+            hit_threshold = self._scoring.get_good_angle_threshold()
+
+            if avg_err <= hit_threshold:
+                scaled = elapsed_ms / active_window * good_window if active_window > 0 else 0.0
+                result = self._scoring.judge(angle_errors, scaled)
                 hit_results.append(result)
-                self._processed_events.append(event)
-            else:
-                remaining.append(event)
+                self._processed_events.append(ev)
+                self._active_event = None
+                self._active_deadline_ms = None
+            elif current_ms >= deadline:
+                result = self._scoring.judge({}, good_window + 1)
+                hit_results.append(result)
+                self._processed_events.append(ev)
+                self._active_event = None
+                self._active_deadline_ms = None
 
-        self._pending_events = remaining
         return hit_results
 
     def _check_song_end(self) -> None:
-        """Detect song completion."""
-        if not self._pending_events and self._beatmap is not None:
+        if (
+            not self._pending_events
+            and self._active_event is None
+            and self._beatmap is not None
+        ):
             current_ms = self._audio.get_position_ms()
 
             if self._all_events_consumed_at_ms is None:

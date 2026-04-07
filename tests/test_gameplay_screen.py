@@ -62,8 +62,6 @@ def test_update_does_not_raise_when_upcoming_events_are_empty() -> None:
     screen.update(0.016)
 
     game_loop.get_upcoming_events.assert_any_call(6000.0)
-    game_loop.get_upcoming_events.assert_any_call(6000.0)
-    assert game_loop.get_upcoming_events.call_count == 2
 
 
 def test_pause_selected_default_zero() -> None:
@@ -186,7 +184,7 @@ def test_game_loop_tick_called_before_visual_cues_update() -> None:
 
     call_order: list[str] = []
     game_loop.tick.side_effect = lambda dt: (call_order.append("tick"), [])[1]
-    visual_cues.update.side_effect = lambda *a: call_order.append("visual_cues.update")
+    visual_cues.update.side_effect = lambda *a, **kw: call_order.append("visual_cues.update")
     game_loop.get_upcoming_events.return_value = []
 
     screen.update(0.016)

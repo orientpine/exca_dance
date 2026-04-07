@@ -310,7 +310,6 @@ def test_handle_event_keydown_only_adds_to_held_keys() -> None:
 
 
 def test_handle_event_keyup_removes_from_held_keys() -> None:
-    """handle_event KEYUP must remove keys from _held_keys set."""
     loop, _, _, _ = _make_game_loop()
     _start_song_with_events(loop)
 
@@ -319,3 +318,102 @@ def test_handle_event_keyup_removes_from_held_keys() -> None:
     loop.handle_event(event)
 
     assert pygame.K_w not in loop._held_keys
+
+
+# ── Active window mechanic ───────────────────────────────────────────
+
+
+def _make_loop_with_scoring() -> tuple[GameLoop, MagicMock]:
+    from exca_dance.core.scoring import ScoringEngine
+
+    renderer = MagicMock()
+    audio = MagicMock()
+    audio.get_position_ms.return_value = 0.0
+    audio.is_playing.return_value = True
+    fk = MagicMock()
+    scoring = ScoringEngine("NORMAL")
+    keybinding = MagicMock()
+    keybinding.get_joint_for_key.return_value = None
+    bridge = MagicMock()
+    viewport_layout = MagicMock()
+    excavator_model = MagicMock()
+    loop = GameLoop(
+        renderer, audio, fk, scoring, keybinding, bridge, viewport_layout, excavator_model
+    )
+    return loop, audio
+
+
+def test_active_window_event_stays_active_until_matched() -> None:
+    loop, audio = _make_loop_with_scoring()
+    ev = BeatEvent(time_ms=5000, target_angles={JointName.BOOM: -40.0}, duration_ms=2500)
+    _start_song_with_events(loop, [ev])
+
+    audio.get_position_ms.return_value = 5000.0
+    results = loop.tick(0.016)
+    assert len(results) == 0
+    assert loop.active_event is ev
+
+    audio.get_position_ms.return_value = 5500.0
+    results = loop.tick(0.016)
+    assert len(results) == 0
+    assert loop.active_event is ev
+
+
+def test_active_window_hit_on_angle_match() -> None:
+    from exca_dance.core.models import Judgment
+
+    loop, audio = _make_loop_with_scoring()
+    ev = BeatEvent(time_ms=5000, target_angles={JointName.BOOM: -40.0}, duration_ms=2500)
+    _start_song_with_events(loop, [ev])
+
+    audio.get_position_ms.return_value = 5000.0
+    loop.tick(0.016)
+
+    loop._joint_angles[JointName.BOOM] = -40.0
+    audio.get_position_ms.return_value = 5800.0
+    results = loop.tick(0.016)
+    assert len(results) == 1
+    assert results[0].judgment != Judgment.MISS
+    assert loop.active_event is None
+
+
+def test_active_window_miss_after_deadline() -> None:
+    from exca_dance.core.models import Judgment
+
+    loop, audio = _make_loop_with_scoring()
+    ev = BeatEvent(time_ms=5000, target_angles={JointName.BOOM: -40.0}, duration_ms=2500)
+    _start_song_with_events(loop, [ev])
+
+    audio.get_position_ms.return_value = 5000.0
+    loop.tick(0.016)
+
+    audio.get_position_ms.return_value = 8001.0
+    results = loop.tick(0.016)
+    assert len(results) == 1
+    assert results[0].judgment == Judgment.MISS
+    assert loop.active_event is None
+
+
+def test_active_window_earlier_match_gives_better_score() -> None:
+    loop1, audio1 = _make_loop_with_scoring()
+    loop2, audio2 = _make_loop_with_scoring()
+
+    _start_song_with_events(
+        loop1, [BeatEvent(time_ms=5000, target_angles={JointName.BOOM: -40.0}, duration_ms=2500)]
+    )
+    audio1.get_position_ms.return_value = 5000.0
+    loop1.tick(0.016)
+    loop1._joint_angles[JointName.BOOM] = -40.0
+    audio1.get_position_ms.return_value = 5100.0
+    early_results = loop1.tick(0.016)
+
+    _start_song_with_events(
+        loop2, [BeatEvent(time_ms=5000, target_angles={JointName.BOOM: -40.0}, duration_ms=2500)]
+    )
+    audio2.get_position_ms.return_value = 5000.0
+    loop2.tick(0.016)
+    loop2._joint_angles[JointName.BOOM] = -40.0
+    audio2.get_position_ms.return_value = 7500.0
+    late_results = loop2.tick(0.016)
+
+    assert early_results[0].score >= late_results[0].score

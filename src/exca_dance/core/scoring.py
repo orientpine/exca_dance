@@ -147,5 +147,8 @@ class ScoringEngine:
             return "B"
         return "C"
 
+    def get_good_angle_threshold(self) -> float:
+        return self._angle_thresholds[cast(Judgment, Judgment.GOOD)]
+
     def get_judgment_counts(self) -> dict[Judgment, int]:
         return dict(self._judgments)

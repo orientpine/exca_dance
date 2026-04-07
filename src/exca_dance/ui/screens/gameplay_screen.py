@@ -237,37 +237,32 @@ class GameplayScreen:
             if hit_sound is not None:
                 hit_sound.play()
 
-        # Sync HUD target — merge ALL upcoming events (nearest wins per joint).
-        # Fallback: keep last processed event’s target for its duration window.
         if self._beatmap:
-            _upcoming = self._game_loop.get_upcoming_events(6000.0)
-            merged: dict[JointName, float] = {}
-            for ev in _upcoming:
-                for jn, ang in ev.target_angles.items():
-                    if jn not in merged:
-                        merged[jn] = ang
-            if not merged:
-                try:
-                    last = self._game_loop.last_processed_event
-                    if last is not None:
-                        elapsed = self._game_loop.current_time_ms - last.time_ms
-                        if elapsed <= last.duration_ms:
-                            merged = dict(last.target_angles)
-                except (TypeError, AttributeError):
-                    pass
-            if merged:
-                full = dict(DEFAULT_JOINT_ANGLES)
-                full.update(merged)
-                merged = full
+            active = self._game_loop.active_event
+            if active is not None:
+                merged: dict[JointName, float] = dict(DEFAULT_JOINT_ANGLES)
+                merged.update(active.target_angles)
+            else:
+                _upcoming = self._game_loop.get_upcoming_events(6000.0)
+                merged = {}
+                for ev in _upcoming:
+                    for jn, ang in ev.target_angles.items():
+                        if jn not in merged:
+                            merged[jn] = ang
+                if merged:
+                    full = dict(DEFAULT_JOINT_ANGLES)
+                    full.update(merged)
+                    merged = full
             self._hud.set_target_angles(merged)
         self._hud.update(dt)
 
-        # Update visual cues
         upcoming = self._game_loop.get_upcoming_events(6000.0)
         self._visual_cues.update(
             self._game_loop.current_time_ms,
             self._game_loop.joint_angles,
             upcoming,
+            active_event=self._game_loop.active_event,
+            active_deadline_ms=self._game_loop.active_deadline_ms,
         )
 
         # Pause → show pause overlay
