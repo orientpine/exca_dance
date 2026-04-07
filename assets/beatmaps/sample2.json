@@ -1,290 +1,80 @@
 {
   "title": "굴착 작업 데이터 수집",
   "artist": "Expert Operator",
-  "bpm": 56.0,
+  "bpm": 28.0,
   "offset_ms": 0,
   "audio_file": "assets/music/sample2.wav",
   "difficulty": "NORMAL",
   "events": [
     {
       "time_ms": 3000,
-      "target_angles": {
-        "swing": 6.7,
-        "boom": -15.3,
-        "arm": 106.2,
-        "bucket": -40.4
-      },
-      "duration_ms": 1200
-    },
-    {
-      "time_ms": 9100,
-      "target_angles": {
-        "swing": 26.2,
-        "boom": -33.9,
-        "arm": 113.2,
-        "bucket": -71.6
-      },
-      "duration_ms": 1200
+      "target_angles": {"swing": 6.7, "boom": -15.3, "arm": 106.2, "bucket": -40.4},
+      "duration_ms": 2400
     },
     {
       "time_ms": 12900,
-      "target_angles": {
-        "swing": 9.3,
-        "boom": -30.0,
-        "arm": 98.7,
-        "bucket": -127.9
-      },
-      "duration_ms": 1200
-    },
-    {
-      "time_ms": 15800,
-      "target_angles": {
-        "swing": 4.9,
-        "boom": -7.3,
-        "arm": 82.4,
-        "bucket": -121.0
-      },
-      "duration_ms": 1200
+      "target_angles": {"swing": 9.3, "boom": -30.0, "arm": 98.7, "bucket": -127.9},
+      "duration_ms": 2400
     },
     {
       "time_ms": 22600,
-      "target_angles": {
-        "swing": 12.8,
-        "boom": -27.7,
-        "arm": 114.8,
-        "bucket": -28.7
-      },
-      "duration_ms": 1200
-    },
-    {
-      "time_ms": 28200,
-      "target_angles": {
-        "swing": 29.2,
-        "boom": -35.2,
-        "arm": 80.2,
-        "bucket": -85.1
-      },
-      "duration_ms": 1200
+      "target_angles": {"swing": 12.8, "boom": -27.7, "arm": 114.8, "bucket": -28.7},
+      "duration_ms": 2400
     },
     {
       "time_ms": 33900,
-      "target_angles": {
-        "swing": -0.9,
-        "boom": -34.6,
-        "arm": 83.8,
-        "bucket": 5.6
-      },
-      "duration_ms": 1200
-    },
-    {
-      "time_ms": 38600,
-      "target_angles": {
-        "swing": -1.1,
-        "boom": -35.7,
-        "arm": 83.7,
-        "bucket": 5.7
-      },
-      "duration_ms": 1200
+      "target_angles": {"swing": -0.9, "boom": -34.6, "arm": 83.8, "bucket": 5.6},
+      "duration_ms": 2400
     },
     {
       "time_ms": 44900,
-      "target_angles": {
-        "swing": -0.8,
-        "boom": -1.5,
-        "arm": 62.5,
-        "bucket": -115.3
-      },
-      "duration_ms": 1200
-    },
-    {
-      "time_ms": 54100,
-      "target_angles": {
-        "swing": 15.5,
-        "boom": -31.3,
-        "arm": 104.4,
-        "bucket": -23.3
-      },
-      "duration_ms": 1200
-    },
-    {
-      "time_ms": 58400,
-      "target_angles": {
-        "swing": 8.1,
-        "boom": -30.2,
-        "arm": 74.4,
-        "bucket": -93.9
-      },
-      "duration_ms": 1200
+      "target_angles": {"swing": -0.8, "boom": -1.5, "arm": 62.5, "bucket": -115.3},
+      "duration_ms": 2400
     },
     {
       "time_ms": 62500,
-      "target_angles": {
-        "swing": -3.3,
-        "boom": 6.7,
-        "arm": 31.6,
-        "bucket": -95.1
-      },
-      "duration_ms": 1200
-    },
-    {
-      "time_ms": 68300,
-      "target_angles": {
-        "swing": -2.0,
-        "boom": -19.6,
-        "arm": 105.9,
-        "bucket": -87.9
-      },
-      "duration_ms": 1200
+      "target_angles": {"swing": -3.3, "boom": 6.7, "arm": 31.6, "bucket": -95.1},
+      "duration_ms": 2400
     },
     {
       "time_ms": 76200,
-      "target_angles": {
-        "swing": 20.7,
-        "boom": -36.2,
-        "arm": 113.6,
-        "bucket": -76.7
-      },
-      "duration_ms": 1200
-    },
-    {
-      "time_ms": 82500,
-      "target_angles": {
-        "swing": -2.6,
-        "boom": -7.2,
-        "arm": 73.3,
-        "bucket": -97.9
-      },
-      "duration_ms": 1200
+      "target_angles": {"swing": 20.7, "boom": -36.2, "arm": 113.6, "bucket": -76.7},
+      "duration_ms": 2400
     },
     {
       "time_ms": 90200,
-      "target_angles": {
-        "swing": 7.2,
-        "boom": -26.4,
-        "arm": 117.2,
-        "bucket": -19.3
-      },
-      "duration_ms": 1200
-    },
-    {
-      "time_ms": 96000,
-      "target_angles": {
-        "swing": 18.1,
-        "boom": -36.6,
-        "arm": 90.2,
-        "bucket": -111.0
-      },
-      "duration_ms": 1200
+      "target_angles": {"swing": 7.2, "boom": -26.4, "arm": 117.2, "bucket": -19.3},
+      "duration_ms": 2400
     },
     {
       "time_ms": 101800,
-      "target_angles": {
-        "swing": -5.2,
-        "boom": -34.5,
-        "arm": 97.8,
-        "bucket": -18.2
-      },
-      "duration_ms": 1200
-    },
-    {
-      "time_ms": 107600,
-      "target_angles": {
-        "swing": -3.4,
-        "boom": -31.6,
-        "arm": 87.1,
-        "bucket": -58.3
-      },
-      "duration_ms": 1200
+      "target_angles": {"swing": -5.2, "boom": -34.5, "arm": 97.8, "bucket": -18.2},
+      "duration_ms": 2400
     },
     {
       "time_ms": 113400,
-      "target_angles": {
-        "swing": -2.9,
-        "boom": -2.2,
-        "arm": 62.9,
-        "bucket": -110.4
-      },
-      "duration_ms": 1200
-    },
-    {
-      "time_ms": 119200,
-      "target_angles": {
-        "swing": -1.7,
-        "boom": -19.7,
-        "arm": 102.9,
-        "bucket": -16.4
-      },
-      "duration_ms": 1200
+      "target_angles": {"swing": -2.9, "boom": -2.2, "arm": 62.9, "bucket": -110.4},
+      "duration_ms": 2400
     },
     {
       "time_ms": 125000,
-      "target_angles": {
-        "swing": 10.4,
-        "boom": -34.5,
-        "arm": 90.1,
-        "bucket": -105.2
-      },
-      "duration_ms": 1200
-    },
-    {
-      "time_ms": 130800,
-      "target_angles": {
-        "swing": -2.9,
-        "boom": 6.5,
-        "arm": 39.8,
-        "bucket": -107.8
-      },
-      "duration_ms": 1200
+      "target_angles": {"swing": 10.4, "boom": -34.5, "arm": 90.1, "bucket": -105.2},
+      "duration_ms": 2400
     },
     {
       "time_ms": 136600,
-      "target_angles": {
-        "swing": -2.8,
-        "boom": -17.0,
-        "arm": 102.3,
-        "bucket": -53.3
-      },
-      "duration_ms": 1200
-    },
-    {
-      "time_ms": 142400,
-      "target_angles": {
-        "swing": 15.4,
-        "boom": -34.1,
-        "arm": 109.2,
-        "bucket": -34.6
-      },
-      "duration_ms": 1200
+      "target_angles": {"swing": -2.8, "boom": -17.0, "arm": 102.3, "bucket": -53.3},
+      "duration_ms": 2400
     },
     {
       "time_ms": 148200,
-      "target_angles": {
-        "swing": -7.5,
-        "boom": -16.2,
-        "arm": 74.8,
-        "bucket": -107.4
-      },
-      "duration_ms": 1200
-    },
-    {
-      "time_ms": 154000,
-      "target_angles": {
-        "swing": -7.1,
-        "boom": -16.1,
-        "arm": 98.6,
-        "bucket": -79.7
-      },
-      "duration_ms": 1200
+      "target_angles": {"swing": -7.5, "boom": -16.2, "arm": 74.8, "bucket": -107.4},
+      "duration_ms": 2400
     },
     {
       "time_ms": 159800,
-      "target_angles": {
-        "swing": 6.1,
-        "boom": -32.6,
-        "arm": 117.8,
-        "bucket": -20.6
-      },
-      "duration_ms": 1200
+      "target_angles": {"swing": 6.1, "boom": -32.6, "arm": 117.8, "bucket": -20.6},
+      "duration_ms": 2400
     }
   ]
 }
