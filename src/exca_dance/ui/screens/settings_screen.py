@@ -295,7 +295,7 @@ class SettingsScreen:
         if self._section == 0:
             return len(list(JointName)) * 2 - 1
         if self._section == 1:
-            return 1
+            return 2 if self._game_settings is not None else 1
         if self._section == 2:
             return 0
         if self._section == 3:
@@ -310,6 +310,12 @@ class SettingsScreen:
         elif self._row == 1:
             self._sfx_volume = max(0.0, min(1.0, self._sfx_volume + delta))
             self._audio.set_sfx_volume(self._sfx_volume)
+        elif self._row == 2 and self._game_settings is not None:
+            from exca_dance.core.game_settings import SPEED_MAX, SPEED_MIN
+
+            current = self._game_settings.playback_speed
+            new_speed = max(SPEED_MIN, min(SPEED_MAX, current + delta))
+            self._game_settings.playback_speed = round(new_speed, 2)
 
     def _adjust_camera(self, delta: float) -> None:
         if self._camera is None:
@@ -570,6 +576,36 @@ class SettingsScreen:
             large=True,
             align="center",
         )
+
+        # Playback Speed
+        if self._game_settings is not None:
+            from exca_dance.core.game_settings import SPEED_MAX, SPEED_MIN
+
+            speed_y = sfx_y + int(120 * s)
+            speed_sel = self._row == 2
+            speed_color = NeonTheme.NEON_PINK if speed_sel else NeonTheme.TEXT_WHITE
+            speed = self._game_settings.playback_speed
+            tr.render(  # type: ignore[union-attr]
+                "PLAYBACK SPEED",
+                W // 2,
+                speed_y,
+                color=speed_color.as_tuple(),
+                scale=max(0.7 * s, 0.42),
+                large=True,
+                align="center",
+            )
+            speed_ratio = (speed - SPEED_MIN) / (SPEED_MAX - SPEED_MIN)
+            speed_filled = int(speed_ratio * 20)
+            speed_bar = "\u2588" * speed_filled + "\u2591" * (20 - speed_filled)
+            tr.render(  # type: ignore[union-attr]
+                f"{speed_bar}  {speed:.2f}x",
+                W // 2,
+                speed_y + int(40 * s),
+                color=speed_color.as_tuple(),
+                scale=max(0.6 * s, 0.38),
+                large=True,
+                align="center",
+            )
 
         tr.render(  # type: ignore[union-attr]
             "\u2190/\u2192: Adjust  |  TAB: Switch Section  |  ESC: Save & Back",

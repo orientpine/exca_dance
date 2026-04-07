@@ -58,6 +58,53 @@ def test_load_invalid_mode_in_file_uses_default(tmp_path) -> None:
     assert gs.mode == "virtual"
 
 
+def test_default_playback_speed_is_1() -> None:
+    gs = GameSettings(filepath="nonexistent/path.json")
+    assert gs.playback_speed == 1.0
+
+
+def test_set_playback_speed() -> None:
+    gs = GameSettings(filepath="nonexistent/path.json")
+    gs.playback_speed = 1.5
+    assert gs.playback_speed == 1.5
+    gs.playback_speed = 0.75
+    assert gs.playback_speed == 0.75
+
+
+def test_set_playback_speed_out_of_range_raises() -> None:
+    gs = GameSettings(filepath="nonexistent/path.json")
+    with pytest.raises(ValueError, match="Playback speed"):
+        gs.playback_speed = 0.1
+    with pytest.raises(ValueError, match="Playback speed"):
+        gs.playback_speed = 5.0
+
+
+def test_playback_speed_save_load_roundtrip(tmp_path) -> None:
+    path = str(tmp_path / "settings.json")
+    gs = GameSettings(filepath=path)
+    gs.mode = "real"
+    gs.playback_speed = 1.25
+    gs.save()
+
+    gs2 = GameSettings(filepath=path)
+    assert gs2.mode == "real"
+    assert gs2.playback_speed == 1.25
+
+
+def test_load_invalid_speed_uses_default(tmp_path) -> None:
+    path = tmp_path / "settings.json"
+    path.write_text(json.dumps({"mode": "virtual", "playback_speed": 99.0}))
+    gs = GameSettings(filepath=str(path))
+    assert gs.playback_speed == 1.0
+
+
+def test_load_missing_speed_uses_default(tmp_path) -> None:
+    path = tmp_path / "settings.json"
+    path.write_text(json.dumps({"mode": "virtual"}))
+    gs = GameSettings(filepath=str(path))
+    assert gs.playback_speed == 1.0
+
+
 # ── GameLoop reads mode from GameSettings ────────────────────────────
 
 

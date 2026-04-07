@@ -98,14 +98,22 @@ class GameLoop:
     def start_song(self, beatmap: BeatMap) -> None:
         self._sync_bridge_if_mode_changed()
         self._beatmap = beatmap
-        self._pending_events = list(beatmap.events)  # already sorted by time_ms
+
+        speed = 1.0
+        if self._game_settings is not None:
+            speed = self._game_settings.playback_speed
+        self._pending_events = _scale_events(beatmap.events, speed)
+
         self._active_event = None
         self._active_deadline_ms = None
         self._processed_events = []
         self._scoring.reset()
         self._joint_angles = dict(DEFAULT_JOINT_ANGLES)
         self._held_keys.clear()
-        self._audio.load_music(beatmap.audio_file)
+        if hasattr(self._audio, "load_music_scaled"):
+            self._audio.load_music_scaled(beatmap.audio_file, speed)
+        else:
+            self._audio.load_music(beatmap.audio_file)
         self._audio.play()
         self._all_events_consumed_at_ms = None
         self._state = GameState.PLAYING
@@ -359,3 +367,24 @@ class GameLoop:
         """Return events within the next lookahead_ms milliseconds."""
         current_ms = self._audio.get_position_ms()
         return [e for e in self._pending_events if e.time_ms <= current_ms + lookahead_ms]
+
+
+def _scale_events(events: list[BeatEvent], speed: float) -> list[BeatEvent]:
+    """Scale beat event timings for playback speed. speed=1.0 is identity.
+
+    At speed s, real-time elapses 1/s per audio-ms, so both time_ms and
+    duration_ms are divided by s to stay in sync with the scaled audio.
+    """
+    if abs(speed - 1.0) < 1e-6:
+        return list(events)
+    scale = 1.0 / speed
+    scaled: list[BeatEvent] = []
+    for ev in events:
+        scaled.append(
+            BeatEvent(
+                time_ms=int(round(ev.time_ms * scale)),
+                target_angles=dict(ev.target_angles),
+                duration_ms=max(1, int(round(ev.duration_ms * scale))),
+            )
+        )
+    return scaled
