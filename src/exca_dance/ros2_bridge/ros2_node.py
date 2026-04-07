@@ -125,8 +125,8 @@ def _ros2_process_main(
                 10,
             )
 
-            # 50 Hz timer — velocity publish + state snapshot push
-            self._timer = self.create_timer(1.0 / 50.0, self._tick)
+            # 100 Hz timer — velocity publish + state snapshot push
+            self._timer = self.create_timer(1.0 / 100.0, self._tick)
 
         # ── Subscriber callbacks: store latest value (no queue) ──
 
