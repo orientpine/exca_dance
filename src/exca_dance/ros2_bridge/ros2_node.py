@@ -29,6 +29,19 @@ def _ros2_process_main(
     state_queue: mp.Queue[dict[str, float]],
 ) -> None:
     """Entry point for the ROS2 subprocess."""
+    import os as _os
+
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    )
+    logger.info(
+        "ROS2 subprocess starting — DOMAIN=%s RMW=%s CYCLONE=%s",
+        _os.environ.get("ROS_DOMAIN_ID", "<unset>"),
+        _os.environ.get("RMW_IMPLEMENTATION", "<unset>"),
+        _os.environ.get("CYCLONEDDS_URI", "<unset>")[:80],
+    )
+
     try:
         import rclpy
         from rclpy.executors import SingleThreadedExecutor
