@@ -11,3 +11,11 @@ Traceback (most recent call last):
   File "/home/cha/Documents/exca_dance/.venv/lib/python3.12/site-packages/moderngl/__init__.py", line 1559, in blend_func
     raise NotImplementedError()
 NotImplementedError
+Traceback (most recent call last):
+  File "/home/cha/Documents/exca_dance/src/exca_dance/__main__.py", line 134, in main
+    renderer = GameRenderer(W, H, "Exca Dance", fullscreen=not args.windowed)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/cha/Documents/exca_dance/src/exca_dance/rendering/renderer.py", line 26, in __init__
+    self._surface = pygame.display.set_mode((width, height), flags)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pygame.error: OpenGL support is either not configured in SDL or not available in current SDL video driver (dummy) or platform
