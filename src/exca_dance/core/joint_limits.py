@@ -55,6 +55,34 @@ class JointLimitsConfig:
     def reset_to_defaults(self) -> None:
         self._limits = {joint: (lo, hi) for joint, (lo, hi) in JOINT_LIMITS.items()}
 
+    def is_default(self) -> bool:
+        for joint, (lo, hi) in JOINT_LIMITS.items():
+            cur_lo, cur_hi = self._limits[joint]
+            if abs(cur_lo - lo) > 1e-9 or abs(cur_hi - hi) > 1e-9:
+                return False
+        return True
+
+    def remap_target(self, joint: JointName, target: float) -> float:
+        """Linearly remap a beatmap target angle from factory range to the user's configured range.
+
+        Beatmaps are authored against `constants.JOINT_LIMITS` (the factory range).
+        When the operator narrows or shifts a joint's range, this method preserves
+        the proportional position of each target inside the new range so the
+        choreography remains playable on the configured machine. Targets outside
+        the factory range are clamped to the nearest endpoint before remapping.
+        """
+        factory_lo, factory_hi = JOINT_LIMITS[joint]
+        user_lo, user_hi = self._limits[joint]
+        span = factory_hi - factory_lo
+        if span <= 0:
+            return user_lo
+        t = (target - factory_lo) / span
+        if t < 0.0:
+            t = 0.0
+        elif t > 1.0:
+            t = 1.0
+        return user_lo + t * (user_hi - user_lo)
+
     def as_dict(self) -> dict[JointName, tuple[float, float]]:
         return dict(self._limits)
 

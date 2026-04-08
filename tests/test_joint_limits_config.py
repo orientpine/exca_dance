@@ -115,3 +115,155 @@ def test_game_loop_uses_joint_limits_config_for_virtual_clamping() -> None:
     }
     loop._update_joints(dt=10.0)
     assert loop.joint_angles[JointName.ARM] == 50.0
+
+
+def test_remap_target_identity_when_user_range_equals_factory() -> None:
+    cfg = JointLimitsConfig(filepath="nonexistent/path.json")
+    for joint in JointName:
+        lo, hi = JOINT_LIMITS[joint]
+        mid = (lo + hi) / 2.0
+        for sample in (lo, mid, hi):
+            assert abs(cfg.remap_target(joint, sample) - sample) < 1e-9
+
+
+def test_remap_target_compresses_to_narrower_user_range() -> None:
+    cfg = JointLimitsConfig(filepath="nonexistent/path.json")
+    cfg.set_min(JointName.BUCKET, -100.0)
+    cfg.set_max(JointName.BUCKET, 30.0)
+
+    factory_lo, factory_hi = JOINT_LIMITS[JointName.BUCKET]
+    assert abs(cfg.remap_target(JointName.BUCKET, factory_lo) - (-100.0)) < 1e-9
+    assert abs(cfg.remap_target(JointName.BUCKET, factory_hi) - 30.0) < 1e-9
+
+    factory_mid = (factory_lo + factory_hi) / 2.0
+    user_mid = (-100.0 + 30.0) / 2.0
+    assert abs(cfg.remap_target(JointName.BUCKET, factory_mid) - user_mid) < 1e-9
+
+
+def test_remap_target_preserves_proportional_position() -> None:
+    cfg = JointLimitsConfig(filepath="nonexistent/path.json")
+    cfg.set_min(JointName.ARM, 30.0)
+    cfg.set_max(JointName.ARM, 90.0)
+
+    factory_lo, factory_hi = JOINT_LIMITS[JointName.ARM]
+    quarter = factory_lo + 0.25 * (factory_hi - factory_lo)
+    expected_quarter = 30.0 + 0.25 * (90.0 - 30.0)
+    assert abs(cfg.remap_target(JointName.ARM, quarter) - expected_quarter) < 1e-9
+
+
+def test_remap_target_clamps_targets_outside_factory_range() -> None:
+    cfg = JointLimitsConfig(filepath="nonexistent/path.json")
+    cfg.set_min(JointName.BUCKET, -100.0)
+    cfg.set_max(JointName.BUCKET, 30.0)
+
+    factory_lo, factory_hi = JOINT_LIMITS[JointName.BUCKET]
+    way_too_low = factory_lo - 50.0
+    way_too_high = factory_hi + 50.0
+    assert cfg.remap_target(JointName.BUCKET, way_too_low) == -100.0
+    assert cfg.remap_target(JointName.BUCKET, way_too_high) == 30.0
+
+
+def test_remap_target_handles_expanded_user_range() -> None:
+    cfg = JointLimitsConfig(filepath="nonexistent/path.json")
+    cfg.set_min(JointName.SWING, -360.0)
+    cfg.set_max(JointName.SWING, 360.0)
+
+    factory_lo, factory_hi = JOINT_LIMITS[JointName.SWING]
+    factory_mid = (factory_lo + factory_hi) / 2.0
+    assert abs(cfg.remap_target(JointName.SWING, factory_mid) - 0.0) < 1e-9
+    assert abs(cfg.remap_target(JointName.SWING, factory_lo) - (-360.0)) < 1e-9
+    assert abs(cfg.remap_target(JointName.SWING, factory_hi) - 360.0) < 1e-9
+
+
+def test_game_loop_remaps_beatmap_targets_at_start_song() -> None:
+    from unittest.mock import MagicMock
+    from exca_dance.core.game_loop import GameLoop
+    from exca_dance.core.models import BeatEvent
+
+    cfg = JointLimitsConfig(filepath="nonexistent/path.json")
+    cfg.set_min(JointName.BUCKET, -100.0)
+    cfg.set_max(JointName.BUCKET, 30.0)
+
+    factory_lo, factory_hi = JOINT_LIMITS[JointName.BUCKET]
+    original_events = [
+        BeatEvent(
+            time_ms=1000,
+            target_angles={JointName.BUCKET: factory_hi},
+            duration_ms=400,
+        ),
+        BeatEvent(
+            time_ms=2000,
+            target_angles={JointName.BUCKET: factory_lo},
+            duration_ms=400,
+        ),
+    ]
+    beatmap = MagicMock()
+    beatmap.events = original_events
+    beatmap.audio_file = "dummy.wav"
+
+    loop = cast(Any, GameLoop)(
+        MagicMock(),
+        MagicMock(),
+        MagicMock(),
+        MagicMock(),
+        MagicMock(),
+        MagicMock(),
+        MagicMock(),
+        MagicMock(),
+        mode="virtual",
+        joint_limits=cfg,
+    )
+    loop.start_song(beatmap)
+
+    assert len(loop._pending_events) == 2
+    assert abs(loop._pending_events[0].target_angles[JointName.BUCKET] - 30.0) < 1e-9
+    assert abs(loop._pending_events[1].target_angles[JointName.BUCKET] - (-100.0)) < 1e-9
+    assert original_events[0].target_angles[JointName.BUCKET] == factory_hi
+
+
+def test_remap_does_not_affect_unconfigured_joints_in_event() -> None:
+    from unittest.mock import MagicMock
+    from exca_dance.core.game_loop import GameLoop
+    from exca_dance.core.models import BeatEvent
+
+    cfg = JointLimitsConfig(filepath="nonexistent/path.json")
+    cfg.set_max(JointName.ARM, 60.0)
+
+    factory_arm_lo, factory_arm_hi = JOINT_LIMITS[JointName.ARM]
+    expected_arm = 60.0
+    factory_arm_mid = (factory_arm_lo + factory_arm_hi) / 2.0
+    expected_arm_mid = factory_arm_lo + 0.5 * (60.0 - factory_arm_lo)
+
+    events = [
+        BeatEvent(
+            time_ms=500,
+            target_angles={
+                JointName.ARM: factory_arm_hi,
+                JointName.SWING: 45.0,
+            },
+            duration_ms=400,
+        ),
+        BeatEvent(
+            time_ms=1000,
+            target_angles={JointName.ARM: factory_arm_mid},
+            duration_ms=400,
+        ),
+    ]
+
+    loop = cast(Any, GameLoop)(
+        MagicMock(),
+        MagicMock(),
+        MagicMock(),
+        MagicMock(),
+        MagicMock(),
+        MagicMock(),
+        MagicMock(),
+        MagicMock(),
+        mode="virtual",
+        joint_limits=cfg,
+    )
+    remapped = loop._remap_events_to_user_limits(events)
+
+    assert abs(remapped[0].target_angles[JointName.ARM] - expected_arm) < 1e-9
+    assert remapped[0].target_angles[JointName.SWING] == 45.0
+    assert abs(remapped[1].target_angles[JointName.ARM] - expected_arm_mid) < 1e-9
