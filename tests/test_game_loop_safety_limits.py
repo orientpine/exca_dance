@@ -45,6 +45,8 @@ def _make_loop(mode: str = "real") -> tuple[GameLoop, MagicMock, MagicMock, Magi
     viewport_layout = MagicMock()
     excavator_model = MagicMock()
 
+    from exca_dance.core.joint_limits import JointLimitsConfig
+
     loop = cast(Any, GameLoop)(
         renderer,
         audio,
@@ -55,6 +57,7 @@ def _make_loop(mode: str = "real") -> tuple[GameLoop, MagicMock, MagicMock, Magi
         viewport_layout,
         excavator_model,
         mode=mode,
+        joint_limits=JointLimitsConfig(filepath="nonexistent/path.json"),
     )
     return loop, bridge, keybinding, scoring
 

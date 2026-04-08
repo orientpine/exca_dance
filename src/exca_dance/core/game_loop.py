@@ -128,6 +128,7 @@ class GameLoop:
         if self._game_settings is not None:
             speed = self._game_settings.playback_speed
         self._pending_events = _scale_events(beatmap.events, speed)
+        self._pending_events = self._remap_events_to_user_limits(self._pending_events)
 
         self._active_event = None
         self._active_deadline_ms = None
@@ -199,6 +200,25 @@ class GameLoop:
         Empty dict in virtual mode or when every joint passes the safety check.
         """
         return dict(self._safety_blocked)
+
+    def _remap_events_to_user_limits(
+        self, events: list[BeatEvent]
+    ) -> list[BeatEvent]:
+        if self._joint_limits is None or self._joint_limits.is_default():
+            return events
+        remapped: list[BeatEvent] = []
+        for ev in events:
+            new_targets: dict[JointName, float] = {}
+            for joint, target in ev.target_angles.items():
+                new_targets[joint] = self._joint_limits.remap_target(joint, target)
+            remapped.append(
+                BeatEvent(
+                    time_ms=ev.time_ms,
+                    target_angles=new_targets,
+                    duration_ms=ev.duration_ms,
+                )
+            )
+        return remapped
 
     # ------------------------------------------------------------------ #
     # Per-frame update (called by screen/state manager)

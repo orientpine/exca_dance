@@ -111,6 +111,8 @@ def test_load_missing_speed_uses_default(tmp_path) -> None:
 def _make_loop_with_settings(
     game_settings: GameSettings,
 ) -> tuple[GameLoop, MagicMock, MagicMock]:
+    from exca_dance.core.joint_limits import JointLimitsConfig
+
     renderer = MagicMock()
     audio = MagicMock()
     audio.get_position_ms.return_value = 0.0
@@ -132,6 +134,7 @@ def _make_loop_with_settings(
         viewport_layout,
         excavator_model,
         game_settings=game_settings,
+        joint_limits=JointLimitsConfig(filepath="nonexistent/path.json"),
     )
     return loop, keybinding, bridge
 

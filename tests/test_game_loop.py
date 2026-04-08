@@ -325,6 +325,7 @@ def test_handle_event_keyup_removes_from_held_keys() -> None:
 
 def _make_loop_with_scoring() -> tuple[GameLoop, MagicMock]:
     from exca_dance.core.scoring import ScoringEngine
+    from exca_dance.core.joint_limits import JointLimitsConfig
 
     renderer = MagicMock()
     audio = MagicMock()
@@ -338,7 +339,8 @@ def _make_loop_with_scoring() -> tuple[GameLoop, MagicMock]:
     viewport_layout = MagicMock()
     excavator_model = MagicMock()
     loop = GameLoop(
-        renderer, audio, fk, scoring, keybinding, bridge, viewport_layout, excavator_model
+        renderer, audio, fk, scoring, keybinding, bridge, viewport_layout, excavator_model,
+        joint_limits=JointLimitsConfig(filepath="nonexistent/path.json"),
     )
     return loop, audio
 

@@ -55,6 +55,8 @@ def _make_game_loop_virtual() -> tuple[GameLoop, MagicMock, MagicMock]:
 
 
 def _make_game_loop_real() -> tuple[GameLoop, MagicMock, MagicMock]:
+    from exca_dance.core.joint_limits import JointLimitsConfig
+
     renderer = MagicMock()
     audio = MagicMock()
     audio.get_position_ms.return_value = 0.0
@@ -76,6 +78,7 @@ def _make_game_loop_real() -> tuple[GameLoop, MagicMock, MagicMock]:
         viewport_layout,
         excavator_model,
         mode="real",
+        joint_limits=JointLimitsConfig(filepath="nonexistent/path.json"),
     )
     return loop, keybinding, bridge
 
