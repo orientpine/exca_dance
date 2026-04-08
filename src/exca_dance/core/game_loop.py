@@ -3,17 +3,30 @@
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import Callable
 from typing import Any, cast
 
 import pygame
 from exca_dance.core.models import JointName, BeatMap, BeatEvent
-from exca_dance.core.constants import DEFAULT_JOINT_ANGLES, JOINT_ANGULAR_VELOCITY, JOINT_LIMITS
+from exca_dance.core.constants import (
+    DEFAULT_JOINT_ANGLES,
+    JOINT_ANGULAR_VELOCITY,
+    JOINT_LIMITS,
+    SAFETY_SENSOR_GRACE_SEC,
+    SAFETY_SENSOR_STALE_SEC,
+    SAFETY_VELOCITY_DEADBAND,
+)
 from exca_dance.core.game_settings import GameSettings
 from exca_dance.core.calibration import CalibrationSettings
 from exca_dance.core.gamepad import GamepadManager
 
 logger = logging.getLogger(__name__)
+
+SAFETY_REASON_MIN: str = "MIN"
+SAFETY_REASON_MAX: str = "MAX"
+SAFETY_REASON_NO_SENSOR: str = "NO_SENSOR"
+SAFETY_REASON_STALE: str = "STALE"
 
 
 class GameState:
@@ -72,6 +85,10 @@ class GameLoop:
         self._joint_angles: dict[JointName, float] = dict(DEFAULT_JOINT_ANGLES)
         self._held_keys: set[int] = set()
 
+        self._unclamped_angles: dict[JointName, float] = {}
+        self._safety_blocked: dict[JointName, str] = {}
+        self._safety_armed_at: float = time.perf_counter()
+
         self._clock = pygame.time.Clock()
         self._running = False
         self._debug_fps = False
@@ -94,6 +111,12 @@ class GameLoop:
             self._bridge.disconnect()
             self._bridge = self._bridge_factory(current)
             self._active_bridge_mode = current
+            self._reset_safety_state()
+
+    def _reset_safety_state(self) -> None:
+        self._unclamped_angles = {}
+        self._safety_blocked = {}
+        self._safety_armed_at = time.perf_counter()
 
     def start_song(self, beatmap: BeatMap) -> None:
         self._sync_bridge_if_mode_changed()
@@ -110,6 +133,7 @@ class GameLoop:
         self._scoring.reset()
         self._joint_angles = dict(DEFAULT_JOINT_ANGLES)
         self._held_keys.clear()
+        self._reset_safety_state()
         if hasattr(self._audio, "load_music_scaled"):
             self._audio.load_music_scaled(beatmap.audio_file, speed)
         else:
@@ -131,6 +155,8 @@ class GameLoop:
     def stop(self) -> None:
         self._audio.stop()
         self._state = GameState.MENU
+        self._held_keys.clear()
+        self._reset_safety_state()
 
     def set_on_song_end(self, callback) -> None:
         self._on_song_end = callback
@@ -162,6 +188,15 @@ class GameLoop:
     @property
     def next_pending_event(self) -> BeatEvent | None:
         return self._pending_events[0] if self._pending_events else None
+
+    @property
+    def safety_blocked_joints(self) -> dict[JointName, str]:
+        """Joints whose outgoing velocity is currently zero-gated by the real-mode safety gate.
+
+        Returns a copy mapping joint → reason code (MIN / MAX / NO_SENSOR / STALE).
+        Empty dict in virtual mode or when every joint passes the safety check.
+        """
+        return dict(self._safety_blocked)
 
     # ------------------------------------------------------------------ #
     # Per-frame update (called by screen/state manager)
@@ -222,13 +257,20 @@ class GameLoop:
     # ------------------------------------------------------------------ #
 
     def _update_joints_from_bridge(self) -> None:
-        """Real mode: read joint angles from ROS2, apply calibration transform."""
+        """Real mode: read joint angles from ROS2, apply calibration transform.
+
+        Populates both the display-safe `_joint_angles` (clamped to JOINT_LIMITS
+        for rendering / scoring) and the uncensored `_unclamped_angles` that the
+        safety gate consults to detect "joint is actually outside the allowed
+        range".
+        """
         raw_angles = self._bridge.get_raw_angles()
         for joint, raw_value in raw_angles.items():
             if self._calibration is not None:
                 value = self._calibration.transform_angle(joint, raw_value)
             else:
                 value = raw_value
+            self._unclamped_angles[joint] = value
             lo, hi = JOINT_LIMITS[joint]
             self._joint_angles[joint] = max(lo, min(hi, value))
 
@@ -252,32 +294,131 @@ class GameLoop:
 
     _vel_log_counter: int = 0
 
+    def _apply_safety_limits(
+        self,
+        raw_velocities: dict[JointName, float],
+    ) -> dict[JointName, float]:
+        """Real-mode safety gate — zero per-joint velocity when unsafe.
+
+        Operates in game-coordinate space. Input is the pre-calibration velocity
+        dict from `_get_input_velocities()`; the unclamped calibrated sensor
+        angles in `self._unclamped_angles` are the ground truth for the range
+        check. Both sides live in game coordinates, so direction comparison is
+        valid regardless of the independent velocity/angle sign calibrations.
+
+        Fail-close policy:
+          * no sensor sample for a joint (and grace window expired) → block
+          * sensor sample older than `SAFETY_SENSOR_STALE_SEC` → block
+          * `angle <= lo` and velocity is actively negative → block
+          * `angle >= hi` and velocity is actively positive → block
+          * velocity magnitude below `SAFETY_VELOCITY_DEADBAND` → not "active"
+
+        Blocking sets that joint's outgoing velocity to 0.0. The reason is
+        recorded in `self._safety_blocked` for HUD display, and a warning
+        is logged only on state transitions to keep log noise bounded.
+        """
+        safe = dict(raw_velocities)
+        new_blocked: dict[JointName, str] = {}
+
+        now = time.perf_counter()
+        in_grace = (now - self._safety_armed_at) < SAFETY_SENSOR_GRACE_SEC
+        try:
+            sensor_timestamps = self._bridge.get_sensor_timestamps()
+        except Exception:
+            sensor_timestamps = {}
+
+        for joint, vel in raw_velocities.items():
+            active = abs(vel) > SAFETY_VELOCITY_DEADBAND
+
+            angle = self._unclamped_angles.get(joint)
+            last_update = sensor_timestamps.get(joint)
+
+            if angle is None or last_update is None:
+                if in_grace:
+                    continue
+                if active:
+                    safe[joint] = 0.0
+                    new_blocked[joint] = SAFETY_REASON_NO_SENSOR
+                continue
+
+            if (now - last_update) > SAFETY_SENSOR_STALE_SEC:
+                if active:
+                    safe[joint] = 0.0
+                    new_blocked[joint] = SAFETY_REASON_STALE
+                continue
+
+            lo, hi = JOINT_LIMITS[joint]
+            if angle <= lo and vel < -SAFETY_VELOCITY_DEADBAND:
+                safe[joint] = 0.0
+                new_blocked[joint] = SAFETY_REASON_MIN
+            elif angle >= hi and vel > SAFETY_VELOCITY_DEADBAND:
+                safe[joint] = 0.0
+                new_blocked[joint] = SAFETY_REASON_MAX
+
+        for joint, reason in new_blocked.items():
+            if self._safety_blocked.get(joint) != reason:
+                angle = self._unclamped_angles.get(joint)
+                angle_str = f"{angle:.2f}°" if angle is not None else "<no data>"
+                lo, hi = JOINT_LIMITS[joint]
+                logger.warning(
+                    "SAFETY BLOCK: %s at %s outside [%.2f, %.2f] (%s) — velocity gated to 0",
+                    joint.value, angle_str, lo, hi, reason,
+                )
+        for joint in self._safety_blocked:
+            if joint not in new_blocked:
+                logger.info("SAFETY CLEAR: %s — safety gate released", joint.value)
+
+        self._safety_blocked = new_blocked
+        return safe
+
     def _send_velocity_to_bridge(self) -> None:
-        """Real mode: send calibrated velocity to ROS2 UpperControlCmd."""
+        """Real mode: send calibrated velocity to ROS2 UpperControlCmd.
+
+        Always publishes an explicit dict (never skips), because the ROS2
+        subprocess keeps replaying its last velocity when the queue is empty.
+        The gate zeroes individual joints instead of suppressing the publish.
+
+        Also forces every velocity to 0.0 unless the game state is PLAYING —
+        this protects against held keys / stuck gamepad axes leaking into
+        real hardware while the player is in a menu or paused.
+        """
         if self._gamepad is not None and not self._gamepad.connected:
             if GameLoop._vel_log_counter % 300 == 1:
                 logger.warning("Gamepad disconnected \u2014 sending zero velocities")
 
-        raw_velocities = self._get_input_velocities()
-        calibrated: dict[JointName, float] = {}
-        for joint, vel in raw_velocities.items():
-            if self._calibration is not None:
-                calibrated[joint] = self._calibration.transform_velocity(joint, vel)
-            else:
-                calibrated[joint] = vel
+        if self._state != GameState.PLAYING:
+            zero_raw: dict[JointName, float] = {j: 0.0 for j in JointName}
+            self._safety_blocked = {}
+            self._bridge.send_velocity(self._calibrate_velocities(zero_raw))
+            return
 
-        # Periodic diagnostic log (every ~5 seconds at 60 FPS)
+        raw_velocities = self._get_input_velocities()
+        safe_velocities = self._apply_safety_limits(raw_velocities)
+        calibrated = self._calibrate_velocities(safe_velocities)
+
         GameLoop._vel_log_counter += 1
         if GameLoop._vel_log_counter % 300 == 0:
             has_input = any(abs(v) > 0.01 for v in calibrated.values())
             logger.info(
-                "bridge vel: %s | gamepad=%s | input=%s",
+                "bridge vel: %s | gamepad=%s | input=%s | blocked=%s",
                 {k.value: round(v, 2) for k, v in calibrated.items()},
                 self._gamepad.connected if self._gamepad else "N/A",
                 has_input,
+                {j.value: r for j, r in self._safety_blocked.items()} or None,
             )
 
         self._bridge.send_velocity(calibrated)
+
+    def _calibrate_velocities(
+        self, velocities: dict[JointName, float]
+    ) -> dict[JointName, float]:
+        calibrated: dict[JointName, float] = {}
+        for joint, vel in velocities.items():
+            if self._calibration is not None:
+                calibrated[joint] = self._calibration.transform_velocity(joint, vel)
+            else:
+                calibrated[joint] = vel
+        return calibrated
 
     def _update_joints(self, dt: float) -> None:
         if self._mode == "real":

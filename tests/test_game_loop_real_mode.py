@@ -95,9 +95,10 @@ def test_real_mode_reads_bridge_angles() -> None:
         JointName.ARM: 55.0,
         JointName.BUCKET: 10.0,
     }
+    bridge.get_sensor_timestamps.return_value = {}
     _start_song(loop)
 
-    loop.tick(0.016)
+    loop.update_bridge()
 
     angles = cast(Any, loop.joint_angles)
     assert angles[JointName.SWING] == 45.0
@@ -112,10 +113,11 @@ def test_real_mode_ignores_keyboard() -> None:
         JointName.ARM: 21.0,
         JointName.BUCKET: 0.0,
     }
+    bridge.get_sensor_timestamps.return_value = {}
     _start_song(loop)
     loop._held_keys.add(pygame.K_w)
 
-    loop.tick(0.1)
+    loop.update_bridge()
 
     angles = cast(Any, loop.joint_angles)
     assert angles[JointName.BOOM] == -10.0
@@ -124,6 +126,7 @@ def test_real_mode_ignores_keyboard() -> None:
 def test_real_mode_skips_send_command() -> None:
     loop, _, bridge = _make_game_loop_real()
     bridge.get_raw_angles.return_value = dict(DEFAULT_JOINT_ANGLES)
+    bridge.get_sensor_timestamps.return_value = {}
     _start_song(loop)
     bridge.send_command.reset_mock()
 
@@ -140,9 +143,10 @@ def test_real_mode_clamps_to_joint_limits() -> None:
         JointName.ARM: 21.0,
         JointName.BUCKET: 0.0,
     }
+    bridge.get_sensor_timestamps.return_value = {}
     _start_song(loop)
 
-    loop.tick(0.016)
+    loop.update_bridge()
 
     angles = cast(Any, loop.joint_angles)
     assert angles[JointName.BOOM] == cast(Any, JOINT_LIMITS)[JointName.BOOM][1]
@@ -151,9 +155,10 @@ def test_real_mode_clamps_to_joint_limits() -> None:
 def test_real_mode_handles_empty_angles() -> None:
     loop, _, bridge = _make_game_loop_real()
     bridge.get_raw_angles.return_value = {}
+    bridge.get_sensor_timestamps.return_value = {}
     _start_song(loop)
 
-    loop.tick(0.016)
+    loop.update_bridge()
 
     angles = cast(Any, loop.joint_angles)
     assert angles == DEFAULT_JOINT_ANGLES

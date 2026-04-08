@@ -231,9 +231,16 @@ class ROS2Bridge:
         self._state_queue: mp.Queue[dict[str, float]] = mp.Queue(maxsize=50)
         self._process: mp.Process | None = None
         self._latest_angles: dict[str, float] = {}
+        self._latest_timestamps: dict[str, float] = {}
         self._connected: bool = False
 
     def connect(self) -> None:
+        # Drop any cached state from a previous subprocess so the safety
+        # gate cannot mistake stale data for a fresh sensor reading after
+        # a restart.
+        self._latest_angles.clear()
+        self._latest_timestamps.clear()
+
         self._process = mp.Process(
             target=_ros2_process_main,
             args=(self._velocity_queue, self._state_queue),
@@ -311,9 +318,11 @@ class ROS2Bridge:
         for _ in range(60):  # safety cap to prevent unbounded drain
             try:
                 update = self._state_queue.get_nowait()
+                now = time.perf_counter()
                 for key, value in update.items():
                     key_name = key.value if isinstance(key, JointName) else str(key)
                     self._latest_angles[key_name] = float(value)
+                    self._latest_timestamps[key_name] = now
             except Empty:
                 break
             except Exception:
@@ -323,6 +332,15 @@ class ROS2Bridge:
         for name, value in self._latest_angles.items():
             try:
                 result[JointName(name)] = float(value)
+            except (ValueError, KeyError):
+                pass
+        return result
+
+    def get_sensor_timestamps(self) -> dict[JointName, float]:
+        result: dict[JointName, float] = {}
+        for name, ts in self._latest_timestamps.items():
+            try:
+                result[JointName(name)] = float(ts)
             except (ValueError, KeyError):
                 pass
         return result

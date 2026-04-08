@@ -5,6 +5,7 @@ Virtual mode works standalone without ROS2 installed.
 
 from __future__ import annotations
 
+import time
 from abc import ABC, abstractmethod
 import sys
 
@@ -39,6 +40,15 @@ class ExcavatorBridgeInterface(ABC):
     @abstractmethod
     def get_raw_angles(self) -> dict[JointName, float]:
         """Get raw (uncalibrated) joint angles from excavator."""
+
+    @abstractmethod
+    def get_sensor_timestamps(self) -> dict[JointName, float]:
+        """Return `time.perf_counter()` timestamps for each joint's last sensor update.
+
+        Joints that have never reported sensor data are omitted. The safety
+        gate uses this to fail-close on missing or stale sensor streams.
+        Virtual mode returns a fresh timestamp for every joint it knows about.
+        """
 
     @abstractmethod
     def is_connected(self) -> bool:
@@ -87,3 +97,8 @@ class VirtualBridge(ExcavatorBridgeInterface):
     @override
     def get_raw_angles(self) -> dict[JointName, float]:
         return dict(self._angles)
+
+    @override
+    def get_sensor_timestamps(self) -> dict[JointName, float]:
+        now = time.perf_counter()
+        return {j: now for j in self._angles}

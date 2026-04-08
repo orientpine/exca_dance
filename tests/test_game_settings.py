@@ -147,12 +147,13 @@ def test_game_loop_reads_mode_from_settings() -> None:
         JointName.ARM: 50.0,
         JointName.BUCKET: 5.0,
     }
+    bridge.get_sensor_timestamps.return_value = {}
 
     beatmap = MagicMock()
     beatmap.events = []
     beatmap.audio_file = "dummy.wav"
     loop.start_song(beatmap)
-    loop.tick(0.016)
+    loop.update_bridge()
 
     angles = cast(Any, loop.joint_angles)
     assert angles[JointName.SWING] == 30.0
@@ -169,6 +170,7 @@ def test_game_loop_responds_to_settings_change_at_start_song() -> None:
         JointName.ARM: 50.0,
         JointName.BUCKET: 5.0,
     }
+    bridge.get_sensor_timestamps.return_value = {}
 
     beatmap = MagicMock()
     beatmap.events = []
@@ -180,7 +182,7 @@ def test_game_loop_responds_to_settings_change_at_start_song() -> None:
 
     gs.mode = "real"
     loop.start_song(beatmap)
-    loop.tick(0.016)
+    loop.update_bridge()
     assert cast(Any, loop.joint_angles)[JointName.SWING] == 99.0
 
 

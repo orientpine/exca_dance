@@ -62,7 +62,12 @@ class GameplayHUD:
         self._last_combo = combo
         self._control_guide.update(dt)
 
-    def render(self, joint_angles: dict[JointName, float]) -> None:
+    def render(
+        self,
+        joint_angles: dict[JointName, float],
+        *,
+        safety_blocked: dict[JointName, str] | None = None,
+    ) -> None:
         """Render all HUD elements — resolution-aware modern layout."""
         if self._text is None:
             return
@@ -266,6 +271,16 @@ class GameplayHUD:
             if self._visual_cues is not None:
                 match_pct = self._visual_cues.get_angle_match_pct(jname)
 
+            if safety_blocked is not None and jname in safety_blocked:
+                self._draw_rect_2d(
+                    panel_x + int(2 * s),
+                    ry,
+                    panel_w - int(4 * s),
+                    row_h,
+                    NeonTheme.MISS,
+                    alpha=0.25,
+                )
+
             if not has_target:
                 val_color = NeonTheme.TEXT_DIM
             elif match_pct >= 0.9:
@@ -275,7 +290,6 @@ class GameplayHUD:
             else:
                 val_color = NeonTheme.NEON_PINK
 
-            # Joint name
             name_w = int(70 * s)
             self._text.render(
                 jname.value.upper(),
@@ -355,6 +369,75 @@ class GameplayHUD:
                 color=fps_color.as_tuple(),
                 scale=max(1.0 * s, 0.7),
             )
+
+        if safety_blocked:
+            self._draw_safety_banner(safety_blocked, W, s)
+
+    def _draw_safety_banner(
+        self,
+        blocked: dict[JointName, str],
+        screen_w: int,
+        s: float,
+    ) -> None:
+        banner_h = int(max(60 * s, 42))
+        main_w = int(screen_w * 0.55)
+        main_y = int(88 * s)
+        main_x = int(20 * s)
+
+        self._draw_rect_2d(
+            main_x,
+            main_y,
+            main_w - 2 * main_x,
+            banner_h,
+            NeonTheme.MISS,
+            alpha=0.80,
+        )
+        self._draw_rect_2d(
+            main_x,
+            main_y,
+            main_w - 2 * main_x,
+            max(int(3 * s), 2),
+            NeonTheme.TEXT_WHITE,
+            alpha=0.85,
+        )
+        self._draw_rect_2d(
+            main_x,
+            main_y + banner_h - max(int(3 * s), 2),
+            main_w - 2 * main_x,
+            max(int(3 * s), 2),
+            NeonTheme.TEXT_WHITE,
+            alpha=0.85,
+        )
+
+        title_x = main_x + int(18 * s)
+        title_y = main_y + int(8 * s)
+        self._text.render(
+            "⚠ SAFETY LIMIT",
+            title_x,
+            title_y,
+            color=NeonTheme.TEXT_WHITE.as_tuple(),
+            scale=max(1.0 * s, 0.6),
+            large=True,
+        )
+
+        reason_text = "  ".join(
+            f"{joint.value.upper()}:{reason}" for joint, reason in blocked.items()
+        )
+        self._text.render(
+            reason_text,
+            title_x,
+            title_y + int(30 * s),
+            color=NeonTheme.TEXT_WHITE.as_tuple(),
+            scale=max(0.75 * s, 0.5),
+        )
+        self._text.render(
+            "ROS2 velocity gated to 0",
+            main_x + (main_w - 2 * main_x) - int(18 * s),
+            title_y + int(8 * s),
+            color=NeonTheme.TEXT_WHITE.as_tuple(),
+            scale=max(0.75 * s, 0.5),
+            align="right",
+        )
 
     def _draw_rect_2d(
         self,

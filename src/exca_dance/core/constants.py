@@ -60,6 +60,23 @@ SCREEN_HEIGHT: int = 1080
 # Joint angular velocity (degrees per second when key held)
 JOINT_ANGULAR_VELOCITY: float = 60.0
 
+# ── Real-mode safety gate ────────────────────────────────────────────
+# Applies only in real ROS2 mode; virtual mode is unaffected.
+
+# Velocity magnitudes below this threshold are treated as "no input"
+# and never count as pushing a joint further out of range.
+SAFETY_VELOCITY_DEADBAND: float = 0.01
+
+# Sensor-freshness cutoff (seconds). If no new sensor sample arrived for
+# a given joint within this window, the joint is considered stale and its
+# outgoing velocity is zeroed (fail-close).
+SAFETY_SENSOR_STALE_SEC: float = 0.5
+
+# Grace window after (re)connecting the real-mode bridge during which
+# fail-close on missing sensors is suppressed. Prevents a spurious
+# "no sensor" block at startup before the first ROS2 state snapshot lands.
+SAFETY_SENSOR_GRACE_SEC: float = 2.0
+
 # Default key bindings: (positive_key, negative_key) per joint
 # Left stick (WASD): swing + arm  |  Right stick (UHJK): boom + bucket
 DEFAULT_KEY_BINDINGS: dict[JointName, tuple[int, int]] = {

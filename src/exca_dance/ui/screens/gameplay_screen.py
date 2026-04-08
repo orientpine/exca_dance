@@ -340,7 +340,10 @@ class GameplayScreen:
         )
 
         # HUD overlay
-        self._hud.render(self._game_loop.joint_angles)
+        self._hud.render(
+            self._game_loop.joint_angles,
+            safety_blocked=self._game_loop.safety_blocked_joints,
+        )
 
         # Pause overlay (resolution-aware)
         if self._game_loop.state == LoopState.PAUSED and text_renderer:
