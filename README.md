@@ -103,7 +103,7 @@ Main Menu → Song Select → Gameplay → Results → Leaderboard
 
 콤보 배율: 10콤보 → 2x, 25콤보 → 3x, 50콤보 → 4x
 
-등급: S(95%+) / A(90%+) / B(80%+) / C(70%+) / D(60%+) / F
+등급: S(95%+) / A(80%+) / B(60%+) / C(40%+) / D(20%+) / F(20% 미만)
 
 ## Custom Beat Maps
 

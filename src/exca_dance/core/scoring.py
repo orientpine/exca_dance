@@ -30,9 +30,9 @@ _JUDGMENT_RANK: dict[Judgment, int] = {
 
 class ScoringEngine:
     _ANGLE_THRESHOLDS: dict[str, dict[Judgment, float]] = {
-        "EASY": _window_set(8.0, 18.0, 35.0),
-        "NORMAL": _window_set(5.0, 12.0, 25.0),
-        "HARD": _window_set(3.0, 8.0, 18.0),
+        "EASY": _window_set(12.0, 25.0, 45.0),
+        "NORMAL": _window_set(8.0, 18.0, 35.0),
+        "HARD": _window_set(5.0, 12.0, 25.0),
     }
 
     def __init__(self, difficulty: str = "NORMAL") -> None:
@@ -85,7 +85,7 @@ class ScoringEngine:
         self.update_combo(judgment)
         combo_mult: int = self.get_combo_multiplier()
 
-        angle_mult: float = max(0.1, 1.0 - (avg_err / 20.0))
+        angle_mult: float = max(0.1, 1.0 - (avg_err / 40.0))
 
         base: int = SCORE_VALUES[timing_judgment]
         score = int(base * angle_mult * combo_mult)
@@ -141,11 +141,15 @@ class ScoringEngine:
         pct = total / max_possible * 100
         if pct >= 95:
             return "S"
-        if pct >= 85:
+        if pct >= 80:
             return "A"
-        if pct >= 70:
+        if pct >= 60:
             return "B"
-        return "C"
+        if pct >= 40:
+            return "C"
+        if pct >= 20:
+            return "D"
+        return "F"
 
     def get_good_angle_threshold(self) -> float:
         return self._angle_thresholds[cast(Judgment, Judgment.GOOD)]

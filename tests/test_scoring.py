@@ -57,7 +57,7 @@ def test_hard_difficulty_great_at_30ms() -> None:
     assert result.judgment == Judgment.GREAT
 
 
-def test_angle_accuracy_scaling_uses_20_degree_floor() -> None:
+def test_angle_accuracy_scaling_uses_40_degree_floor() -> None:
     engine = ScoringEngine()
     boom = cast(JointName, JointName.BOOM)
     angle_errors: dict[JointName, float] = {boom: 0.0}
@@ -66,10 +66,10 @@ def test_angle_accuracy_scaling_uses_20_degree_floor() -> None:
     assert engine.judge(angle_errors, 20.0).score == 300
 
     angle_errors[boom] = 10.0
-    assert engine.judge(angle_errors, 20.0).score == 150
+    assert engine.judge(angle_errors, 20.0).score == 225
 
     angle_errors[boom] = 20.0
-    assert engine.judge(angle_errors, 20.0).score == 30
+    assert engine.judge(angle_errors, 20.0).score == 150
 
 
 def test_combo_increments_on_hits_and_resets_on_miss() -> None:
@@ -104,20 +104,19 @@ def test_combo_multiplier_applies_on_current_hit() -> None:
 
 def test_grade_boundaries() -> None:
     engine = ScoringEngine()
-    # S: 95%+
     assert engine.get_grade(95, 100) == "S"
     assert engine.get_grade(190, 200) == "S"
     assert engine.get_grade(100, 100) == "S"
-    # A: 85%+
-    assert engine.get_grade(85, 100) == "A"
+    assert engine.get_grade(80, 100) == "A"
     assert engine.get_grade(94, 100) == "A"
-    # B: 70%+
-    assert engine.get_grade(70, 100) == "B"
-    assert engine.get_grade(84, 100) == "B"
-    # C: below 70%
-    assert engine.get_grade(69, 100) == "C"
-    assert engine.get_grade(0, 100) == "C"
-    # edge: max_possible == 0
+    assert engine.get_grade(60, 100) == "B"
+    assert engine.get_grade(79, 100) == "B"
+    assert engine.get_grade(40, 100) == "C"
+    assert engine.get_grade(59, 100) == "C"
+    assert engine.get_grade(20, 100) == "D"
+    assert engine.get_grade(39, 100) == "D"
+    assert engine.get_grade(19, 100) == "F"
+    assert engine.get_grade(0, 100) == "F"
     assert engine.get_grade(0, 0) == "C"
 
 
@@ -136,24 +135,23 @@ def test_max_possible_score_for_20_events() -> None:
 
 def test_angle_accuracy_downgrades_perfect_to_great() -> None:
     engine = ScoringEngine()
-    angle_errors = {cast(JointName, JointName.BOOM): 8.0}
+    angle_errors = {cast(JointName, JointName.BOOM): 10.0}
     result = engine.judge(angle_errors, 0.0)
     assert result.judgment == Judgment.GREAT
 
 
 def test_angle_accuracy_downgrades_perfect_to_good() -> None:
     engine = ScoringEngine()
-    angle_errors = {cast(JointName, JointName.BOOM): 15.0}
+    angle_errors = {cast(JointName, JointName.BOOM): 20.0}
     result = engine.judge(angle_errors, 0.0)
     assert result.judgment == Judgment.GOOD
 
 
 def test_angle_accuracy_causes_miss_at_high_error() -> None:
     engine = ScoringEngine()
-    angle_errors = {cast(JointName, JointName.BOOM): 30.0}
+    angle_errors = {cast(JointName, JointName.BOOM): 40.0}
     result = engine.judge(angle_errors, 0.0)
     assert result.judgment == Judgment.MISS
-    assert result.score == 0
     assert result.score == 0
 
 
@@ -166,7 +164,7 @@ def test_small_angle_error_keeps_perfect() -> None:
 
 def test_combined_timing_and_angle_picks_worse() -> None:
     engine = ScoringEngine()
-    angle_errors = {cast(JointName, JointName.BOOM): 15.0}
+    angle_errors = {cast(JointName, JointName.BOOM): 20.0}
     result = engine.judge(angle_errors, 50.0)
     assert result.judgment == Judgment.GOOD
 

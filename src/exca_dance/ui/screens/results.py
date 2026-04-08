@@ -100,6 +100,8 @@ class ResultsScreen:
             "A": NeonTheme.NEON_GREEN,
             "B": NeonTheme.NEON_BLUE,
             "C": NeonTheme.NEON_ORANGE,
+            "D": NeonTheme.NEON_PURPLE,
+            "F": NeonTheme.MISS,
         }
         grade_color = grade_colors.get(grade, NeonTheme.TEXT_WHITE)
         text_renderer.render(
