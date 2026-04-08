@@ -4,16 +4,18 @@ from __future__ import annotations
 import pygame
 from .models import JointName, Judgment
 
-# Joint angle limits (degrees): (min, max)
-# Derived from real excavator sensor data (action_space_finder workspace analysis).
-# Sensor data uses absolute inclinometer angles; game uses cumulative/relative angles:
-#   game_boom = boom_latitude  (absolute)
-#   game_arm  = arm_latitude - boom_latitude  (relative to boom)
-#   game_bucket = bucket_latitude - arm_latitude  (relative to arm)
+# Joint angle limits (degrees): (min, max) — factory defaults.
+# Runtime values are loaded from data/joint_limits.json via JointLimitsConfig
+# (so the operator can tighten limits per machine without editing source).
+# Falls back to these constants if the file is missing.
+#
+# ARM upper bound 120° matches the observed full-extension angle of the real
+# excavator after applying calibration; the previous 153° was wider than the
+# joint physically reaches and prevented the safety gate from triggering.
 JOINT_LIMITS: dict[JointName, tuple[float, float]] = {
     JointName.SWING: (-180.0, 180.0),
     JointName.BOOM: (-52.0, 13.0),
-    JointName.ARM: (21.0, 153.0),
+    JointName.ARM: (21.0, 120.0),
     JointName.BUCKET: (-132.0, 47.0),
 }
 

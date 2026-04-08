@@ -12,12 +12,12 @@ from exca_dance.core.models import JointName, BeatMap, BeatEvent
 from exca_dance.core.constants import (
     DEFAULT_JOINT_ANGLES,
     JOINT_ANGULAR_VELOCITY,
-    JOINT_LIMITS,
     SAFETY_SENSOR_GRACE_SEC,
     SAFETY_SENSOR_STALE_SEC,
     SAFETY_VELOCITY_DEADBAND,
 )
 from exca_dance.core.game_settings import GameSettings
+from exca_dance.core.joint_limits import JointLimitsConfig
 from exca_dance.core.calibration import CalibrationSettings
 from exca_dance.core.gamepad import GamepadManager
 
@@ -58,6 +58,7 @@ class GameLoop:
         bridge_factory: Callable[[str], Any] | None = None,
         gamepad: GamepadManager | None = None,
         calibration: CalibrationSettings | None = None,
+        joint_limits: JointLimitsConfig | None = None,
     ) -> None:
         self._renderer = renderer
         self._audio = audio
@@ -73,6 +74,7 @@ class GameLoop:
         self._active_bridge_mode = game_settings.mode if game_settings is not None else mode
         self._gamepad = gamepad
         self._calibration = calibration
+        self._joint_limits = joint_limits if joint_limits is not None else JointLimitsConfig()
 
         self._state = GameState.MENU
         self._beatmap: BeatMap | None = None
@@ -259,10 +261,10 @@ class GameLoop:
     def _update_joints_from_bridge(self) -> None:
         """Real mode: read joint angles from ROS2, apply calibration transform.
 
-        Populates both the display-safe `_joint_angles` (clamped to JOINT_LIMITS
-        for rendering / scoring) and the uncensored `_unclamped_angles` that the
-        safety gate consults to detect "joint is actually outside the allowed
-        range".
+        Populates both the display-safe `_joint_angles` (clamped to the
+        runtime joint limits for rendering / scoring) and the uncensored
+        `_unclamped_angles` that the safety gate consults to detect
+        "joint is actually outside the allowed range".
         """
         raw_angles = self._bridge.get_raw_angles()
         for joint, raw_value in raw_angles.items():
@@ -271,7 +273,7 @@ class GameLoop:
             else:
                 value = raw_value
             self._unclamped_angles[joint] = value
-            lo, hi = JOINT_LIMITS[joint]
+            lo, hi = self._joint_limits.get(joint)
             self._joint_angles[joint] = max(lo, min(hi, value))
 
     def _get_input_velocities(self) -> dict[JointName, float]:
@@ -347,7 +349,7 @@ class GameLoop:
                     new_blocked[joint] = SAFETY_REASON_STALE
                 continue
 
-            lo, hi = JOINT_LIMITS[joint]
+            lo, hi = self._joint_limits.get(joint)
             if angle <= lo and vel < -SAFETY_VELOCITY_DEADBAND:
                 safe[joint] = 0.0
                 new_blocked[joint] = SAFETY_REASON_MIN
@@ -359,7 +361,7 @@ class GameLoop:
             if self._safety_blocked.get(joint) != reason:
                 angle = self._unclamped_angles.get(joint)
                 angle_str = f"{angle:.2f}°" if angle is not None else "<no data>"
-                lo, hi = JOINT_LIMITS[joint]
+                lo, hi = self._joint_limits.get(joint)
                 logger.warning(
                     "SAFETY BLOCK: %s at %s outside [%.2f, %.2f] (%s) — velocity gated to 0",
                     joint.value, angle_str, lo, hi, reason,
@@ -430,7 +432,7 @@ class GameLoop:
             if raw == 0.0:
                 continue
             delta = raw * JOINT_ANGULAR_VELOCITY * dt
-            lo, hi = JOINT_LIMITS[joint]
+            lo, hi = self._joint_limits.get(joint)
             self._joint_angles[joint] = max(lo, min(hi, self._joint_angles[joint] + delta))
 
     def _check_beats(self) -> list[Any]:

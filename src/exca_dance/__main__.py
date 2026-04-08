@@ -165,6 +165,7 @@ def main(argv: list[str] | None = None) -> int:
         from exca_dance.core.camera_settings import CameraSettings
         from exca_dance.core.gamepad import GamepadManager
         from exca_dance.core.calibration import CalibrationSettings
+        from exca_dance.core.joint_limits import JointLimitsConfig
 
         fk = ExcavatorFK()
         scoring = ScoringEngine()
@@ -174,6 +175,7 @@ def main(argv: list[str] | None = None) -> int:
         pygame.joystick.init()
         gamepad = GamepadManager()
         calibration = CalibrationSettings()
+        joint_limits = JointLimitsConfig()
 
         # Bridge
         from exca_dance.ros2_bridge import create_bridge
@@ -196,6 +198,7 @@ def main(argv: list[str] | None = None) -> int:
             bridge_factory=create_bridge,
             gamepad=gamepad,
             calibration=calibration,
+            joint_limits=joint_limits,
         )
 
         # HUD + visual cues
@@ -265,6 +268,7 @@ def main(argv: list[str] | None = None) -> int:
                 game_settings=game_settings,
                 calibration=calibration,
                 bridge=bridge,
+                joint_limits=joint_limits,
             ),
         )
         tutorial_screen_class = import_module(
@@ -343,6 +347,7 @@ def _safe_cleanup(ctx: dict, logger: logging.Logger) -> None:
     _try_call(logger, "camera_settings.save", lambda: ctx["camera_settings"].save())
     _try_call(logger, "game_settings.save", lambda: ctx["game_settings"].save())
     _try_call(logger, "calibration.save", lambda: ctx["calibration"].save())
+    _try_call(logger, "joint_limits.save", lambda: ctx["joint_limits"].save())
     _try_call(logger, "audio.destroy", lambda: ctx["audio"].destroy())
     _try_call(logger, "bridge.disconnect", lambda: ctx["bridge"].disconnect())
     _try_call(logger, "visual_cues.destroy", lambda: ctx["visual_cues"].destroy())

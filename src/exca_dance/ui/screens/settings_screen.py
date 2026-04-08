@@ -16,6 +16,7 @@ from exca_dance.core.models import JointName
 from exca_dance.rendering.excavator_model import ExcavatorModel
 from exca_dance.rendering.theme import NeonTheme
 from exca_dance.core.calibration import CalibrationSettings
+from exca_dance.core.joint_limits import JointLimitsConfig
 from exca_dance.ros2_bridge.interface import ExcavatorBridgeInterface
 
 
@@ -79,7 +80,7 @@ class _AudioLike(Protocol):
 class SettingsScreen:
     """Settings screen with key bindings, audio, mode, and camera preview."""
 
-    SECTIONS: list[str] = ["KEY BINDINGS", "AUDIO", "MODE", "CAMERA", "CALIBRATION"]
+    SECTIONS: list[str] = ["KEY BINDINGS", "AUDIO", "MODE", "CAMERA", "CALIBRATION", "JOINT LIMITS"]
 
     def __init__(
         self,
@@ -94,6 +95,7 @@ class SettingsScreen:
         game_settings: GameSettings | None = None,
         calibration: CalibrationSettings | None = None,
         bridge: ExcavatorBridgeInterface | None = None,
+        joint_limits: JointLimitsConfig | None = None,
     ) -> None:
         self._renderer = renderer
         self._text = text_renderer
@@ -116,6 +118,7 @@ class SettingsScreen:
         # Calibration
         self._calibration: CalibrationSettings | None = calibration
         self._bridge: ExcavatorBridgeInterface | None = bridge
+        self._joint_limits: JointLimitsConfig | None = joint_limits
         self._cal_bridge: ExcavatorBridgeInterface | None = None  # dedicated ROS2 bridge for live data
         self._cal_col: int = 0  # 0=vel_sign, 1=ang_sign, 2=scale, 3=offset
         self._cal_adjust_dir: int = 0  # -1=LEFT held, 0=none, +1=RIGHT held
@@ -240,6 +243,9 @@ class SettingsScreen:
                     self._cal_adjust_dir = -1
                     self._cal_hold_elapsed = 0.0
                     self._cal_step_accum = 0.0
+                elif self._section == 5:
+                    fine = bool(pygame.key.get_mods() & pygame.KMOD_SHIFT)
+                    self._adjust_joint_limit(-0.5 if fine else -1.0)
                 else:
                     new = (self._section - 1) % len(self.SECTIONS)
                     if new == 4 and self._mode != "real":
@@ -256,6 +262,9 @@ class SettingsScreen:
                     self._cal_adjust_dir = 1
                     self._cal_hold_elapsed = 0.0
                     self._cal_step_accum = 0.0
+                elif self._section == 5:
+                    fine = bool(pygame.key.get_mods() & pygame.KMOD_SHIFT)
+                    self._adjust_joint_limit(0.5 if fine else 1.0)
                 else:
                     new = (self._section + 1) % len(self.SECTIONS)
                     if new == 4 and self._mode != "real":
@@ -291,6 +300,8 @@ class SettingsScreen:
             self._game_settings.save()
         if self._calibration is not None:
             self._calibration.save()
+        if self._joint_limits is not None:
+            self._joint_limits.save()
     def _max_row_for_section(self) -> int:
         if self._section == 0:
             return len(list(JointName)) * 2 - 1
@@ -300,8 +311,10 @@ class SettingsScreen:
             return 0
         if self._section == 3:
             return 2  # azimuth, elevation, reset
-        # section 4 = CALIBRATION: 4 joints × 4 params + RESET row
-        return len(list(JointName)) * 4
+        if self._section == 4:
+            return len(list(JointName)) * 4
+        # section 5 = JOINT LIMITS: 4 joints × 2 (min/max) + RESET row
+        return len(list(JointName)) * 2
 
     def _adjust_volume(self, delta: float) -> None:
         if self._row == 0:
@@ -356,6 +369,31 @@ class SettingsScreen:
                 self._camera.save()
         elif self._section == 4:
             self._activate_calibration_row()
+        elif self._section == 5:
+            reset_row = len(list(JointName)) * 2
+            if self._row == reset_row and self._joint_limits is not None:
+                self._joint_limits.reset_to_defaults()
+                self._joint_limits.save()
+
+    def _adjust_joint_limit(self, delta: float) -> None:
+        if self._joint_limits is None:
+            return
+        joints = list(JointName)
+        joint_idx = self._row // 2
+        if joint_idx >= len(joints):
+            return
+        joint = joints[joint_idx]
+        is_max_row = (self._row % 2 == 1)
+        try:
+            if is_max_row:
+                new_val = self._joint_limits.get_max(joint) + delta
+                self._joint_limits.set_max(joint, round(new_val, 2))
+            else:
+                new_val = self._joint_limits.get_min(joint) + delta
+                self._joint_limits.set_min(joint, round(new_val, 2))
+        except ValueError:
+            pass
+
     def _check_ros2_status(self) -> str:
         if self._mode != "real":
             return "ok"
@@ -413,7 +451,7 @@ class SettingsScreen:
 
         # ── Section tabs ─────────────────────────────────────────
         tab_y = int(100 * s)
-        tab_positions = [0.10, 0.26, 0.42, 0.58, 0.82]
+        tab_positions = [0.08, 0.22, 0.36, 0.50, 0.66, 0.86]
         for i, sec in enumerate(self.SECTIONS):
             x = int(W * tab_positions[i])
             active = i == self._section
@@ -472,6 +510,8 @@ class SettingsScreen:
             self._render_camera_text(text_renderer, W, H, s, content_y)
         elif self._section == 4:
             self._render_calibration(text_renderer, W, H, s, content_y)
+        elif self._section == 5:
+            self._render_joint_limits(text_renderer, W, H, s, content_y)
     # ── Section renderers ─────────────────────────────────────────────
 
     def _render_keybindings(self, tr: Any, W: int, H: int, s: float, start_y: int) -> None:
@@ -1013,6 +1053,110 @@ class SettingsScreen:
             hint = "\u2190/\u2192: Adjust  |  ENTER: Edit/Toggle  |  TAB: Section  |  ESC: Back"
         tr.render(  # type: ignore[union-attr]
             hint, W // 2, H - int(40 * s),
+            color=NeonTheme.TEXT_DIM.as_tuple(),
+            scale=max(0.50 * s, 0.33), large=True, align="center",
+        )
+
+    def _render_joint_limits(self, tr: Any, W: int, H: int, s: float, start_y: int) -> None:
+        from exca_dance.core.constants import JOINT_LIMITS as DEFAULT_LIMITS
+
+        joints = list(JointName)
+        joint_colors = {
+            JointName.SWING: NeonTheme.JOINT_SWING,
+            JointName.BOOM: NeonTheme.JOINT_BOOM,
+            JointName.ARM: NeonTheme.JOINT_ARM,
+            JointName.BUCKET: NeonTheme.JOINT_BUCKET,
+        }
+
+        col_name = int(W * 0.10)
+        col_min = int(W * 0.32)
+        col_max = int(W * 0.50)
+        col_default = int(W * 0.70)
+        row_h = int(max(54 * s, 36))
+
+        tr.render(  # type: ignore[union-attr]
+            "JOINT", col_name, start_y,
+            color=NeonTheme.TEXT_DIM.as_tuple(),
+            scale=max(0.50 * s, 0.32), large=True,
+        )
+        tr.render(  # type: ignore[union-attr]
+            "MIN", col_min, start_y,
+            color=NeonTheme.TEXT_DIM.as_tuple(),
+            scale=max(0.50 * s, 0.32), large=True,
+        )
+        tr.render(  # type: ignore[union-attr]
+            "MAX", col_max, start_y,
+            color=NeonTheme.TEXT_DIM.as_tuple(),
+            scale=max(0.50 * s, 0.32), large=True,
+        )
+        tr.render(  # type: ignore[union-attr]
+            "DEFAULT (min / max)", col_default, start_y,
+            color=NeonTheme.TEXT_DIM.as_tuple(),
+            scale=max(0.50 * s, 0.32), large=True,
+        )
+
+        y = start_y + int(40 * s)
+        for j_idx, joint in enumerate(joints):
+            color = joint_colors.get(joint, NeonTheme.TEXT_WHITE)
+            if self._joint_limits is not None:
+                lo, hi = self._joint_limits.get(joint)
+            else:
+                lo, hi = DEFAULT_LIMITS[joint]
+            d_lo, d_hi = DEFAULT_LIMITS[joint]
+
+            tr.render(  # type: ignore[union-attr]
+                cast(str, joint.value).upper(), col_name, y,
+                color=color.as_tuple(),
+                scale=max(0.65 * s, 0.40), large=True,
+            )
+
+            min_row = j_idx * 2
+            max_row = j_idx * 2 + 1
+            min_sel = self._row == min_row
+            max_sel = self._row == max_row
+            min_color = NeonTheme.NEON_PINK if min_sel else NeonTheme.TEXT_WHITE
+            max_color = NeonTheme.NEON_PINK if max_sel else NeonTheme.TEXT_WHITE
+
+            min_drift = abs(lo - d_lo) > 1e-6
+            max_drift = abs(hi - d_hi) > 1e-6
+            min_label = f"{lo:+7.1f}\u00b0"
+            max_label = f"{hi:+7.1f}\u00b0"
+            if min_drift and not min_sel:
+                min_color = NeonTheme.NEON_ORANGE
+            if max_drift and not max_sel:
+                max_color = NeonTheme.NEON_ORANGE
+
+            tr.render(  # type: ignore[union-attr]
+                min_label, col_min, y,
+                color=min_color.as_tuple(),
+                scale=max(0.60 * s, 0.38), large=True,
+            )
+            tr.render(  # type: ignore[union-attr]
+                max_label, col_max, y,
+                color=max_color.as_tuple(),
+                scale=max(0.60 * s, 0.38), large=True,
+            )
+            tr.render(  # type: ignore[union-attr]
+                f"{d_lo:+.1f}\u00b0 / {d_hi:+.1f}\u00b0", col_default, y,
+                color=NeonTheme.TEXT_DIM.as_tuple(),
+                scale=max(0.50 * s, 0.32), large=True,
+            )
+            y += row_h
+
+        reset_row = len(joints) * 2
+        is_reset_sel = self._row == reset_row
+        reset_color = NeonTheme.NEON_ORANGE if is_reset_sel else NeonTheme.TEXT_DIM
+        tr.render(  # type: ignore[union-attr]
+            "[ RESET ALL TO DEFAULTS ]",
+            W // 2, y + int(20 * s),
+            color=reset_color.as_tuple(),
+            scale=max(0.60 * s, 0.36), large=True, align="center",
+        )
+
+        tr.render(  # type: ignore[union-attr]
+            "\u2190/\u2192: Adjust 1\u00b0  |  SHIFT+\u2190/\u2192: 0.5\u00b0  |  ENTER: Reset"
+            "  |  TAB: Section  |  ESC: Save & Back",
+            W // 2, H - int(40 * s),
             color=NeonTheme.TEXT_DIM.as_tuple(),
             scale=max(0.50 * s, 0.33), large=True, align="center",
         )
