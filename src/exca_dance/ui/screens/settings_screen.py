@@ -120,6 +120,7 @@ class SettingsScreen:
         self._bridge: ExcavatorBridgeInterface | None = bridge
         self._joint_limits: JointLimitsConfig | None = joint_limits
         self._cal_bridge: ExcavatorBridgeInterface | None = None  # dedicated ROS2 bridge for live data
+        self._live_calibrated_angles: dict[JointName, float] = {}
         self._cal_col: int = 0  # 0=vel_sign, 1=ang_sign, 2=scale, 3=offset
         self._cal_adjust_dir: int = 0  # -1=LEFT held, 0=none, +1=RIGHT held
         self._cal_hold_elapsed: float = 0.0  # how long LEFT/RIGHT has been held
@@ -225,10 +226,12 @@ class SettingsScreen:
                 self._row = 0
                 self._cal_adjust_dir = 0
                 self._cal_hold_elapsed = 0.0
-                # Bridge lifecycle: connect/disconnect on calibration enter/leave
-                if old_section == 4 and self._section != 4:
+                # Bridge lifecycle: live sensor needed for CALIBRATION (4) and JOINT LIMITS (5)
+                old_needs_bridge = old_section in (4, 5)
+                new_needs_bridge = self._section in (4, 5)
+                if old_needs_bridge and not new_needs_bridge:
                     self._disconnect_cal_bridge()
-                elif self._section == 4 and old_section != 4:
+                elif new_needs_bridge and not old_needs_bridge:
                     self._ensure_cal_bridge()
                 return None
 
@@ -247,11 +250,13 @@ class SettingsScreen:
                     fine = bool(pygame.key.get_mods() & pygame.KMOD_SHIFT)
                     self._adjust_joint_limit(-0.5 if fine else -1.0)
                 else:
+                    old_section = self._section
                     new = (self._section - 1) % len(self.SECTIONS)
                     if new == 4 and self._mode != "real":
                         new = (new - 1) % len(self.SECTIONS)
                     self._section = new
                     self._row = 0
+                    self._sync_live_bridge_for_sections(old_section, new)
             elif key in (pygame.K_RIGHT, pygame.K_d):
                 if self._section == 1:
                     self._adjust_volume(0.1)
@@ -266,17 +271,23 @@ class SettingsScreen:
                     fine = bool(pygame.key.get_mods() & pygame.KMOD_SHIFT)
                     self._adjust_joint_limit(0.5 if fine else 1.0)
                 else:
+                    old_section = self._section
                     new = (self._section + 1) % len(self.SECTIONS)
                     if new == 4 and self._mode != "real":
                         new = (new + 1) % len(self.SECTIONS)
                     self._section = new
                     self._row = 0
+                    self._sync_live_bridge_for_sections(old_section, new)
 
             # UP/DOWN: row navigation
             elif key in (pygame.K_UP, pygame.K_w):
                 self._row = max(0, self._row - 1)
             elif key in (pygame.K_DOWN, pygame.K_s):
                 self._row = min(self._max_row_for_section(), self._row + 1)
+
+            # M: snap selected joint-limit row to current calibrated sensor angle
+            elif key == pygame.K_m and self._section == 5:
+                self._snap_joint_limit_to_live()
 
             # ENTER/SPACE: activate
             elif key in (pygame.K_RETURN, pygame.K_SPACE):
@@ -394,6 +405,78 @@ class SettingsScreen:
         except ValueError:
             pass
 
+    def _selected_joint_limit_row(self) -> tuple[JointName, bool] | None:
+        if self._joint_limits is None:
+            return None
+        joints = list(JointName)
+        joint_idx = self._row // 2
+        if joint_idx >= len(joints):
+            return None
+        return joints[joint_idx], self._row % 2 == 1
+
+    def _snap_joint_limit_to_live(self) -> None:
+        sel = self._selected_joint_limit_row()
+        if sel is None or self._joint_limits is None:
+            return
+        joint, is_max_row = sel
+        live = self._live_calibrated_angles.get(joint)
+        if live is None:
+            return
+        snapped = round(live, 2)
+        try:
+            if is_max_row:
+                self._joint_limits.set_max(joint, snapped)
+            else:
+                self._joint_limits.set_min(joint, snapped)
+        except ValueError:
+            pass
+
+    def _sync_live_bridge_for_sections(self, old_section: int, new_section: int) -> None:
+        old_needs = old_section in (4, 5)
+        new_needs = new_section in (4, 5)
+        if old_needs and not new_needs:
+            self._disconnect_cal_bridge()
+        elif new_needs and not old_needs:
+            self._ensure_cal_bridge()
+
+    def _update_live_calibrated_angles(self) -> None:
+        bridge = self._cal_bridge or self._bridge
+        if bridge is None or not bridge.is_connected():
+            self._live_calibrated_angles = {}
+            return
+        try:
+            raw = bridge.get_raw_angles()
+        except Exception:
+            self._live_calibrated_angles = {}
+            return
+        result: dict[JointName, float] = {}
+        for joint, raw_value in raw.items():
+            if self._calibration is not None:
+                result[joint] = self._calibration.transform_angle(joint, raw_value)
+            else:
+                result[joint] = raw_value
+        self._live_calibrated_angles = result
+
+    def _update_joint_limits_preview(self) -> None:
+        if self._preview_model is None or self._joint_limits is None:
+            return
+        from exca_dance.core.constants import DEFAULT_JOINT_ANGLES
+
+        preview_angles: dict[JointName, float] = {}
+        for joint in JointName:
+            if joint in self._live_calibrated_angles:
+                preview_angles[joint] = self._live_calibrated_angles[joint]
+            else:
+                preview_angles[joint] = float(DEFAULT_JOINT_ANGLES[joint])
+
+        sel = self._selected_joint_limit_row()
+        if sel is not None:
+            joint, is_max_row = sel
+            lo, hi = self._joint_limits.get(joint)
+            preview_angles[joint] = hi if is_max_row else lo
+
+        self._preview_model.update(preview_angles)
+
     def _check_ros2_status(self) -> str:
         if self._mode != "real":
             return "ok"
@@ -423,6 +506,11 @@ class SettingsScreen:
         # Update preview model with calibrated angles when in CALIBRATION section
         if self._section == 4 and self._preview_model is not None:
             self._update_calibration_preview()
+
+        # JOINT LIMITS section: refresh live sensor + preview pose at the limit value
+        if self._section == 5 and self._preview_model is not None:
+            self._update_live_calibrated_angles()
+            self._update_joint_limits_preview()
         return None
 
     # ── Rendering ─────────────────────────────────────────────────────
@@ -434,8 +522,8 @@ class SettingsScreen:
         H: int = renderer.height
         s = H / 1080.0
 
-        # Camera / Calibration section: render 3D preview FIRST (behind text)
-        if self._section in (3, 4):
+        # Camera / Calibration / Joint Limits sections: render 3D preview FIRST (behind text)
+        if self._section in (3, 4, 5):
             self._render_camera_preview(W, H)
 
         # ── Title ────────────────────────────────────────────────
@@ -1068,10 +1156,12 @@ class SettingsScreen:
             JointName.BUCKET: NeonTheme.JOINT_BUCKET,
         }
 
-        col_name = int(W * 0.10)
-        col_min = int(W * 0.32)
-        col_max = int(W * 0.50)
-        col_default = int(W * 0.70)
+        # Numeric panel lives in left ~38% of the screen so the 3D preview
+        # (rendered by _render_camera_preview) can occupy the right side.
+        col_name = int(W * 0.04)
+        col_min = int(W * 0.13)
+        col_max = int(W * 0.22)
+        col_live = int(W * 0.31)
         row_h = int(max(54 * s, 36))
 
         tr.render(  # type: ignore[union-attr]
@@ -1090,7 +1180,7 @@ class SettingsScreen:
             scale=max(0.50 * s, 0.32), large=True,
         )
         tr.render(  # type: ignore[union-attr]
-            "DEFAULT (min / max)", col_default, start_y,
+            "LIVE", col_live, start_y,
             color=NeonTheme.TEXT_DIM.as_tuple(),
             scale=max(0.50 * s, 0.32), large=True,
         )
@@ -1136,10 +1226,21 @@ class SettingsScreen:
                 color=max_color.as_tuple(),
                 scale=max(0.60 * s, 0.38), large=True,
             )
+
+            live_val = self._live_calibrated_angles.get(joint)
+            if live_val is None:
+                live_text = "---"
+                live_color = NeonTheme.TEXT_DIM
+            else:
+                live_text = f"{live_val:+7.1f}\u00b0"
+                if live_val < lo or live_val > hi:
+                    live_color = NeonTheme.MISS
+                else:
+                    live_color = NeonTheme.NEON_GREEN
             tr.render(  # type: ignore[union-attr]
-                f"{d_lo:+.1f}\u00b0 / {d_hi:+.1f}\u00b0", col_default, y,
-                color=NeonTheme.TEXT_DIM.as_tuple(),
-                scale=max(0.50 * s, 0.32), large=True,
+                live_text, col_live, y,
+                color=live_color.as_tuple(),
+                scale=max(0.55 * s, 0.34), large=True,
             )
             y += row_h
 
@@ -1148,17 +1249,34 @@ class SettingsScreen:
         reset_color = NeonTheme.NEON_ORANGE if is_reset_sel else NeonTheme.TEXT_DIM
         tr.render(  # type: ignore[union-attr]
             "[ RESET ALL TO DEFAULTS ]",
-            W // 2, y + int(20 * s),
+            int(W * 0.20), y + int(20 * s),
             color=reset_color.as_tuple(),
-            scale=max(0.60 * s, 0.36), large=True, align="center",
+            scale=max(0.55 * s, 0.34), large=True, align="center",
         )
 
+        sel = self._selected_joint_limit_row()
+        if sel is not None:
+            joint, is_max_row = sel
+            if self._joint_limits is not None:
+                lo, hi = self._joint_limits.get(joint)
+                pose_val = hi if is_max_row else lo
+                badge = (
+                    f"PREVIEW: {cast(str, joint.value).upper()} "
+                    f"{'MAX' if is_max_row else 'MIN'} = {pose_val:+.1f}\u00b0"
+                )
+                tr.render(  # type: ignore[union-attr]
+                    badge,
+                    int(W * 0.68), int(88 * s),
+                    color=NeonTheme.NEON_PINK.as_tuple(),
+                    scale=max(0.55 * s, 0.34), large=True, align="center",
+                )
+
         tr.render(  # type: ignore[union-attr]
-            "\u2190/\u2192: Adjust 1\u00b0  |  SHIFT+\u2190/\u2192: 0.5\u00b0  |  ENTER: Reset"
-            "  |  TAB: Section  |  ESC: Save & Back",
+            "\u2190/\u2192: Adjust 1\u00b0  |  SHIFT+\u2190/\u2192: 0.5\u00b0  |  M: Snap to LIVE"
+            "  |  ENTER: Reset  |  TAB: Section  |  ESC: Save & Back",
             W // 2, H - int(40 * s),
             color=NeonTheme.TEXT_DIM.as_tuple(),
-            scale=max(0.50 * s, 0.33), large=True, align="center",
+            scale=max(0.48 * s, 0.32), large=True, align="center",
         )
 
     # ── Calibration continuous adjustment + preview ───────────────────
