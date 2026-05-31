@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>EXCA DANCE — 원내실증 제출 자료</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 16mm 15mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Malgun Gothic", "맑은 고딕", sans-serif;
+    color: #1a1a2e; line-height: 1.65; font-size: 10.5pt; margin: 0;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .cover {
+    background: linear-gradient(135deg, #0b0f2a 0%, #1a1a40 55%, #2a1040 100%);
+    color: #eaf6ff; padding: 26px 28px; border-radius: 10px; margin-bottom: 22px;
+  }
+  .cover .badge {
+    display: inline-block; font-size: 9pt; letter-spacing: 1px; color: #00e5ff;
+    border: 1px solid #00e5ff; border-radius: 20px; padding: 3px 12px; margin-bottom: 12px;
+  }
+  .cover h1 {
+    margin: 4px 0 6px; font-size: 30pt; letter-spacing: 2px;
+    color: #00e5ff; text-shadow: 0 0 14px rgba(0,229,255,.45);
+  }
+  .cover .sub { font-size: 11pt; color: #ff3d8b; letter-spacing: 1px; margin: 0 0 4px; }
+  .cover .desc { font-size: 10pt; color: #c5d3e8; margin: 8px 0 0; }
+  h2 {
+    font-size: 14pt; color: #12123a; margin: 26px 0 10px; padding-bottom: 6px;
+    border-bottom: 2.5px solid #00b8d4;
+  }
+  h2 .note { font-size: 9.5pt; color: #c2185b; font-weight: 600; }
+  h3 { font-size: 11.5pt; color: #c2185b; margin: 16px 0 6px; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 9.8pt; }
+  th, td { border: 1px solid #c4cdda; padding: 7px 9px; text-align: left; vertical-align: top; }
+  th { background: #eef3fb; color: #12123a; font-weight: 700; white-space: nowrap; }
+  td:first-child { white-space: nowrap; font-weight: 600; color: #2a3550; background: #f8fafd; }
+  ul, ol { margin: 6px 0 6px 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+  .lead { font-size: 10.5pt; }
+  .oneliner {
+    background: #f0f9ff; border-left: 4px solid #00b8d4; padding: 10px 14px;
+    margin: 12px 0; border-radius: 0 6px 6px 0; font-style: italic; color: #0d3b4f;
+  }
+  .hero {
+    background: linear-gradient(135deg,#fff5fb 0%, #f3f9ff 100%);
+    border: 1.5px solid #ff3d8b; border-radius: 10px; padding: 14px 18px; margin: 14px 0;
+    page-break-inside: avoid;
+  }
+  .hero b { color: #c2185b; }
+  .flow { display: flex; align-items: stretch; gap: 0; margin: 14px 0 6px; page-break-inside: avoid; }
+  .fnode { flex: 1; border: 1.5px solid #00b8d4; border-radius: 8px; background: #f3fbfe;
+    padding: 10px 8px; text-align: center; font-weight: 700; font-size: 9.5pt; color: #0d3b4f;
+    display: flex; flex-direction: column; justify-content: center; }
+  .fnode.player { border-color: #2e7d32; background: #f1fbf2; color: #1b5e20; }
+  .fnode.real { border-color: #c2185b; background: #fff4f9; color: #ad1457; }
+  .fnode small { display: block; font-weight: 400; font-size: 8pt; color: #557; margin-top: 3px; }
+  .farrow { flex: 0 0 82px; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; color: #00838f; font-size: 8pt; font-weight: 700; }
+  .farrow .ln { font-size: 14pt; line-height: 1; }
+  .feedback { background: #0b0f2a; color: #9ad8ff; border-radius: 6px; padding: 7px 12px;
+    font-size: 8.6pt; text-align: center; margin: 8px 0; page-break-inside: avoid; }
+  .stages { display: flex; gap: 14px; margin: 10px 0; page-break-inside: avoid; }
+  .stage { flex: 1; border-radius: 8px; padding: 11px 13px; font-size: 9.2pt; }
+  .stage.s1 { background: #eef6ff; border: 1px solid #90caf9; }
+  .stage.s2 { background: #fff0f6; border: 1px solid #f48fb1; }
+  .stage b { font-size: 10pt; }
+  figure { margin: 14px 0; text-align: center; page-break-inside: avoid; }
+  figure img { width: 100%; max-width: 640px; border: 1px solid #2a2a40; border-radius: 6px; }
+  figcaption { font-size: 9pt; color: #555; margin-top: 5px; }
+  .section-keep { page-break-inside: avoid; }
+  hr { border: none; border-top: 1px solid #dfe5ee; margin: 20px 0; }
+  .small { font-size: 9pt; color: #667; }
+  .keyval ol { counter-reset: item; list-style: none; padding-left: 0; }
+  .keyval ol li { position: relative; padding: 6px 6px 6px 30px; margin: 6px 0;
+    border-bottom: 1px dashed #e2e8f2; }
+  .keyval ol li::before {
+    counter-increment: item; content: counter(item);
+    position: absolute; left: 0; top: 6px; width: 21px; height: 21px;
+    background: #00b8d4; color: #fff; border-radius: 50%; text-align: center;
+    font-weight: 700; font-size: 9pt; line-height: 21px;
+  }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="badge">KIMM 50주년 · 원내실증</div>
+  <div class="sub">한국기계연구원 50주년 기념</div>
+  <h1>EXCA&nbsp;DANCE</h1>
+  <div class="sub">EXCAVATOR RHYTHM TRAINING</div>
+  <div class="desc">굴착기 4관절 조작 리듬 트레이닝 · ROS2 기반 실물 굴착기 원격제어 실증</div>
+</div>
+
+<table>
+  <tr><th>실증 아이템명</th><td><b>EXCA DANCE</b> (Excavator Rhythm Training)</td></tr>
+  <tr><th>분류</th><td>굴착기 4관절 조작 교육용 3D 리듬 게임 + 실물 굴착기 원격제어 실증</td></tr>
+  <tr><th>행사</th><td>한국기계연구원 개원 50주년 기념 행사</td></tr>
+  <tr><th>운용 모드</th><td>VIRTUAL(가상 시뮬레이션) / <b>REAL(ROS2 기반 실물 굴착기 연동)</b></td></tr>
+  <tr><th>제출일</th><td>2026년 6월 1일</td></tr>
+</table>
+
+<h2>1. 실증 아이템 개요</h2>
+<p class="lead"><b>EXCA DANCE</b>는 굴착기의 4개 관절(<b>선회 swing · 붐 boom · 암 arm · 버킷 bucket</b>)을 음악 비트에 맞춰 조작하고, 화면에 제시되는 목표 자세(타겟 포즈)와 얼마나 정확히 일치시켰는지를 <b>각도·타이밍 정확도</b>로 판정해 점수와 콤보를 부여하는 <b>3D 리듬 게임</b>입니다.</p>
+<p class="lead">그러나 이 아이템의 본질은 단순한 게임이 아니라 <b>"누구나 게임을 하듯 조작하면, 그 입력이 실시간으로 실물 굴착기를 움직인다"는 원격제어 기술을 공개 현장에서 입증하는 실증 플랫폼</b>이라는 데 있습니다. 즉, <b>플레이어는 안전한 게임 인터페이스를 조작하고, 같은 순간 현장의 관람객은 실제 굴착기가 음악에 맞춰 움직이는 장면을 직접 목격</b>합니다. 이 "조작–구동–관람"의 동시성이 EXCA DANCE를 실증용 콘텐츠로 만든 핵심 이유입니다.</p>
+<div class="oneliner">한 줄 요약 — "플레이어가 게임을 조작하면 실물 굴착기가 그대로 움직이고, 관람객은 그 실물의 동작을 관람한다. EXCA DANCE는 건설기계 원격제어 기술을, 게임이라는 가장 친숙한 형태로 대중 앞에서 실증하는 플랫폼이다."</div>
+
+<h2>2. 실증 시나리오와 핵심 가치 <span class="note">— 본 아이템이 '실증용'으로 제작된 이유</span></h2>
+
+<h3>2.1 실증 현장 구성 — 하나의 콘텐츠, 두 개의 경험</h3>
+<p class="lead">EXCA DANCE의 실증은 <b>세 주체가 동시에 연결되는 구조</b>로 이루어집니다.</p>
+<div class="flow">
+  <div class="fnode player">플레이어<small>안전한 게임 인터페이스 조작</small></div>
+  <div class="farrow"><span>게임 조작</span><span class="ln">▶</span></div>
+  <div class="fnode">게임 + ROS2 브리지<small>입력 → 속도 명령 변환</small></div>
+  <div class="farrow"><span>속도 명령</span><span class="ln">▶</span></div>
+  <div class="fnode real">실물 굴착기<small>실제로 비트에 맞춰 구동</small></div>
+</div>
+<div class="feedback">◀  센서 피드백 (붐·암·버킷 관절 / 선회 각도) — closed-loop 로 실물의 실제 자세를 화면에 실시간 반영</div>
+<div class="stages">
+  <div class="stage s1">무대 ① · 게임 화면 — <b>플레이어</b>가 3D·채점에 몰입 <span style="color:#557">(능동적 참여)</span></div>
+  <div class="stage s2">무대 ② · 실물 굴착기 — <b>관람객</b>이 실물의 군무를 관람 <span style="color:#557">(수동적 관중)</span></div>
+</div>
+<ul>
+  <li><b>플레이어(능동적 참여자)</b>: 운전석이 아닌 <b>안전한 거리의 게임 인터페이스</b>에서 4관절을 조작하며, 3D 화면·판정·콤보에 몰입합니다.</li>
+  <li><b>실물 굴착기(실증 대상)</b>: 플레이어의 입력이 ROS2 속도 명령으로 전달되어 <b>실제로 비트에 맞춰 움직입니다.</b></li>
+  <li><b>관람객(수동적 관중)</b>: 게임을 하지 않아도, <b>실물 중장비가 음악에 맞춰 정밀하게 움직이는 스펙터클</b>을 눈앞에서 관람합니다.</li>
+</ul>
+<div class="hero">하나의 플레이가 <b>'게임 화면(플레이어용)'과 '실물 굴착기(관람객용)'라는 두 개의 무대</b>에서 동시에 펼쳐집니다. 이 이중 경험(dual-surface)이 EXCA DANCE만의 차별점입니다.</div>
+
+<h3>2.2 실증 시나리오에서의 핵심 장점</h3>
+<div class="keyval">
+<ol>
+  <li><b>안전한 원격제어의 직접 입증</b> — 플레이어는 위험한 작업 반경 밖, 운전석 탑승 없이 조작합니다. 작업자를 현장 위험으로부터 분리하는 <b>건설기계 원격·무인화 기술의 안전성</b>을 행사장에서 그대로 증명합니다.</li>
+  <li><b>추상적 기술의 직관적 가시화</b> — "ROS2 기반 실물 원격제어"라는 전문 기술을, <b>"내가 게임을 하면 진짜 굴착기가 움직인다"</b>는 누구나 즉시 이해하는 경험으로 변환합니다. 별도의 설명 없이 기술의 핵심이 전달됩니다.</li>
+  <li><b>참여자–관람객 동시 몰입(이중 무대)</b> — 능동적 플레이어와 수동적 관람객을 <b>하나의 콘텐츠로 동시에</b> 사로잡습니다. 줄을 서서 차례를 기다리는 동안에도 관람객은 실물의 동작을 즐기므로, 전시 부스의 체류·집객 효과가 극대화됩니다.</li>
+  <li><b>공개 환경에서의 신뢰성 실증</b> — 통제된 실험실이 아닌 <b>실제 행사 현장</b>에서, 실시간 센서 피드백(closed-loop)과 fail-close 안전 게이트로 안정 동작을 입증합니다. 이는 "실환경 검증"이라는 실증(實證)의 본질에 정확히 부합합니다.</li>
+  <li><b>교육·홍보·기술 시연의 동시 달성</b> — 굴착기 조작 원리 학습(교육), 연구원 로봇·자동화 역량 노출(홍보), 원격제어 동작 입증(기술 실증)을 <b>단일 콘텐츠</b>로 한 번에 달성합니다.</li>
+</ol>
+</div>
+
+<h2>3. 기술 설명</h2>
+
+<h3>3.1 조작 및 게임플레이</h3>
+<ul>
+  <li><b>조작 대상</b>: 굴착기 4관절 — 선회(swing), 붐(boom), 암(arm), 버킷(bucket)</li>
+  <li><b>관절 가동 범위</b>: SWING(−180°~180°), BOOM(−52°~13°), ARM(21°~120°), BUCKET(−132°~47°)</li>
+  <li><b>방식</b>: 화면 하단 노트 하이웨이를 따라 흐르는 비트에 맞춰, 반투명 "고스트(ghost) 굴착기"가 제시하는 목표 자세로 각 관절을 정렬</li>
+</ul>
+
+<h3>3.2 채점 · 판정 시스템</h3>
+<ul>
+  <li><b>판정 4단계</b>: PERFECT / GREAT / GOOD / MISS</li>
+  <li><b>타이밍 윈도우</b>: ±35 / 70 / 120 ms (NORMAL 기준)</li>
+  <li><b>점수 산정</b>: 기본 점수(300/200/100/0)에 <b>목표 각도와의 정확도</b>와 <b>콤보 배율</b>을 곱해 합산</li>
+  <li><b>콤보 배율</b>: 10콤보 → 2배, 25콤보 → 3배, 50콤보 → 4배 (MISS 시 콤보 0 초기화)</li>
+  <li><b>결과 화면</b>: 최종 점수, 등급, 판정별 개수, 최대 콤보 제공 및 리더보드 저장</li>
+</ul>
+
+<h3>3.3 3D 시각화 (렌더링)</h3>
+<ul>
+  <li><b>엔진</b>: ModernGL(OpenGL) 기반 실시간 3D 렌더링, 네온/사이버펑크 비주얼 테마</li>
+  <li><b>모델</b>: STL 메시 기반 굴착기 3D 모델을 순기구학(FK)으로 구동</li>
+  <li><b>다중 뷰포트</b>: 3D VIEW(원근 3D) · JOINT DIAGRAM(측면 관절 도식) · TOP VIEW(선회 상면도)</li>
+  <li><b>시각적 가이드</b>: 목표 자세 고스트 굴착기, 외곽선 강조, 비트 타임라인, 매치율에 따라 색이 변하는 정렬 링</li>
+</ul>
+
+<h3>3.4 실물 굴착기 연동 (ROS2) — 실증 핵심</h3>
+<ul>
+  <li><b>연동 구조</b>: 게임 본체와 ROS2 노드를 <b>별도 프로세스로 분리</b>하고 IPC 큐로 통신하여 안정성 확보</li>
+  <li><b>제어 방식</b>: 실물 모드(REAL)에서 게임은 <code>/upper_controller/control_cmd</code>(UpperControlCmd) <b>속도(velocity) 명령</b>을 발행하여 실물 굴착기를 구동</li>
+  <li><b>센서 피드백</b>: 붐·암·버킷 관절 및 선회 각도 센서 토픽을 구독하여 실물의 실제 자세를 화면에 반영(closed-loop)</li>
+  <li><b>모드 전환</b>: VIRTUAL(키보드/게임패드) ↔ REAL(실물 연동)을 설정에서 전환, ROS2 미연결 시 자동으로 가상 모드 안전 폴백</li>
+</ul>
+
+<h3>3.5 안전 설계</h3>
+<ul>
+  <li><b>Fail-close 안전 게이트</b>: 센서 신호가 없거나 일정 시간 이상 지연(stale)되면 명령 차단</li>
+  <li><b>관절 한계 보호</b>: 가동 범위 경계에서 한계를 더 벗어나려는 방향의 속도 명령 차단</li>
+  <li><b>데드밴드 처리</b> 및 메뉴·일시정지 시 <b>무조건 0속도</b> 송신으로 오작동 방지</li>
+  <li>캘리브레이션 보정(ROS2 원시 각도 ↔ 게임 각도, 속도 보정)으로 실기기 정밀 연동</li>
+</ul>
+<div class="oneliner">이 안전 설계는 <b>관람객과 플레이어가 함께 있는 공개 현장에서 실물 중장비를 구동</b>한다는 실증 환경의 전제 조건을 충족하기 위한 것으로, 기술 시연의 신뢰성을 뒷받침합니다.</div>
+
+<h2>4. 첨부 자료에 대한 간략한 설명</h2>
+<table>
+  <tr><th>구분</th><th>파일</th><th>설명</th></tr>
+  <tr><td>이미지 ①</td><td>01_title.png</td><td>타이틀 화면 — "한국기계연구원 50주년 EXCA DANCE / EXCAVATOR RHYTHM TRAINING" 로고와 네온 와이어프레임 굴착기, 메인 메뉴(PLAY / HOW TO PLAY / EDITOR / LEADERBOARD / SETTINGS)</td></tr>
+  <tr><td>이미지 ②</td><td>02_gameplay.png</td><td>게임플레이 화면 — 3D VIEW(굴착기 3D 모델), JOINT DIAGRAM / TOP VIEW 도식, 4관절 각도(SWING/BOOM/ARM/BUCKET) 실시간 표시, 비트 노트 하이웨이 및 진행도(00:04/01:45)</td></tr>
+  <tr><td>동영상</td><td>별도 첨부</td><td>실제 플레이 영상 — 플레이어 조작 화면 및 실물 굴착기 구동/시연 장면</td></tr>
+</table>
+
+<figure>
+  <img src="__IMG1__" alt="타이틀 화면">
+  <figcaption>이미지 ① — EXCA DANCE 타이틀 화면 (KIMM 50주년)</figcaption>
+</figure>
+
+<figure>
+  <img src="__IMG2__" alt="게임플레이 화면">
+  <figcaption>이미지 ② — 플레이어가 보는 실시간 게임플레이 화면 (3D 뷰 · 관절 다이어그램 · 노트 하이웨이)</figcaption>
+</figure>
+
+<p class="lead"><b>첨부 자료 요약</b>: 위 캡처 2종은 EXCA DANCE의 타이틀 화면과 플레이어가 보는 실시간 게임플레이 화면입니다. 동영상에는 플레이어의 게임 조작과 더불어 <b>그 입력에 따라 실제 굴착기가 움직이는 실증 장면</b>이 담겨 있어, 관람객 관점의 핵심 가치를 함께 확인하실 수 있습니다.</p>
+
+<h2>5. 향후 발전 및 홍보 방안</h2>
+
+<h3>5.1 향후 발전 방안</h3>
+<ul>
+  <li><b>실물 굴착기 원격제어 고도화</b>: 현재 속도 명령 기반 연동을 정밀 자세제어·실시간 피드백까지 확장하여, 게임에서 학습한 조작을 실물 장비로 더욱 정밀하게 전이</li>
+  <li><b>실증 시연 시나리오 정교화</b>: 플레이어 조작과 실물 동작이 더 극적으로 동기화되는 시연용 안무(비트맵)를 제작하여 관람객 임팩트 극대화</li>
+  <li><b>교육 커리큘럼화</b>: 난이도별 비트맵(연습→숙련)·튜토리얼을 체계화하여 신규 작업자 굴착기 조작 교육·평가 도구로 활용</li>
+  <li><b>콘텐츠 저작 도구 확장</b>: 내장 포즈 에디터로 작업·시연 시나리오별 맞춤 비트맵을 손쉽게 제작</li>
+  <li><b>안전 운전 훈련 모듈</b>: 관절 한계·작업 반경 등 안전 제약을 게임 규칙으로 내재화하여 위험 인지 훈련에 적용</li>
+  <li><b>데이터 기반 평가</b>: 판정·콤보·정확도 로그를 활용한 조작 숙련도 정량 분석 및 리더보드 기반 동기 부여</li>
+</ul>
+
+<h3>5.2 홍보 방안</h3>
+<ul>
+  <li><b>체험형 전시 시연</b>: 개원 50주년 행사를 시작으로 대외 전시·오픈하우스에서 <b>"게임 조작 → 실물 굴착기 구동"</b> 체험 부스로 운영하여 연구원의 로봇·자동화 역량을 직관적으로 전달</li>
+  <li><b>가상–실물 동시 구동 데모</b>: 화면 속 가상 굴착기와 현장의 실물 굴착기가 같은 동작을 수행하는 장면을 핵심 시연 포인트로 부각하여 ROS2 기반 원격제어 기술을 임팩트 있게 시각화</li>
+  <li><b>영상 콘텐츠 제작</b>: 플레이어 조작과 실물 동작을 한 화면에 담은 영상을 홍보 채널(연구원 SNS·유튜브 등)에 게시하여 대중 친화적 과학기술 콘텐츠로 확산</li>
+  <li><b>교육·산학 연계</b>: 건설기계·스마트 건설 분야 교육기관·기업과 연계한 체험 프로그램으로 확대</li>
+</ul>
+
+<hr>
+<p class="small">한국기계연구원 · 본 자료는 연구실의 연구 기록 및 향후 자산으로 활용됩니다. (제출일: 2026-06-01)</p>
+
+</body>
+</html>
